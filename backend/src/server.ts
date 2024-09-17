@@ -1,5 +1,4 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import { adminRouter } from '../adminjs/config';
@@ -7,10 +6,16 @@ import { adminRouter } from '../adminjs/config';
 dotenv.config();
 
 const app = express();
-const prisma = new PrismaClient();
 
 app.use(express.json());
 app.use(cors());
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || 'localhost',
+        resave: false,
+        saveUninitialized: false,
+    })
+);
 app.use('/auth', authRoutes);
 
 // Montar AdminJS en '/admin'
