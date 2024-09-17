@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "./build",
+    "target": "ESNext",
+    "lib": [
+      "esnext"
+    ],
+    "esModuleInterop": true,
+    "jsx": "react",
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "noImplicitThis": true,
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false,
+    "strict": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": false
+  },
+  "include": [
+    "./src/**/*"
+  ]
+}
