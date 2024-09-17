@@ -14,7 +14,7 @@ router.post('/register', async (req, res) => {
         });
         res.json(user);
     } catch (error) {
-        console.error('Error creating user:', error);
+        if(error.meta.target.indexOf("email")>=0) return res.status(500).json({error:"This email is already registered"});
         res.status(500).json({ error: 'Error creating user' });
     }
 });

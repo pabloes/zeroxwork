@@ -29,7 +29,7 @@ const options:AdminJSOptions =  {
             options: {
                 properties: {
                     ID: { isVisible: { show: true, edit: false, list: true, filter: true } },
-                    username: { isVisible: { show: true, edit: true, list: true, filter: true } },
+                    email: { isVisible: { show: true, edit: true, list: true, filter: true } },
                     password: { isVisible: {list: false, edit: false, filter: false, show: false} },
                     role: { isVisible: { show: true, edit: true, list: true, filter: true } },
                 },

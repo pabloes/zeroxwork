@@ -9,6 +9,7 @@ import session from 'express-session';
 import AdminJS from 'adminjs';
 import AdminJSExpress from '@adminjs/express';
 import {fileURLToPath} from "url";
+import argon2 from 'argon2';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -34,10 +35,12 @@ const run = async () => {
         authenticate: async (email, password) => {
             const userCount = await prisma.user.count();
             if(userCount === 0) return true;
-            if(userCount === 1) return true;
-            const user = await prisma.user.findFirst({where:{ username:email }});
+            const user = await prisma.user.findFirst({where:{ email }});
             if(!user) return false;
             if(!await argon2.verify(user.password,password)){
+                return false;
+            }
+            if (user.role !== 'ADMIN') { // Verifica si el usuario es administrador
                 return false;
             }
             return user;
