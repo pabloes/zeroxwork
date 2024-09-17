@@ -1,14 +1,21 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import App from './App';
-import './styles/main.scss';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import Home from './pages/Home';
+import Register from './pages/Register';
+import 'uikit/dist/css/uikit.min.css'; // UIkit CSS
+import './styles/main.scss'; // Tus estilos personalizados
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-    <BrowserRouter>
+    <Router>
+        <Header />
         <Routes>
-            <Route path="/" element={<App />} />
-            {/* Agrega más rutas aquí */}
+            <Route path="/" element={<Home />} />
+            <Route path="/register" element={<Register />} /> {/* Ruta de Registro */}
+            {/* Puedes agregar más rutas aquí */}
         </Routes>
-    </BrowserRouter>
+        <Footer />
+    </Router>
 );

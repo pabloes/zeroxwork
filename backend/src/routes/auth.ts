@@ -10,14 +10,26 @@ router.post('/register', async (req, res) => {
     try {
         const hashedPassword = await argon2.hash(password);
         const user = await prisma.user.create({
-            data: {
-                email,
-                password: hashedPassword,
-            },
+            data: { email, password: hashedPassword },
         });
         res.json(user);
     } catch (error) {
+        console.error('Error creating user:', error);
         res.status(500).json({ error: 'Error creating user' });
+    }
+});
+// Nueva ruta para inicio de sesión
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || !(await argon2.verify(user.password, password))) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        // Aquí puedes agregar lógica para crear una sesión o token JWT
+        res.json({ message: 'Login successful' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error logging in' });
     }
 });
 

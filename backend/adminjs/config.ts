@@ -1,25 +1,52 @@
-import AdminJS from 'adminjs';
-import AdminJSExpress from '@adminjs/express';
-import { PrismaClient } from '@prisma/client';
-import express from 'express';
+import {AdminJSOptions} from 'adminjs';
+import {getModelByName} from '@adminjs/prisma';
+import {prisma} from '../src/db';
+import argon2 from 'argon2';
 
-const app = express();
-const prisma = new PrismaClient();
+import {fileURLToPath} from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import PasswordsFeature from '@adminjs/passwords';
+import {Components, componentLoader} from './component-loader';
+import path from "path";
 
-// Configurar AdminJS
-const adminJs = new AdminJS({
+const options:AdminJSOptions =  {
+    componentLoader:componentLoader,
+    dashboard: {
+        component: Components.Dashboard,
+    },
+    branding: {
+        logo: false,
+        companyName: 'ZEROxWORK',
+    },
     resources: [
         {
-            resource: { model: prisma.user, client: prisma },
-            options: { properties: { password: { isVisible: false } } },
+
+            resource: {
+                model: getModelByName("User"),
+                client: prisma,
+            },
+            options: {
+                properties: {
+                    ID: { isVisible: { show: true, edit: false, list: true, filter: true } },
+                    username: { isVisible: { show: true, edit: true, list: true, filter: true } },
+                    password: { isVisible: {list: false, edit: false, filter: false, show: false} },
+                    role: { isVisible: { show: true, edit: true, list: true, filter: true } },
+                },
+            },
+            features: [
+                PasswordsFeature({
+                    properties: {
+                        encryptedPassword: 'password',
+                        password: 'pass'
+                    },
+                    hash: argon2.hash,
+                    componentLoader
+                })
+            ]
         },
     ],
     rootPath: '/admin',
-});
+}
 
-const adminRouter = AdminJSExpress.buildRouter(adminJs);
-
-// Montar AdminJS en Express
-app.use(adminJs.options.rootPath, adminRouter);
-
-export { adminJs, adminRouter };
+export default options;

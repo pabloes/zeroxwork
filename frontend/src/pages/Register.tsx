@@ -1,58 +1,103 @@
 import React, { useState } from 'react';
-import api from '../services/api';
+import axios from 'axios';
 
-const Register = () => {
+const Register: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [name, setName] = useState('');
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
     const [message, setMessage] = useState('');
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // Manejo del registro de usuario
+    const handleRegisterSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
         try {
-            const response = await api.post('/auth/register', { email, password, name });
-            setMessage(response.data.message);
+            await axios.post('/api/auth/register', { email, password });
+            setMessage('User registered successfully!');
         } catch (error) {
-            setMessage('Error en el registro');
+            setMessage('Error registering user.');
+        }
+    };
+
+    // Manejo del inicio de sesión
+    const handleLoginSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        try {
+            await axios.post('/api/auth/login', { email: loginEmail, password: loginPassword });
+            setMessage('Logged in successfully!');
+        } catch (error) {
+            setMessage('Error logging in.');
         }
     };
 
     return (
-        <div className="uk-container">
-            <h2>Registro de Usuarios</h2>
-            <form onSubmit={handleSubmit}>
-                <div className="uk-margin">
-                    <input
-                        className="uk-input"
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
+        <div className="uk-section uk-section-small">
+            <div className="uk-container">
+                <div className="uk-grid-match uk-child-width-1-2@m" uk-grid="true">
+                    {/* Columna de Registro */}
+                    <div>
+                        <h2>Register</h2>
+                        <form onSubmit={handleRegisterSubmit} className="uk-form-stacked">
+                            <div className="uk-margin">
+                                <label className="uk-form-label" htmlFor="email">Email</label>
+                                <input
+                                    id="email"
+                                    className="uk-input"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="uk-margin">
+                                <label className="uk-form-label" htmlFor="password">Password</label>
+                                <input
+                                    id="password"
+                                    className="uk-input"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" className="uk-button uk-button-primary">Register</button>
+                        </form>
+                    </div>
+
+                    {/* Columna de Login */}
+                    <div>
+                        <h2>Login</h2>
+                        <form onSubmit={handleLoginSubmit} className="uk-form-stacked">
+                            <div className="uk-margin">
+                                <label className="uk-form-label" htmlFor="loginEmail">Email</label>
+                                <input
+                                    id="loginEmail"
+                                    className="uk-input"
+                                    type="email"
+                                    value={loginEmail}
+                                    onChange={(e) => setLoginEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="uk-margin">
+                                <label className="uk-form-label" htmlFor="loginPassword">Password</label>
+                                <input
+                                    id="loginPassword"
+                                    className="uk-input"
+                                    type="password"
+                                    value={loginPassword}
+                                    onChange={(e) => setLoginPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" className="uk-button uk-button-secondary">Login</button>
+                        </form>
+                    </div>
                 </div>
-                <div className="uk-margin">
-                    <input
-                        className="uk-input"
-                        type="password"
-                        placeholder="Contraseña"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="uk-margin">
-                    <input
-                        className="uk-input"
-                        type="text"
-                        placeholder="Nombre"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                    />
-                </div>
-                <button className="uk-button uk-button-primary" type="submit">Registrarse</button>
-            </form>
-            {message && <p>{message}</p>}
+
+                {/* Mensaje de éxito/error */}
+                {message && <p>{message}</p>}
+            </div>
         </div>
     );
 };
