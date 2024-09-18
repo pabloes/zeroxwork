@@ -4,16 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "tsc": "./node_modules/typescript/bin/tsc",
     "start": "echo 'node -> version '$(node --version) && echo 'npm -> '$(npm --version) && cd frontend && npm run build && cd ../backend && npm run prod"
   },
   "author": "",
   "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "typescript": "^5.6.2"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.7"
-  }
+  "description": ""
 }

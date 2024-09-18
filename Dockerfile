@@ -1,46 +1,39 @@
-# Stage 1: Build the frontend
-FROM node:20.17.0-alpine AS frontend-builder
-
-# Set working directory for frontend
-WORKDIR /usr/src/app/frontend
-
-# Copy frontend-specific files
-COPY ./frontend/package.json ./
-COPY ./frontend/package-lock.json ./
-
-# Install frontend dependencies
-RUN npm install
-
-# Copy the frontend source code
-COPY ./frontend ./
-
-# Build the frontend
-RUN npm run build
-
-# Stage 2: Set up the backend and serve the app
+# Use Node.js base image
 FROM node:20.17.0-alpine
 
-# Set working directory for backend
-WORKDIR /usr/src/app/backend
+# Set working directory for the root folder (which includes frontend and backend folders)
+WORKDIR /usr/src/app
 
-# Copy backend-specific files
-COPY ./backend/package.json ./
-COPY ./backend/package-lock.json ./
+# Copy root-level package.json and package-lock.json (if exists)
+COPY ./package.json ./
+COPY ./package-lock.json ./
 
-# Install backend dependencies
+# Install dependencies from the root package.json
 RUN npm install
 
-# Copy the backend source code
-COPY ./backend ./
+# Change to frontend folder and install dependencies if it has its own package.json
+WORKDIR /usr/src/app/frontend
+COPY ./frontend/package.json ./frontend/
+COPY ./frontend/package-lock.json ./frontend/
+RUN npm install
 
-# Copy the frontend build from the first stage to serve with the backend
-COPY --from=frontend-builder /usr/src/app/frontend/dist ./public
+# Change to backend folder and install dependencies if it has its own package.json
+WORKDIR /usr/src/app/backend
+COPY ./backend/package.json ./backend/
+COPY ./backend/package-lock.json ./backend/
+RUN npm install
 
-# Expose ports for both frontend (if needed) and backend
-EXPOSE 3000 5000
+# Return to the root working directory
+WORKDIR /usr/src/app
+
+# Copy all files from the root folder (including frontend and backend)
+COPY . .
+
+# Expose the backend port (change it if necessary)
+EXPOSE 3000
 
 # Set environment to production
 ENV NODE_ENV=production
 
-# Start the backend server
+# Start the app (frontend build and backend start will be handled by your "start" script)
 CMD ["npm", "start"]
