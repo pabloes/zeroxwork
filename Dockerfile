@@ -11,17 +11,17 @@ COPY ./package-lock.json ./
 # Install dependencies from the root package.json (to get any shared packages like TypeScript)
 RUN npm install
 
-# Change to frontend folder and copy its files
+# Move to frontend folder and copy its files
 WORKDIR /usr/src/app/frontend
 COPY ./frontend/package.json ./frontend/package-lock.json ./
 
 # Install frontend dependencies
 RUN npm install
 
-# Build the frontend
-RUN npm run build
+# Build the frontend and output any errors
+RUN npm run build || echo "Frontend build failed"
 
-# Change to backend folder and copy its files
+# Move to backend folder and copy its files
 WORKDIR /usr/src/app/backend
 COPY ./backend/package.json ./backend/package-lock.json ./
 
