@@ -1,0 +1,12 @@
+{
+  "name": "ohmyserver",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "cd frontend && npm install && npm run build && cd ../backend && npm install && npm run prod"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
