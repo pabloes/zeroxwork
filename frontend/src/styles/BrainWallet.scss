@@ -1,0 +1,97 @@
+/* styles/BrainWallet.scss */
+
+/* Mobile Styles */
+@media (max-width: 600px) {
+  .uk-container {
+    padding: 10px;
+  }
+
+  .uk-article {
+    font-size: 14px;
+  }
+
+  .uk-card {
+    margin-bottom: 20px;
+  }
+
+  .uk-heading-medium {
+    font-size: 24px;
+    text-align: center;
+  }
+
+  .wallet-grid {
+    margin-top: 20px;
+  }
+
+  .logo-mobile {
+    width: 80px;
+  }
+
+  .uk-input {
+    font-size: 16px;
+  }
+
+  .uk-icon-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .uk-button-primary, .uk-button-danger {
+    font-size: 14px;
+    padding: 10px 15px;
+  }
+}
+
+/* Default Styles */
+.uk-container {
+  max-width: 800px;
+  margin: auto;
+}
+
+.uk-article {
+  font-size: 16px;
+}
+
+.uk-heading-medium {
+  font-size: 32px;
+}
+
+.uk-card {
+  padding: 20px;
+}
+
+.uk-input {
+  font-size: 18px;
+  padding: 12px;
+}
+
+.uk-icon-button {
+  width: 36px;
+  height: 36px;
+}
+
+.uk-card p {
+  word-break: break-all;
+}
+
+/* styles/BrainWallet.scss */
+
+/* Mobile Styles */
+@media (max-width: 600px) {
+  * + [class*=uk-align].title-container {
+    margin: 0;
+  }
+
+  * + h3.uk-text-muted {
+    margin-top:  0;
+  }
+}
+
+/* Default Styles */
+.uk-heading-medium {
+  font-size: 32px;
+}
+
+.uk-card {
+  padding: 20px;
+}

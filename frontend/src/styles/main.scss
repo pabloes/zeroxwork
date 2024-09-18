@@ -1,10 +1,30 @@
-.uk-heading-line span {
-  color: #ff5722;
-}
-.uk-button-primary {
-  background-color: #1e87f0;
+//web2/frontend/src/styles/main.scss
+
+// Import UIkit's core styles
+@import "uikit/src/scss/variables";
+@import "uikit/src/scss/uikit";
+@import "uikit/src/scss/components/base.scss";
+@import "uikit/src/scss/components/grid.scss";
+@import "uikit/src/scss/components/button.scss";
+
+// Your custom styles here
+body {
+  background-color: #ffffff;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
-.uk-notification-danger {
-  background-color: #ffc5c5;
+.home-logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.home-logo {
+  max-width: calc(90% - 60px); // Adjust the size as needed
+  width: 90%;
+  height: auto;
+}
+
+#root {
+  overflow: auto;
 }
