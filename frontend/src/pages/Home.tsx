@@ -1,8 +1,12 @@
 import React from 'react';
+/*
 import { Link } from 'react-router-dom';
+*/
 
 const Home: React.FC = () => {
+/*
     const isLoggedIn = false; // Cambia esto por la lógica real de autenticación
+*/
 
     return (
         <div className="uk-section uk-section-large uk-text-center">
