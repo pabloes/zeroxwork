@@ -4,7 +4,6 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "echo 'node -> version '$(node --version) && echo 'npm -> '$(npm --version) && cd frontend && npm run build && cd ../backend && npm run prod"
   },
   "author": "",
   "license": "ISC",
