@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios, {AxiosError} from 'axios';
 import UIkit from 'uikit'; // Asegúrate de tener UIkit instalado
 
@@ -19,7 +19,7 @@ const Register: React.FC = () => {
         } catch (axiosError:AxiosError|any) {
             const errorMessage = (typeof axiosError?.response?.data?.error === "string" ? axiosError?.response?.data?.error : axiosError?.response?.data?.error?.message) || 'Error registering user.'
             setMessage(errorMessage);
-            UIkit.notification({ message: errorMessage, status: 'danger', className:"uk-notification-danger" });
+            UIkit.notification({ message: errorMessage, status: 'danger' });
         } finally {
             setIsSubmitting(false); // Desactiva el estado de carga
         }
