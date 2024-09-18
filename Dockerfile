@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY ./package.json ./
 COPY ./package-lock.json ./
 
-# Install dependencies from the root package.json (to get any shared packages like TypeScript)
+# Install dependencies from the root package.json
 RUN npm install
 
 # Move to frontend folder and copy its files
@@ -18,8 +18,8 @@ COPY ./frontend/package.json ./frontend/package-lock.json ./
 # Install frontend dependencies
 RUN npm install
 
-# Build the frontend and output any errors
-RUN npm run build || echo "Frontend build failed"
+# Build the frontend
+RUN npm run build
 
 # Move to backend folder and copy its files
 WORKDIR /usr/src/app/backend
@@ -27,6 +27,12 @@ COPY ./backend/package.json ./backend/package-lock.json ./
 
 # Install backend dependencies
 RUN npm install
+
+# Run Prisma generate to create the Prisma client
+RUN npx prisma generate
+
+# Run Prisma migrate to apply database migrations
+RUN npx prisma migrate deploy
 
 # Copy all other files (frontend and backend source code)
 WORKDIR /usr/src/app
