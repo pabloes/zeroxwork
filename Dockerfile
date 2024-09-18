@@ -34,6 +34,12 @@ WORKDIR /usr/src/app/frontend
 RUN npm run build
 
 WORKDIR /usr/src/app/backend
+# Copy .env file into the container
+COPY .env /usr/src/app/.env
+
+# Use env file during build (before running Prisma commands)
+ENV DATABASE_URL=${DATABASE_URL}
+
 # Run Prisma generate to create the Prisma client
 RUN npx prisma generate
 
