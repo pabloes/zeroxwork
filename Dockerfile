@@ -33,17 +33,6 @@ WORKDIR /usr/src/app/frontend
 # Build the frontend
 RUN npm run build
 
-WORKDIR /usr/src/app/backend
-
-# Use env file during build (before running Prisma commands)
-ENV DATABASE_URL=${DATABASE_URL}
-
-# Run Prisma generate to create the Prisma client
-RUN npx prisma generate
-
-# Run Prisma migrate to apply database migrations
-RUN npx prisma migrate deploy
-
 # Expose the backend port (adjust this if necessary)
 EXPOSE 3000
 
@@ -53,5 +42,5 @@ ENV NODE_ENV=production
 # Set the working directory to the backend folder to run the backend app
 WORKDIR /usr/src/app/backend
 
-# Run the backend's production start script
-CMD ["npm", "run", "prod"]
+# Run the backend's production start script and Prisma commands
+CMD npx prisma generate && npx prisma migrate deploy && npm run prod
