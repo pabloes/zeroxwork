@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "./node_modules/typescript/bin/tsc",
-    "start": "echo 'node -> version '$(node --version) && cd frontend && npm install && npm run build && cd ../backend && npm install && npm run prod"
+    "start": "echo 'node -> version '$(node --version) && echo 'npm -> '$(npm --version) && cd frontend && npm install && npm run build && cd ../backend && npm install && npm run prod"
   },
   "author": "",
   "license": "ISC",
