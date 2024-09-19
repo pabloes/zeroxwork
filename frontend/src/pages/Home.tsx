@@ -10,7 +10,6 @@ const Home: React.FC = () => {
 
     return (
         <>
-            <Header />
             <div className="uk-section uk-section-large uk-text-center">
                 <div className="uk-container">
                     <h1 className="uk-heading-line"><span>SooN!</span></h1>
