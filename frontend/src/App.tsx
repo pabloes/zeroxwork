@@ -6,20 +6,24 @@ import OldBrainWallet from "./pages/OldBrainWallet";
 import Register from "./pages/Register";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import Login from "./pages/Login";
+import {AuthProvider} from "./context/AuthContext";
 
 const App: React.FC = () => {
-    return (
+    return (<AuthProvider>
         <Router>
-<Header />
-                <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/eth-brain-wallet" element={<BrainWallet />} />
-                    <Route path="/brain-wallet" element={<BrainWallet />} />
-                    <Route path="/old-brain-wallet" element={<OldBrainWallet />} />
-                </Routes>
-        <Footer/>
+            <Header />
+                    <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/eth-brain-wallet" element={<BrainWallet />} />
+                        <Route path="/brain-wallet" element={<BrainWallet />} />
+                        <Route path="/old-brain-wallet" element={<OldBrainWallet />} />
+                    </Routes>
+            <Footer/>
         </Router>
+        </AuthProvider>
     );
 };
 

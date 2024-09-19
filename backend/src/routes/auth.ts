@@ -5,6 +5,8 @@ import {sendMail} from "../services/mailer";
 
 const router = Router();
 const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+import jwt from 'jsonwebtoken';
 
 router.post('/register', async (req, res) => {
     const { email, password } = req.body;
@@ -34,18 +36,40 @@ router.post('/register', async (req, res) => {
         res.status(500).json({ error: 'Error creating user' });
     }
 });
-// Nueva ruta para inicio de sesión
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
     const { email, password } = req.body;
+//TODO if not verified return error
+
     try {
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user || !(await argon2.verify(user.password, password))) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+        // Verificar que el usuario exista en la base de datos
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        }else if(!user.verified){
+            return res.status(403).json({ error: 'Email not verified. Look your mail inbox.' });
         }
-        // Aquí puedes agregar lógica para crear una sesión o token JWT
-        res.json({ message: 'Login successful' });
+
+        // Verificar que la contraseña sea correcta con argon2
+        const isPasswordValid = await argon2.verify(user.password, password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        }
+
+        // Generar un token JWT
+        const token = jwt.sign(
+            { userId: user.id, email: user.email },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        // Enviar el token como respuesta
+        res.json({ token });
     } catch (error) {
-        res.status(500).json({ error: 'Error logging in' });
+        console.error('Error logging in user:', error);
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
