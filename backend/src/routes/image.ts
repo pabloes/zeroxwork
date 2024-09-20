@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import fs from 'fs';
+import fs, {writeFile, writeFileSync} from 'fs';
 import path from 'path';
 import axios, {AxiosRequestConfig} from 'axios';
 import { fileTypeFromBuffer } from 'file-type';
@@ -13,12 +13,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const router = Router();
 import * as crypto from "crypto";
+import {prisma} from "../db";
 
 // Configure multer for in-memory storage to validate and scan files
 const storage = multer.memoryStorage();
 const calculateSHA256 = (fileBuffer: Buffer): string => {
     return crypto.createHash('sha256').update(fileBuffer).digest('hex');
 };
+const calculateMD5 = (buffer: Buffer): string => {
+    return crypto.createHash('md5').update(buffer).digest('hex');
+};
+
 const upload = multer({
     storage: storage,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -37,50 +42,53 @@ const uploadLimiter = rateLimit({
     message: 'Too many uploads from this IP, please try again later.',
 });
 
+const fileAnalysis:{[sha256Hash:string]: any} = {};
+
+// Función para asegurarse de que la ruta existe
+const ensureDirectoryExistence = (filePath: string): void => {
+    const dirname = path.dirname(filePath);
+    if (!fs.existsSync(dirname)) {
+        fs.mkdirSync(dirname, { recursive: true });
+    }
+};
 
 // Endpoint for image uploads with VirusTotal scanning
 router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), async (req: Request, res: Response) => {
     if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded' });
+        return res.status(400).json({message: 'No file uploaded'});
     }
 
     try {
+        const {userId} = req.user;
         const sha256Hash: string = calculateSHA256(req.file.buffer);
-        console.log("sha256Hash",sha256Hash)
+        console.log("sha256Hash", sha256Hash)
         // Scan the uploaded file buffer with VirusTotal
         const {analysisData} = await scanFileWithVirusTotal(req.file.buffer);
-
         const analysisId = analysisData.id;
-        const analysisResult = await pollAnalysisStatus(analysisId);
-        const fileIsValid = !analysisResult.attributes.stats.malicious && !analysisResult.attributes.stats.suspicious && !analysisResult.attributes.stats.failure;
-        if(!fileIsValid){
-            res.status(500).json({ message: 'Invalid file', error:'Invalid file' });
-        }
-        // Check the file type after confirming it's clean
-        const fileType = await fileTypeFromBuffer(req.file.buffer);
-        if (!fileType || !['image/jpeg', 'image/png'].includes(fileType.mime)) {
-            return res.status(400).json({ message: 'Invalid file type. Only JPEG and PNG are allowed.' });
-        }
+        const tempFolder = path.join(__dirname, '../../public/temp-user-uploaded-images', userId.toString());
+        const fileName = `${sha256Hash}.${req.file.originalname.split(".")[1]}`;
+        const tempFilePath = path.join(tempFolder, fileName);
+        ensureDirectoryExistence(tempFilePath);
+        writeFileSync(tempFilePath, req.file.buffer);
 
-        // Create a user-specific folder if it doesn't exist
-        const userFolder = path.join(__dirname, '../../public/user-uploaded-images', req.user.id.toString());
-        if (!fs.existsSync(userFolder)) {
-            fs.mkdirSync(userFolder, { recursive: true });
-        }
-
-        // Sanitize file name and save the file
-        const sanitizedFilename = sanitizeFileName(req.file.originalname);
-        const targetPath = path.join(userFolder, `${Date.now()}-${sanitizedFilename}`);
-        fs.writeFileSync(targetPath, req.file.buffer);
-
-        // Return the public URL of the uploaded file
-        const fileUrl = `${req.protocol}://${req.get('host')}/user-uploaded-images/${req.user.id}/${path.basename(targetPath)}`;
+        const fileUpload = await prisma.fileUpload.create({
+            data: {
+                userId,
+                fileName,
+                fileSize: req.file.size,
+                md5Hash: calculateMD5(req.file.buffer),
+                sha256Hash,
+                analysisId,
+                status: 'pending'
+            }
+        });
+        const filePageUrl = `/user-uploaded-images/${sha256Hash}`;
         res.status(200).json({
-            message: 'File uploaded successfully',
-            fileUrl: fileUrl
+            message: 'File uploaded successfully and being processed',
+            filePageUrl
         });
     } catch (error) {
-        res.status(500).json({ message: 'Error uploading file', error: error.message });
+        res.status(500).json({message: 'Error uploading file', error: error.message});
     }
 });
 

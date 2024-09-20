@@ -21,4 +21,24 @@ model User {
   verified          Boolean  @default(false) // Campo para el estado de verificación
   verificationCode  String?  // Código de verificación de correo
   updatedAt         DateTime @updatedAt
+  fileUploads FileUpload[]  // One-to-many relationship with FileUpload
+
+}
+
+model FileUpload {
+  id         Int      @id @default(autoincrement())
+  fileName   String
+  fileSize   Int
+  md5Hash    String?
+  sha256Hash String   @unique // Utiliza sha256 como identificador único
+  uploadDate DateTime @default(now())
+  userId     Int
+  analysisId String?  // ID del análisis (opcional si no se usa VirusTotal)
+  status     String   @default("pending") // Estado del análisis: pending, completed, etc.
+
+  // Relación con User
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([sha256Hash])
 }
