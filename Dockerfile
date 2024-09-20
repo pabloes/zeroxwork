@@ -41,6 +41,9 @@ ENV NODE_ENV=production
 
 # Set the working directory to the backend folder to run the backend app
 WORKDIR /usr/src/app/backend
+# Create the public/user-uploaded-images directory and set permissions
+RUN mkdir -p public/user-uploaded-images && \
+    chmod -R 755 public/user-uploaded-images \
 
 # Run the backend's production start script and Prisma commands
 CMD npx prisma generate && npx prisma migrate deploy && npm run prod

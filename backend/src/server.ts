@@ -10,6 +10,8 @@ import AdminJS from 'adminjs';
 import AdminJSExpress from '@adminjs/express';
 import {fileURLToPath} from "url";
 import argon2 from 'argon2';
+import imageRoutes from './routes/image';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -50,8 +52,9 @@ const run = async () => {
 
     app.use(admin.options.rootPath, router);
 
+    app.use('/user-uploaded-images', express.static('public/user-uploaded-images'));
     app.use('/api/auth', authRoutes);
-
+    app.use('/api/images', imageRoutes);
 
     const port = process.env.PORT || 3000;
     console.log("Listening...")

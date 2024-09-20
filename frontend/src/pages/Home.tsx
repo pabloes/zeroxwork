@@ -17,6 +17,9 @@ const Home: React.FC = () => {
                 <div className="uk-container uk-text-center">
                     <Link to={"/brain-wallet"}>Brain wallet generator</Link>
                 </div>
+                <div className="uk-container uk-text-center">
+                    <Link to={"/image-upload"}>Image upload</Link>
+                </div>
           {/*      <div className="uk-container">
                     <h1 className="uk-heading-line"><span>Deploy your server in easy steps!</span></h1>
                     <p>With our service, you can deploy and publish your server, fully synced with your GitHub repository, in just a few clicks.</p>

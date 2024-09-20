@@ -1,4 +1,10 @@
 {
   "schemaVersion": 2,
-  "dockerfilePath": "./Dockerfile"
+  "dockerfilePath": "./Dockerfile",
+  "volumes": [
+    {
+      "hostPath": "/captain/data/user-uploaded-images",
+      "containerPath": "/usr/src/app/backend/public/user-uploaded-images"
+    }
+  ]
 }
