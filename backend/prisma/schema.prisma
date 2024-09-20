@@ -34,8 +34,8 @@ model FileUpload {
   uploadDate DateTime @default(now())
   userId     Int
   analysisId String?  // ID del análisis (opcional si no se usa VirusTotal)
-  status     String   @default("pending") // Estado del análisis: pending, completed, etc.
-
+  status     String   @default("pending") // Estado del análisis: pending, completed, dangerous etc.
+  dangerous  Boolean  @default(false) // Indica si el archivo es peligroso
   // Relación con User
   user       User     @relation(fields: [userId], references: [id])
 

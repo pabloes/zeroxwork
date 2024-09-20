@@ -61,11 +61,22 @@ router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), async
     try {
         const {userId} = req.user;
         const sha256Hash: string = calculateSHA256(req.file.buffer);
+        const filePageUrl = `/user-uploaded-images/${sha256Hash}`;
+        //TODO look for sha256 in database, if found return answer already
+        const previousUploaded = await prisma.fileUpload.findUnique({where:{sha256Hash}});
+        if(previousUploaded){
+            return res.status(200).json({
+                message: 'File uploaded successfully and being processed',
+                sha256:sha256Hash,
+                filePageUrl
+            });
+        }
+
         console.log("sha256Hash", sha256Hash)
         // Scan the uploaded file buffer with VirusTotal
         const {analysisData} = await scanFileWithVirusTotal(req.file.buffer);
         const analysisId = analysisData.id;
-        const tempFolder = path.join(__dirname, '../../public/temp-user-uploaded-images', userId.toString());
+        const tempFolder = path.join(__dirname, '../../public/temp-user-uploaded-images');
         const fileName = `${sha256Hash}.${req.file.originalname.split(".")[1]}`;
         const tempFilePath = path.join(tempFolder, fileName);
         ensureDirectoryExistence(tempFilePath);
@@ -82,45 +93,96 @@ router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), async
                 status: 'pending'
             }
         });
-        const filePageUrl = `/user-uploaded-images/${sha256Hash}`;
+
         res.status(200).json({
             message: 'File uploaded successfully and being processed',
+            sha256:sha256Hash,
             filePageUrl
         });
+
+        analyzeFileResult(analysisId, sha256Hash);
     } catch (error) {
         res.status(500).json({message: 'Error uploading file', error: error.message});
     }
 });
 
-const pollAnalysisStatus = async (analysisId: string, retries: number = 60, delay: number = 1000): Promise<any> => {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await axios.get(`https://www.virustotal.com/api/v3/analyses/${analysisId}`, {
-                headers: {
-                    'x-apikey': process.env.VIRUS_TOTAL_KEY
-                }
-            } as AxiosRequestConfig);
+router.get('/file-status/:sha256', async (req: Request, res: Response) => {
+    console.log("file-status")
+    const { sha256 } = req.params;
 
-/*            const response2 = await axios.get(`https://www.virustotal.com/api/v3/analyses/${analysisId}`, {
-                headers: {
-                    'x-apikey': process.env.VIRUS_TOTAL_KEY
-                }
-            } as AxiosRequestConfig);*/
+    try {
+        // Buscar archivo en la base de datos por sha256
+        const file = await prisma.fileUpload.findUnique({
+            where: { sha256Hash: sha256 }
+        });
 
-            const status = response.data.data.attributes.status;
-
-            if (status === 'completed') {
-                return response.data.data;
-            }
-
-            // Wait for a second before polling again
-            await new Promise((resolve) => setTimeout(resolve, delay));
-        } catch (error) {
-            throw new Error(`Error checking analysis status: ${error.response?.data?.message || error.message}`);
+        if (!file) {
+            return res.status(404).json({ message: 'File not found' });
         }
-    }
 
-    throw new Error('Analysis did not complete in time.');
+        // Verificar estado del análisis
+        let analysisStatus = file.status;
+        if (file.status === 'pending') {
+            // Consultar el estado del análisis desde el servicio externo (ejemplo con VirusTotal)
+            try {
+                const response = await axios.get(`https://www.virustotal.com/api/v3/analyses/${file.analysisId}`, {
+                    headers: { 'x-apikey': process.env.VIRUS_TOTAL_KEY! }
+                } as AxiosRequestConfig);
+
+                analysisStatus = response.data.data.attributes.status;
+
+                // Actualizar estado en la base de datos si se ha completado
+                if (analysisStatus === 'completed') {
+                    await prisma.fileUpload.update({
+                        where: { sha256Hash: sha256 },
+                        data: { status: 'completed' }
+                    });
+                }
+            } catch (error) {
+                console.error('Error checking analysis status:', error.message);
+            }
+        }
+
+        // Respuesta con información del archivo y estado de análisis
+        res.status(200).json({
+            fileName: file.fileName,
+            fileSize: file.fileSize,
+            sha256,
+            uploadDate: file.uploadDate,
+            status: analysisStatus,
+            analysisId: file.analysisId
+        });
+
+
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching file status', error: error.message });
+    }
+});
+
+const analyzeFileResult = async (analysisId: string, sha256Hash: string) => {
+    try {
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        const response = await axios.get(`https://www.virustotal.com/api/v3/analyses/${analysisId}`, {
+            headers: { 'x-apikey': process.env.VIRUS_TOTAL_KEY! }
+        } as AxiosRequestConfig);
+
+        const analysisData = response.data.data;
+        const status = analysisData.attributes.status;
+
+        if (status === 'completed') {
+            const stats = analysisData.attributes.stats;
+            await prisma.fileUpload.update({
+                where: { sha256Hash: sha256Hash },
+                data: {
+                    status: 'completed',
+                    dangerous: !!(stats.malicious || stats.suspicious || 0)
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error analyzing file result:', error.message);
+    }
 };
+
 
 export default router;

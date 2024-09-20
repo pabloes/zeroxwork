@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import UIkit from 'uikit'; // Ensure you have UIkit installed for notifications
 import { useAuth } from '../context/AuthContext'; // Import your AuthContext to check user authentication
+import { useNavigate } from 'react-router-dom';
+import {sleep} from "../services/sleep"; // Import useHistory for navigation
 
 const ImageUpload: React.FC = () => {
     const { isAuthenticated } = useAuth(); // Check if the user is authenticated
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
-    const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
-    const [scanStatus, setScanStatus] = useState<string | null>(null);
+    const navigate = useNavigate(); // Initialize useHistory for navigation
 
     // Handle file selection
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,8 +42,6 @@ const ImageUpload: React.FC = () => {
         }
 
         setIsUploading(true);
-        setScanStatus(null); // Reset scan status
-        setUploadedImageUrl(null); // Reset uploaded image URL
 
         const formData = new FormData();
         formData.append('image', file);
@@ -63,15 +62,13 @@ const ImageUpload: React.FC = () => {
                     'Authorization': `Bearer ${token}`, // Include the token in headers
                 },
             });
-            debugger;
-            if (response.data.attributes.last_analysis_stats.malicious > 0) {
-                UIkit.notification({ message: 'File is malicious. Upload rejected.', status: 'danger' });
-                setScanStatus('File is malicious. Upload rejected.');
-            } else {
-                UIkit.notification({ message: 'File uploaded and scanned successfully.', status: 'success' });
-                setScanStatus('File uploaded and scanned successfully.');
-                setUploadedImageUrl(response.data.fileUrl);
-            }
+
+            UIkit.notification({ message: 'File uploaded and being processed.', status: 'success' });
+            // Redirection to the analysis page after 10 seconds
+            await sleep(8000);
+            UIkit.notification({ message: 'Redirecting...', status: 'success' });
+            await sleep(3000);
+            navigate(`/uploaded-image-page/${response.data.sha256}`);
         } catch (error: any) {
             // Handle errors from the server, e.g., file being malicious
             const errorMessage = error?.response?.data?.message || 'Error uploading image';
@@ -106,14 +103,6 @@ const ImageUpload: React.FC = () => {
                 >
                     {isUploading ? 'Uploading and Scanning...' : 'Upload'}
                 </button>
-                {scanStatus && <p className="uk-text-warning uk-margin-top">{scanStatus}</p>}
-                {uploadedImageUrl && (
-                    <div className="uk-margin-top">
-                        <p>Uploaded Image URL:</p>
-                        <a href={uploadedImageUrl} target="_blank" rel="noopener noreferrer">{uploadedImageUrl}</a>
-                        <img src={uploadedImageUrl} alt="Uploaded Image" className="uk-margin-top" width="300" />
-                    </div>
-                )}
             </div>
         </div>
     );
