@@ -145,12 +145,9 @@ router.get('/file-status/:sha256', async (req: Request, res: Response) => {
 
         // Respuesta con información del archivo y estado de análisis
         res.status(200).json({
-            fileName: file.fileName,
-            fileSize: file.fileSize,
             sha256,
-            uploadDate: file.uploadDate,
-            status: analysisStatus,
-            analysisId: file.analysisId
+            ...file,
+            status: analysisStatus
         });
 
 
