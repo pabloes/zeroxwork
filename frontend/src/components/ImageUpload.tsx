@@ -1,41 +1,28 @@
-import React, { useState } from 'react';
+import React, {useEffect,useRef, useState} from 'react';
 import axios from 'axios';
 import UIkit from 'uikit'; // Ensure you have UIkit installed for notifications
 import { useAuth } from '../context/AuthContext'; // Import your AuthContext to check user authentication
 import { useNavigate } from 'react-router-dom';
 import {sleep} from "../services/sleep"; // Import useHistory for navigation
+import { Toast } from 'primereact/toast';
+import { FileUpload } from 'primereact/fileupload';
+import { ProgressBar } from 'primereact/progressbar';
+import { Button } from 'primereact/button';
+import { Tooltip } from 'primereact/tooltip';
+import { Tag } from 'primereact/tag';
 
 const ImageUpload: React.FC = () => {
     const { isAuthenticated } = useAuth(); // Check if the user is authenticated
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const navigate = useNavigate(); // Initialize useHistory for navigation
-
-    // Handle file selection
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const selectedFile = e.target.files[0];
-
-            // Validate file type and size
-            const allowedTypes = ['image/jpeg', 'image/png'];
-            if (!allowedTypes.includes(selectedFile.type)) {
-                UIkit.notification({ message: 'Invalid file type. Only JPEG and PNG are allowed.', status: 'danger' });
-                setFile(null);
-                return;
-            }
-
-            if (selectedFile.size > 5 * 1024 * 1024) { // 5MB size limit
-                UIkit.notification({ message: 'File size exceeds 5MB limit.', status: 'danger' });
-                setFile(null);
-                return;
-            }
-
-            setFile(selectedFile); // Set the selected file
-        }
-    };
+    const toast = useRef(null);
+    const [totalSize, setTotalSize] = useState(0);
+    const fileUploadRef = useRef(null);
 
     // Handle file upload
-    const handleUpload = async () => {
+    const handleUpload = async (event) => {
+        const file = event.files[0];
         if (!file) {
             UIkit.notification({ message: 'Please select an image to upload', status: 'warning' });
             return;
@@ -73,7 +60,6 @@ const ImageUpload: React.FC = () => {
             // Handle errors from the server, e.g., file being malicious
             const errorMessage = error?.response?.data?.message || 'Error uploading image';
             UIkit.notification({ message: errorMessage, status: 'danger' });
-            setScanStatus(errorMessage);
         } finally {
             setIsUploading(false);
             setFile(null); // Clear file input
@@ -83,28 +69,107 @@ const ImageUpload: React.FC = () => {
     if (!isAuthenticated) {
         return <p>Please log in to upload images.</p>;
     }
+    const onTemplateSelect = (e) => {
+        let _totalSize = totalSize;
+        let files = e.files;
+
+        Object.keys(files).forEach((key) => {
+            _totalSize += files[key].size || 0;
+        });
+
+        setTotalSize(_totalSize);
+    };
+
+    const onTemplateUpload = (e) => {
+        try {
+
+        }catch(error){
+
+        }
+        let _totalSize = 0;
+
+        e.files.forEach((file) => {
+            _totalSize += file.size || 0;
+        });
+
+        setTotalSize(_totalSize);
+        toast.current.show({ severity: 'info', summary: 'Success', detail: 'File Uploaded' });
+    };
+
+    const onTemplateRemove = (file, callback) => {
+        setTotalSize(totalSize - file.size);
+        callback();
+    };
+
+    const onTemplateClear = () => {
+        setTotalSize(0);
+    };
+
+    const headerTemplate = (options) => {
+        const { className, chooseButton, uploadButton, cancelButton } = options;
+        const value = totalSize / 10000;
+        const formatedValue = fileUploadRef && fileUploadRef.current ? fileUploadRef.current.formatSize(totalSize) : '0 B';
+
+        return (
+            <div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
+                {chooseButton}
+                {uploadButton}
+                {cancelButton}
+                <div className="flex align-items-center gap-3 ml-auto">
+                    <span>{formatedValue} / 5 MB</span>
+                    <ProgressBar value={value} showValue={false} style={{ width: '10rem', height: '12px' }}></ProgressBar>
+                </div>
+            </div>
+        );
+    };
+
+    const itemTemplate = (file, props) => {
+        return (
+            <div className="flex align-items-center flex-wrap">
+                <div className="flex align-items-center" style={{ width: '40%' }}>
+                    <img alt={file.name} role="presentation" src={file.objectURL} width={100} />
+                    <span className="flex flex-column text-left ml-3">
+                        {file.name}
+                        <small>{new Date().toLocaleDateString()}</small>
+                    </span>
+                </div>
+                <Tag value={props.formatSize} severity="warning" className="px-3 py-2" />
+                <Button type="button" icon="pi pi-times" className="p-button-outlined p-button-rounded p-button-danger ml-auto" onClick={() => onTemplateRemove(file, props.onRemove)} />
+            </div>
+        );
+    };
+
+    const emptyTemplate = () => {
+        return (
+            <div className="flex align-items-center flex-column">
+                <i className="pi pi-image mt-3 p-5" style={{ fontSize: '5em', borderRadius: '50%', backgroundColor: 'var(--surface-b)', color: 'var(--surface-d)' }}></i>
+                <span style={{ fontSize: '1.2em', color: 'var(--text-color-secondary)' }} className="my-5">
+                    Drag and Drop Image Here
+                </span>
+            </div>
+        );
+    };
+    const chooseOptions = { icon: 'pi pi-fw pi-images', iconOnly: false, className: 'custom-choose-btn p-button-rounded p-button-outlined' };
+    const uploadOptions = { icon: 'pi pi-fw pi-cloud-upload', iconOnly: false, className: 'custom-upload-btn p-button-success p-button-rounded p-button-outlined' };
+    const cancelOptions = { icon: 'pi pi-fw pi-times', iconOnly: false, className: 'custom-cancel-btn p-button-danger p-button-rounded p-button-outlined' };
 
     return (
-        <div className="uk-section uk-section-small">
-            <div className="uk-container">
-                <h3>Upload an Image</h3>
-                <div className="uk-margin">
-                    <div uk-form-custom="true">
-                        <input type="file" onChange={handleFileChange} accept="image/*" />
-                        <button className="uk-button uk-button-default" type="button" tabIndex={-1}>
-                            Select Image
-                        </button>
+        <>
+            {isUploading ? <p>Uploading and Scanning...</p> :
+                <div className="uk-section uk-section-small">
+                    <div className="uk-container">
+                        <div>
+                            <FileUpload ref={fileUploadRef} name="demo[]" url="/api/images/upload" accept="image/*" maxFileSize={5000000} customUpload
+                                        uploadHandler={handleUpload}
+                                        onUpload={onTemplateUpload} onSelect={onTemplateSelect} onError={onTemplateClear} onClear={onTemplateClear}
+                                        headerTemplate={headerTemplate} itemTemplate={itemTemplate} emptyTemplate={emptyTemplate}
+                                        chooseOptions={chooseOptions} uploadOptions={uploadOptions} cancelOptions={cancelOptions} />
+                        </div>
                     </div>
                 </div>
-                <button
-                    className={`uk-button uk-button-primary ${isUploading ? 'uk-disabled' : ''}`}
-                    disabled={isUploading}
-                    onClick={handleUpload}
-                >
-                    {isUploading ? 'Uploading and Scanning...' : 'Upload'}
-                </button>
-            </div>
-        </div>
+            }
+        </>
+
     );
 };
 

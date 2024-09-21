@@ -14,7 +14,9 @@ import ImageUploadedPage from "./pages/ImageUploadedPage";
 const App: React.FC = () => {
     return (<AuthProvider>
         <Router>
-            <Header />
+            <div className="app-container">
+                <Header />
+                <div className="main-content">
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/register" element={<Register />} />
@@ -25,7 +27,9 @@ const App: React.FC = () => {
                         <Route path="/brain-wallet" element={<BrainWallet />} />
                         <Route path="/old-brain-wallet" element={<OldBrainWallet />} />
                     </Routes>
-            <Footer/>
+                </div>
+                <Footer/>
+            </div>
         </Router>
         </AuthProvider>
     );
