@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import {AuthProvider} from "./context/AuthContext";
 import ImageUploadPage from "./pages/ImageUploadPage";
 import ImageUploadedPage from "./pages/ImageUploadedPage";
+import MyImagesPage from "./pages/MyImagesPage";
 
 const App: React.FC = () => {
     return (<AuthProvider>
@@ -26,6 +27,7 @@ const App: React.FC = () => {
                         <Route path="/eth-brain-wallet" element={<BrainWallet />} />
                         <Route path="/brain-wallet" element={<BrainWallet />} />
                         <Route path="/old-brain-wallet" element={<OldBrainWallet />} />
+                        <Route path="/my-images" element={<MyImagesPage />} />
                     </Routes>
                 </div>
                 <Footer/>

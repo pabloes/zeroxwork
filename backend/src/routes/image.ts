@@ -114,6 +114,37 @@ console.log("sending response")
     }
 });
 
+router.get('/get-all', verifyToken, async (req: Request, res: Response) => {
+    try {
+        const userId = parseInt(req.user.userId); // Asumiendo que `req.user` tiene la información del usuario autenticado
+
+        const images = await prisma.fileUpload.findMany({
+            where: { userId },
+            select: {
+                id: true,
+                fileName: true,
+                sha256Hash: true,
+                uploadDate: true,
+                dangerous: true
+            }
+        });
+
+        const imageList = images.map(image => ({
+            id: image.id,
+            fileName: image.fileName,
+            fileUrl: `${req.protocol}://${req.get('host')}/api/images/user-uploaded-images/${image.fileName}`, // URL completa
+            uploadDate: image.uploadDate,
+            dangerous: image.dangerous
+        }));
+
+        res.json(imageList);
+    } catch (error) {
+
+        res.status(500).json({ message: 'Failed to load images.' });
+
+    }
+});
+
 router.get('/file-status/:sha256', async (req: Request, res: Response) => {
     console.log("file-status")
     const { sha256 } = req.params;

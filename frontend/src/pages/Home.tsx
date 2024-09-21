@@ -12,13 +12,16 @@ const Home: React.FC = () => {
         <>
             <div className="uk-section uk-section-large uk-text-center">
                 <div className="uk-container">
-                    <h1 className="uk-heading-line"><span>SooN!</span></h1>
+                    <h1 className="uk-heading-line"><span>🚧 In construction!</span></h1>
                 </div>
                 <div className="uk-container uk-text-center">
                     <Link to={"/brain-wallet"}>Brain wallet generator</Link>
                 </div>
                 <div className="uk-container uk-text-center">
                     <Link to={"/image-upload"}>Image upload</Link>
+                </div>
+                <div className="uk-container uk-text-center">
+                    <Link to={"/my-images"}>My images</Link>
                 </div>
           {/*      <div className="uk-container">
                     <h1 className="uk-heading-line"><span>Deploy your server in easy steps!</span></h1>
