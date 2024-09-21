@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import {formatFileSize} from "../services/format-file-size";
+import UIkit from "uikit";
 
 const UploadedImagePage: React.FC = () => {
     const { sha256 } = useParams<{ sha256: string }>();
@@ -29,25 +31,43 @@ const UploadedImagePage: React.FC = () => {
     if (!fileData) {
         return <div>File not found or an error occurred.</div>;
     }
-
+    const baseUrl = `${window.location.protocol}//${window.location.host}`;
+    const fileUrl = `${baseUrl}/api/images/user-uploaded-images/${fileData.fileName}`;
+    const handleCopyUrl = () => {
+        navigator.clipboard.writeText(fileUrl)
+            .then(() => {
+                UIkit.notification({ message: 'URL copied to clipboard!', status: 'success' });
+            })
+            .catch(err => {
+                UIkit.notification({ message: 'Failed to copy URL.', status: 'danger' });
+                console.error('Failed to copy URL:', err);
+            });
+    };
     return (
         <div>
-            <h2>Uploaded File Information</h2>
-            <p><strong>File Name:</strong> {fileData.fileName}</p>
-            <p><strong>File Size:</strong> {fileData.fileSize} bytes</p>
-            <p><strong>Upload Date:</strong> {new Date(fileData.uploadDate).toLocaleString()}</p>
-            <p><strong>Status:</strong> {fileData.status}</p>
-            <p><strong>Dangerous:</strong> {fileData.dangerous ? 'Yes' : 'No'}</p>
+            <section className="uk-container">
+                <h2>Uploaded File Information</h2>
+                <div><button
+                    className="uk-button uk-button-small uk-button-default uk-margin-left"
+                    onClick={handleCopyUrl}
+                    >Copy URL:</button> {fileUrl}</div>
+                <br/>
+                <div><strong>File Size:</strong> {formatFileSize(fileData.fileSize)}</div>
+                <div><strong>Upload Date:</strong> {new Date(fileData.uploadDate).toLocaleString()}</div>
+                <div><strong>Status:</strong> {fileData.status}</div>
+                <div className={fileData.dangerous?"uk-alert-danger":""}><strong>Dangerous:</strong> {fileData.dangerous ? 'Yes' : 'No'}</div>
 
-            {fileData.dangerous ? (
-                <p style={{ color: 'red' }}>Warning: This file has been flagged as dangerous.</p>
-            ) : null}
+                {fileData.dangerous ? (
+                    <p style={{ color: 'red' }}>Warning: This file has been flagged as dangerous.</p>
+                ) : null}
 
-            {fileData.status === 'completed' && !fileData.dangerous ? (
-                <img src={`/user-uploaded/${sha256}`} alt="Uploaded file" />
-            ) : (
-                <p>Analysis in progress or file not safe to display, please wait...</p>
-            )}
+                {fileData.status === 'completed' && !fileData.dangerous ? (
+                    <img src={`/api/images/user-uploaded-images/${fileData.fileName}`} alt="Uploaded file" />
+                ) : (
+                    <p>Analysis in progress or file not safe to display, please wait...</p>
+                )}
+            </section>
+
         </div>
     );
 };

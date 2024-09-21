@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 const router = Router();
 import * as crypto from "crypto";
 import {prisma} from "../db";
+import {sleep} from "../services/sleep.ts"
 
 // Configure multer for in-memory storage to validate and scan files
 const storage = multer.memoryStorage();
@@ -76,11 +77,7 @@ router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), async
         // Scan the uploaded file buffer with VirusTotal
         const {analysisData} = await scanFileWithVirusTotal(req.file.buffer);
         const analysisId = analysisData.id;
-        const tempFolder = path.join(__dirname, '../../public/temp-user-uploaded-images');
         const fileName = `${sha256Hash}.${req.file.originalname.split(".")[1]}`;
-        const tempFilePath = path.join(tempFolder, fileName);
-        ensureDirectoryExistence(tempFilePath);
-        writeFileSync(tempFilePath, req.file.buffer);
 
         const fileUpload = await prisma.fileUpload.create({
             data: {
@@ -93,14 +90,25 @@ router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), async
                 status: 'pending'
             }
         });
-
+console.log("sending response")
         res.status(200).json({
             message: 'File uploaded successfully and being processed',
             sha256:sha256Hash,
             filePageUrl
         });
+        console.log("starting analysis ...")
+        await analyzeFileResult(analysisId, sha256Hash);
+        console.log("waiting analysis ...")
+        await sleep(10000);
 
-        analyzeFileResult(analysisId, sha256Hash);
+        await pollAnalysisStatus(analysisId);
+        //TODO copy file to the folder
+        console.log("copy file to public folder")
+        const publicFolder = path.join(__dirname, '../../public/user-uploaded-images');
+        const publicFilePath = path.join(publicFolder, fileName);
+        ensureDirectoryExistence(publicFilePath);
+        writeFileSync(publicFilePath, req.file.buffer);
+        console.log("copied")
     } catch (error) {
         res.status(500).json({message: 'Error uploading file', error: error.message});
     }
@@ -155,6 +163,30 @@ router.get('/file-status/:sha256', async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error fetching file status', error: error.message });
     }
 });
+
+const pollAnalysisStatus = async (analysisId: string, retries: number = 60, delay: number = 10000): Promise<any> => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await axios.get(`https://www.virustotal.com/api/v3/analyses/${analysisId}`, {
+                headers: {
+                    'x-apikey': process.env.VIRUS_TOTAL_KEY
+                }
+            } as AxiosRequestConfig);
+
+            const status = response.data.data.attributes.status;
+
+            if (status === 'completed') {
+                return response.data.data;
+            }
+
+            await sleep(delay);
+        } catch (error) {
+            throw new Error(`Error checking analysis status: ${error.response?.data?.message || error.message}`);
+        }
+    }
+
+    throw new Error('Analysis did not complete in time.');
+};
 
 const analyzeFileResult = async (analysisId: string, sha256Hash: string) => {
     try {

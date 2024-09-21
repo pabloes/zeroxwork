@@ -52,7 +52,7 @@ const run = async () => {
 
     app.use(admin.options.rootPath, router);
 
-    app.use('/user-uploaded-images', express.static('public/user-uploaded-images'));
+    app.use('/api/images/user-uploaded-images', express.static('public/user-uploaded-images'));
     app.use('/api/auth', authRoutes);
     app.use('/api/images', imageRoutes);
 
