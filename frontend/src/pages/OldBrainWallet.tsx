@@ -3,7 +3,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { keccak256 } from 'viem/utils'; // Using keccak256 hash
 import { toHex } from 'viem/utils';
 import '../styles/BrainWallet.scss';
-import logo from "../../public/zerox-logo.png";
+import logo from "../../public/zeroxwork-logo.png";
 import img1 from "../../public/img1.png";
 import img2 from "../../public/img2.png";
 import img3 from "../../public/img3.png";

@@ -3,7 +3,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { keccak256 } from 'viem/utils'; // Using keccak256 hash
 import { toHex } from 'viem/utils';
 import '../styles/BrainWallet.scss'; // Import the new SCSS styles for mobile
-import logo from "../../public/zerox-logo.png";
+import logo from "../../public/zeroxwork-logo.png";
 import { Link } from 'react-router-dom';
 import { payments } from 'bitcoinjs-lib'; // Correct named imports
 import * as ecc from 'tiny-secp256k1';

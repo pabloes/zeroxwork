@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import logo from '../../public/zerox-logo.png';
+import logo from '../../public/zeroxwork-logo.png';
 import { useAuth } from "../context/AuthContext";
 
 const Header: React.FC = () => {
