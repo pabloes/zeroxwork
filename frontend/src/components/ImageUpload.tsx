@@ -2,7 +2,7 @@ import React, {useEffect,useRef, useState} from 'react';
 import axios from 'axios';
 import UIkit from 'uikit'; // Ensure you have UIkit installed for notifications
 import { useAuth } from '../context/AuthContext'; // Import your AuthContext to check user authentication
-import { useNavigate } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import {sleep} from "../services/sleep"; // Import useHistory for navigation
 import { Toast } from 'primereact/toast';
 import { FileUpload } from 'primereact/fileupload';
@@ -67,7 +67,7 @@ const ImageUpload: React.FC = () => {
     };
 
     if (!isAuthenticated) {
-        return <p>Please log in to upload images.</p>;
+        return <p>Please <Link to="/register">Register</Link> or <Link to="/login">Login</Link> to upload images.</p>;
     }
     const onTemplateSelect = (e) => {
         let _totalSize = totalSize;

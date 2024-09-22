@@ -22,7 +22,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 const decodedUser = jwtDecode(token); // Decode the JWT
                 setUser(decodedUser);
-                setIsAuthenticated(true);
+                if(decodedUser.iat*1000 < Date.now()){
+                    setIsAuthenticated(false);
+                }else{
+                    setIsAuthenticated(true);
+                }
+
             } catch (error) {
                 console.error('Invalid token', error);
                 localStorage.removeItem('authToken'); // Remove invalid token

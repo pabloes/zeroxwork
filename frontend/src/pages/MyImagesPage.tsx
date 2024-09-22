@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import ImageGallery from '../components/ImageGallery'; // Asegúrate de que la ruta esté correcta
+import ImageGallery from '../components/ImageGallery';
+import {useAuth} from "../context/AuthContext";
+import {Link} from "react-router-dom"; // Asegúrate de que la ruta esté correcta
 
 const MyImagesPage: React.FC = () => {
     const [images, setImages] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const token = localStorage.getItem('authToken');
+    const {isAuthenticated} = useAuth();
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -20,7 +23,11 @@ const MyImagesPage: React.FC = () => {
                 setImages(response.data);
                 setLoading(false);
             } catch (err) {
-                setError('Failed to load images.');
+                if(err?.response?.data?.message){
+                    setError(err.response.data.message);
+                }else{
+                    setError('Failed to load images.');
+                }
                 setLoading(false);
             }
         };
@@ -31,7 +38,9 @@ const MyImagesPage: React.FC = () => {
     if (loading) {
         return <div>Loading...</div>;
     }
-
+if(!isAuthenticated){
+    return  <div className="uk-container"><br/><p>You need to <Link to="/register">Register</Link> or <Link to="/login">Login</Link> to access this page</p></div>;
+}
     if (error) {
         return <div>{error}</div>;
     }
@@ -40,7 +49,7 @@ const MyImagesPage: React.FC = () => {
         <div className="uk-section uk-section-small">
             <div className="uk-container">
                 <h2 className="uk-heading-line uk-text-center"><span>My Uploaded Images</span></h2>
-                {images?.length > 0 ? (
+                {images.length > 0 ? (
                     <ImageGallery images={images} />
                 ) : (
                     <p>No images uploaded yet.</p>
