@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 const decodedUser = jwtDecode(token); // Decode the JWT
                 setUser(decodedUser);
-                if(decodedUser.iat*1000 < Date.now()){
+                if((decodedUser.exp * 1000) < Date.now()){
                     setIsAuthenticated(false);
                 }else{
                     setIsAuthenticated(true);
