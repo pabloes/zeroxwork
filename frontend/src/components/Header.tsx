@@ -3,7 +3,7 @@ import logo from '../../public/zeroxwork-logo.png';
 import { useAuth } from "../context/AuthContext";
 
 const Header: React.FC = () => {
-    const { user, isAuthenticated, logout } = useAuth(); // Get logout function from context
+    const { user, isAuthenticated, logout, contextTitle } = useAuth(); // Get logout function from context
 
     const handleLogout = () => {
         logout(); // Call the logout function
@@ -17,6 +17,9 @@ const Header: React.FC = () => {
                     <a href="/" className="uk-navbar-item uk-logo">
                         <img src={logo} alt="ZEROxWORK Logo" width="120" /> {/* Use imported logo */}
                     </a>
+                </div>
+                <div className="uk-navbar-center">
+                    <h1>{contextTitle}</h1>
                 </div>
                 <div className="uk-navbar-right">
                     <ul className="uk-navbar-nav">

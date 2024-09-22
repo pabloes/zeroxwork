@@ -119,15 +119,6 @@ const BrainWallet: React.FC = () => {
 
     return (
         <div className="uk-container uk-padding-small">
-            <div className="uk-flex uk-flex-between uk-flex-middle">
-{/*                <Link to={"/"}>
-                    <img style={{ width: "128px" }} src={logo} alt="ZeroxWork Logo" />
-                </Link>*/}
-                <div className="title-container uk-align-center">
-                    <h1 className="uk-heading-medium">Brain Wallet Generator</h1>
-                </div>
-            </div>
-
             <h3 className="uk-text-muted">Inherit Eth & BTC Wallets from a memorable phrase</h3>
 
             <article className="uk-article uk-text-small">
