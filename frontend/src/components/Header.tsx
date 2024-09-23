@@ -3,7 +3,7 @@ import logo from '../../public/zeroxwork-logo.png';
 import { useAuth } from "../context/AuthContext";
 
 const Header: React.FC = () => {
-    const { user, isAuthenticated, logout, contextTitle } = useAuth(); // Get logout function from context
+    const { isAuthenticated, logout, contextTitle } = useAuth(); // Get logout function from context
 
     const handleLogout = () => {
         logout(); // Call the logout function

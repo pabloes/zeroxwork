@@ -1,7 +1,3 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import UIkit from 'uikit';
-import {formatFileSize} from "../services/format-file-size";
 import {Link} from "react-router-dom";
 import AccountQuota from "../components/AccountQuota";
 

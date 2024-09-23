@@ -1,5 +1,4 @@
 import ImageUpload from '../components/ImageUpload';
-import AccountQuota from "../components/AccountQuota";
 import React from "react";
 import {Link} from "react-router-dom"; // Adjust the path based on your structure
 

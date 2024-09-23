@@ -3,7 +3,7 @@ import UIkit from 'uikit';
 import {useAuth} from "../context/AuthContext"; // Ensure UIkit is installed
 
 const Login: React.FC = () => {
-    const { login, isAuthenticated } = useAuth(); // Get the login function from the AuthContext
+    const { login } = useAuth(); // Get the login function from the AuthContext
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false); // Loading state

@@ -4,25 +4,22 @@ import UIkit from 'uikit'; // Ensure you have UIkit installed for notifications
 import { useAuth } from '../context/AuthContext'; // Import your AuthContext to check user authentication
 import {Link, useNavigate} from 'react-router-dom';
 import {sleep} from "../services/sleep"; // Import useHistory for navigation
-import { Toast } from 'primereact/toast';
-import { FileUpload } from 'primereact/fileupload';
-import { ProgressBar } from 'primereact/progressbar';
+import {FileUpload, FileUploadUploadEvent} from 'primereact/fileupload';
 import { Button } from 'primereact/button';
-import { Tooltip } from 'primereact/tooltip';
 import { Tag } from 'primereact/tag';
 import AccountQuota from "./AccountQuota";
 
 const ImageUpload: React.FC = () => {
     const { isAuthenticated } = useAuth(); // Check if the user is authenticated
-    const [file, setFile] = useState<File | null>(null);
+    const [,setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const navigate = useNavigate(); // Initialize useHistory for navigation
-    const toast = useRef(null);
+    const toast:any = useRef(null);
     const [totalSize, setTotalSize] = useState(0);
-    const fileUploadRef = useRef(null);
+    const fileUploadRef:any = useRef(null);
 
     // Handle file upload
-    const handleUpload = async (event) => {
+    const handleUpload = async (event:FileUploadUploadEvent) => {
         const file = event.files[0];
         if (!file) {
             UIkit.notification({ message: 'Please select an image to upload', status: 'warning' });
@@ -68,18 +65,18 @@ const ImageUpload: React.FC = () => {
     };
 
 
-    const onTemplateSelect = (e) => {
+    const onTemplateSelect = (e:any) => {
         let _totalSize = totalSize;
-        let files = e.files;
+        let files:any = e.files;
 
-        Object.keys(files).forEach((key) => {
+        Object.keys(files).forEach((key:string) => {
             _totalSize += files[key].size || 0;
         });
 
         setTotalSize(_totalSize);
     };
 
-    const onTemplateUpload = (e) => {
+    const onTemplateUpload = (e:any) => {
         try {
 
         }catch(error){
@@ -87,7 +84,7 @@ const ImageUpload: React.FC = () => {
         }
         let _totalSize = 0;
 
-        e.files.forEach((file) => {
+        e.files.forEach((file:any) => {
             _totalSize += file.size || 0;
         });
 
@@ -95,7 +92,7 @@ const ImageUpload: React.FC = () => {
         toast.current.show({ severity: 'info', summary: 'Success', detail: 'File Uploaded' });
     };
 
-    const onTemplateRemove = (file, callback) => {
+    const onTemplateRemove = (file:any, callback:Function) => {
         setTotalSize(totalSize - file.size);
         callback();
     };
@@ -104,10 +101,8 @@ const ImageUpload: React.FC = () => {
         setTotalSize(0);
     };
 
-    const headerTemplate = (options) => {
+    const headerTemplate = (options:any) => {
         const { className, chooseButton, uploadButton, cancelButton } = options;
-        const value = totalSize / 10000;
-        const formatedValue = fileUploadRef && fileUploadRef.current ? fileUploadRef.current.formatSize(totalSize) : '0 B';
 
         return (
             <div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
@@ -118,7 +113,7 @@ const ImageUpload: React.FC = () => {
         );
     };
 
-    const itemTemplate = (file, props) => {
+    const itemTemplate = (file:any, props:any) => {
         return (
             <div className="flex align-items-center flex-wrap">
                 <div className="flex align-items-center" style={{ width: '40%' }}>
@@ -161,7 +156,7 @@ const ImageUpload: React.FC = () => {
                         <p className="uk-text-center">Please make sure your images are in JPEG or PNG format and do not exceed 5MB in size. Images will be publicly visible.</p>
                         <div>
                             <FileUpload ref={fileUploadRef} name="demo[]" url="/api/images/upload" accept="image/*" maxFileSize={5000000} customUpload
-                                        uploadHandler={handleUpload}
+                                        uploadHandler={handleUpload as any}
                                         onUpload={onTemplateUpload} onSelect={onTemplateSelect} onError={onTemplateClear} onClear={onTemplateClear}
                                         headerTemplate={headerTemplate} itemTemplate={itemTemplate} emptyTemplate={emptyTemplate}
                                         chooseOptions={chooseOptions} uploadOptions={uploadOptions} cancelOptions={cancelOptions} />

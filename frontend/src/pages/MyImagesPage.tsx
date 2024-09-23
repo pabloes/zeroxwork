@@ -52,7 +52,7 @@ const MyImagesPage: React.FC = () => {
 
                 setImages(response.data);
                 setLoading(false);
-            } catch (err) {
+            } catch (err:any) {
                 if (err?.response?.data?.message) {
                     setError(err.response.data.message);
                 } else {

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {useAuth} from "../context/AuthContext";
 
-const PageTitle = ({ title }) => {
+const PageTitle = ({ title }:any) => {
     const location = useLocation();
     const {setContextTitle} = useAuth();
 
