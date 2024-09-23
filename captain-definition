@@ -3,7 +3,7 @@
   "dockerfilePath": "./Dockerfile",
   "volumes": [
     {
-      "hostPath": "/captain/data/user-uploaded-images",
+      "volumeName": "zeroxwork-images-volume",
       "containerPath": "/usr/src/app/backend/public/user-uploaded-images"
     }
   ]
