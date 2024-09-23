@@ -5,6 +5,7 @@ import Login from "../pages/Login";
 import BrainWallet from "../pages/BrainWallet";
 import OldBrainWallet from "../pages/OldBrainWallet";
 import MyImagesPage from "../pages/MyImagesPage";
+import AccountPage from "../pages/Account";
 
 export const pageRoutes = [
     {RouteElement:Home, title:`Welcome`, path:`/`, props:{}},
@@ -15,4 +16,5 @@ export const pageRoutes = [
     {RouteElement:BrainWallet, title:`Brain Wallet`, path:`/eth-brain-wallet`, props:{}},
     {RouteElement:OldBrainWallet, title:`(Old) Brain Wallet`, path:`/old-brain-wallet`, props:{}},
     {RouteElement:MyImagesPage, title:`My Images`, path:`/my-images`, props:{}},
+    {RouteElement:AccountPage, title:`Account`, path:`/account`, props:{}},
 ]

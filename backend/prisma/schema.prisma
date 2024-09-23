@@ -21,8 +21,8 @@ model User {
   verified          Boolean  @default(false) // Campo para el estado de verificación
   verificationCode  String?  // Código de verificación de correo
   updatedAt         DateTime @updatedAt
+  maxQuota   Int       @default(5242880) // Default max quota in bytes (5 MB)
   fileUploads FileUpload[]  // One-to-many relationship with FileUpload
-
 }
 
 model FileUpload {

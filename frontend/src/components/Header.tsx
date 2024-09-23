@@ -25,14 +25,14 @@ const Header: React.FC = () => {
                     <ul className="uk-navbar-nav">
                         {isAuthenticated ? (
                             <>
-                                <li><Link to="/profile">My Account</Link></li>
+                                <li><Link to="/account">👤 My Account</Link></li>
                                 {/* Replace the logout link with a button */}
                                 <li>
                                     <a
                                         className="uk-button uk-button-link uk-text-danger"
                                         onClick={handleLogout}
                                     >
-                                        Logout
+                                        ⏏️ Logout
                                     </a>
                                 </li>
                             </>

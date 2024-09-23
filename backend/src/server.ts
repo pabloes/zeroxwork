@@ -11,6 +11,7 @@ import AdminJSExpress from '@adminjs/express';
 import {fileURLToPath} from "url";
 import argon2 from 'argon2';
 import imageRoutes from './routes/image';
+import userRoutes from "./routes/user";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -55,6 +56,7 @@ const run = async () => {
     app.use('/api/images/user-uploaded-images', express.static('public/user-uploaded-images'));
     app.use('/api/auth', authRoutes);
     app.use('/api/images', imageRoutes);
+    app.use('/api/user', userRoutes)
 
     const port = process.env.PORT || 3000;
     console.log("Listening...")

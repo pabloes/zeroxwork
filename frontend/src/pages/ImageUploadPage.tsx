@@ -4,9 +4,6 @@ import ImageUpload from '../components/ImageUpload'; // Adjust the path based on
 const ImageUploadPage: React.FC = () => {
     return (
         <div className="uk-section">
-            <div className="uk-container">
-                <p>Images will be publicly visible</p>
-            </div>
                 <div className="uk-container">
 
                     <ImageUpload />

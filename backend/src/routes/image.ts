@@ -15,6 +15,7 @@ const router = Router();
 import * as crypto from "crypto";
 import {prisma} from "../db";
 import {sleep} from "../services/sleep.ts"
+import {getUserQuota} from "./user";
 
 // Configure multer for in-memory storage to validate and scan files
 const storage = multer.memoryStorage();
@@ -61,6 +62,12 @@ router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), async
 
     try {
         const {userId} = req.user;
+        const {usedQuota, maxQuota} = await getUserQuota(userId);
+
+        if (((req.file.size + usedQuota) > maxQuota)) {
+            return res.status(501).json({error:"Your account reached max capacity. Upgrade"});
+        }
+
         const sha256Hash: string = calculateSHA256(req.file.buffer);
         const filePageUrl = `/user-uploaded-images/${sha256Hash}`;
         //TODO look for sha256 in database, if found return answer already
