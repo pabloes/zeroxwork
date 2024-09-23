@@ -81,10 +81,10 @@ router.post("/verify", async (req, res) => {
         if(!user){
             return res.status(400).send({error:"Wrong code"})
         }else if(user){
-            user.update({
-                data:{
-                    verified:true
-                }
+            // Update the user's verified status
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { verified: true },
             });
         }
     }catch(error){
