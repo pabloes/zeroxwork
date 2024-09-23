@@ -42,7 +42,6 @@ ENV NODE_ENV=production
 # Set the working directory to the backend folder to run the backend app
 WORKDIR /usr/src/app/backend
 # Create the public/user-uploaded-images directory and set permissions
-RUN mkdir -p public
 RUN mkdir -p public/user-uploaded-images
 RUN chmod -R 755 public/user-uploaded-images
 
