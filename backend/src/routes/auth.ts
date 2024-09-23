@@ -80,8 +80,6 @@ router.post("/verify", async (req, res) => {
         const user = await prisma.user.findFirst({ where: { verificationCode: token } });
         if(!user){
             return res.status(400).send({error:"User not found"})
-        }else if(!user.verified){
-            return res.status(400).send({error:"User not verified"})
         }
         if(user.verificationCode === verificationCode){
             user.update({
