@@ -119,7 +119,8 @@ router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), async
         // Scan the uploaded file buffer with VirusTotal
         const {analysisData} = await scanFileWithVirusTotal(req.file.buffer);
         const analysisId = analysisData.id;
-        const fileName = `${sha256Hash}.${req.file.originalname.split(".")[1]}`;
+        const splittedFileName = req.file.originalname.split(".")
+        const fileName = `${sha256Hash}.${splittedFileName[splittedFileName.length-1]}`;
 
         const fileUpload = await prisma.fileUpload.create({
             data: {
