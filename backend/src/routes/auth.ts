@@ -7,35 +7,58 @@ const router = Router();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 import jwt from 'jsonwebtoken';
-
+// Register Endpoint
 router.post('/register', async (req, res) => {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
     try {
-        const hashedPassword = await argon2.hash(password);
-        const verificationCode =Math.random().toString().slice(2,20);
-        const user = await prisma.user.create({
-            data: { email, password: hashedPassword, verificationCode },
+        // Check if the user already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email },
         });
 
-        //TODO send mail
-        try{
-            await sendMail(
-                email,
-                "ZEROxWORK mail verification",
-                `<p>Please click on the following link to verify your account:</p>
-                        <a href="http://zeroxwork.com/verify?token=${verificationCode}">Verify Account</a>`
-            );
-            res.json({ message: 'User registered. Please check your email to verify your account.' });
-        }catch(error){
-            console.log("error",error)
-            res.status(400).send({error})
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email is already registered.' });
         }
 
+        // Hash the password
+        const hashedPassword = await argon2.hash(password);
+
+        // Create new user in the database
+        const newUser = await prisma.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                verified: false, // User is not verified yet
+            },
+        });
+
+        // Create a verification token
+        const verificationToken = jwt.sign(
+            { userId: newUser.id },
+            JWT_SECRET,
+            { expiresIn: '6h' } // Token expires in 1 hour
+        );
+
+        // Send verification email
+        const verificationUrl = `http://zeroxwork.com/verify?token=${verificationToken}`;
+        await sendMail(
+            email,
+            "ZEROxWORK email verification",
+            `<p>Please click on the following link to verify your account, the token expires in 6 hours:</p>
+                        <a href="${verificationUrl}">Verify Email</a>`
+        );
+        res.json({ message: 'Registration successful! Please check your email to verify your account. The token expires in 6 hours.' });
     } catch (error) {
-        if(error.meta.target.indexOf("email")>=0) return res.status(500).json({error:"This email is already registered"});
-        res.status(500).json({ error: 'Error creating user' });
+        console.error('Error during registration:', error);
+        res.status(500).json({ message: 'Internal server error. Please try again later.' });
     }
 });
+
 router.post('/login', async (req: Request, res: Response) => {
     const { email, password } = req.body;
 //TODO if not verified return error
@@ -73,7 +96,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-router.post('/api/auth/verify', async (req, res) => {
+router.post('/verify', async (req, res) => {
     const { token } = req.body;
 
     if (!token) {
