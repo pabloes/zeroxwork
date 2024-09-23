@@ -48,7 +48,9 @@ if(!isAuthenticated){
     return (
         <div className="uk-section uk-section-small">
             <div className="uk-container">
-                <h2 className="uk-heading-line uk-text-center"><span>My Uploaded Images</span></h2>
+                <div className="uk-container uk-text-center">
+                    <Link to={"/image-upload"}>🏞️ Public Image upload</Link>
+                </div>
                 {images.length > 0 ? (
                     <ImageGallery images={images} />
                 ) : (

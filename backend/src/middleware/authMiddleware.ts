@@ -10,7 +10,7 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     try {
         const verified = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
         req.user = verified; // Assuming user information is stored in the token
-        if((verified.iat*1000) < Date.now()){
+        if((verified.exp *1000) < Date.now()){
             throw new jwt.TokenExpiredError("Session expired", verified.iat);
         }
         next();

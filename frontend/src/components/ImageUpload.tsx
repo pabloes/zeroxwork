@@ -1,4 +1,4 @@
-import React, {useEffect,useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import axios from 'axios';
 import UIkit from 'uikit'; // Ensure you have UIkit installed for notifications
 import { useAuth } from '../context/AuthContext'; // Import your AuthContext to check user authentication
@@ -66,9 +66,7 @@ const ImageUpload: React.FC = () => {
         }
     };
 
-    if (!isAuthenticated) {
-        return <p>Please <Link to="/register">Register</Link> or <Link to="/login">Login</Link> to upload images.</p>;
-    }
+
     const onTemplateSelect = (e) => {
         let _totalSize = totalSize;
         let files = e.files;
@@ -153,11 +151,20 @@ const ImageUpload: React.FC = () => {
     const uploadOptions = { icon: 'pi pi-fw pi-cloud-upload', iconOnly: false, className: 'custom-upload-btn p-button-success p-button-rounded p-button-outlined' };
     const cancelOptions = { icon: 'pi pi-fw pi-times', iconOnly: false, className: 'custom-cancel-btn p-button-danger p-button-rounded p-button-outlined' };
 
+    if (!isAuthenticated) {
+        return <p>Please <Link to="/register">Register</Link> or <Link to="/login">Login</Link> to upload images.</p>;
+    }
+
     return (
         <>
             {isUploading ? <p>Uploading and Scanning...</p> :
                 <div className="uk-section uk-section-small">
+                    <div className="uk-container uk-text-center">
+                        <Link to={"/my-images"}>🌃 Navigate to my image gallery</Link>
+                    </div>
+
                     <div className="uk-container">
+                        <p className="uk-text-center">Please make sure your images are in JPEG or PNG format and do not exceed 5MB in size.</p>
                         <div>
                             <FileUpload ref={fileUploadRef} name="demo[]" url="/api/images/upload" accept="image/*" maxFileSize={5000000} customUpload
                                         uploadHandler={handleUpload}

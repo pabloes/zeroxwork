@@ -9,7 +9,7 @@ import MyImagesPage from "../pages/MyImagesPage";
 export const pageRoutes = [
     {RouteElement:Home, title:`Welcome`, path:`/`, props:{}},
     {RouteElement:Register, title:`Register new account`, path:`/register`, props:{}},
-    {RouteElement:ImageUploadPage, title:`Upload image`, path:`/image-upload`, props:{}},
+    {RouteElement:ImageUploadPage, title:`Image upload`, path:`/image-upload`, props:{}},
     {RouteElement:Login, title:`Login account`, path:`/login`, props:{}},
     {RouteElement:BrainWallet, title:`Brain Wallet`, path:`/brain-wallet`, props:{}},
     {RouteElement:BrainWallet, title:`Brain Wallet`, path:`/eth-brain-wallet`, props:{}},
