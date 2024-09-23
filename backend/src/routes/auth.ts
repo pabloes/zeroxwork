@@ -77,18 +77,15 @@ router.post("/verify", async (req, res) => {
     const {token} = req.query;
     try {
         //TODO check that the verificationCode is the same than in database
-        const user = await prisma.user.findFirst({ where: { verificationCode: token } });
+        const user = await prisma.user.findFirst({ where: { verificationCode:token  } });
         if(!user){
-            return res.status(400).send({error:"User not found"})
-        }
-        if(user.verificationCode === verificationCode){
+            return res.status(400).send({error:"Wrong code"})
+        }else if(user){
             user.update({
                 data:{
                     verified:true
                 }
             });
-        }else{
-            return res.status(400).send({error:"Wrong code"})
         }
     }catch(error){
         return res.send({error})
