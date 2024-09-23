@@ -121,7 +121,9 @@ router.post('/verify', async (req, res) => {
         if (user.verified) {
             return res.status(400).json({ message: 'User is already verified.' });
         }
-
+        if((user.exp *1000) < Date.now()){
+            return res.status(400).json({ message: 'This token is expired.' });
+        }
         // Update the user's verified status
         await prisma.user.update({
             where: { id: user.id },
