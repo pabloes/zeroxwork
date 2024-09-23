@@ -54,6 +54,41 @@ const ensureDirectoryExistence = (filePath: string): void => {
     }
 };
 
+router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const userId = parseInt(req.user.userId); // Asumiendo que `req.user` tiene la información del usuario autenticado
+
+    try {
+        // Verificar que el archivo existe y pertenece al usuario
+        const file = await prisma.fileUpload.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!file) {
+            return res.status(404).json({ message: 'File not found' });
+        }
+
+        if (file.userId !== userId) {
+            return res.status(403).json({ message: 'You are not authorized to delete this file' });
+        }
+
+        // Eliminar archivo de la base de datos
+        await prisma.fileUpload.delete({
+            where: { id: parseInt(id) },
+        });
+
+        // Eliminar archivo físico del sistema (si es necesario)
+        const filePath = path.join(__dirname, '../../public/user-uploaded-images', file.fileName);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        res.status(200).json({ message: 'File deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting file', error: error.message });
+    }
+});
+
 // Endpoint for image uploads with VirusTotal scanning
 router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), async (req: Request, res: Response) => {
     if (!req.file) {
