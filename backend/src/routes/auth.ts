@@ -96,6 +96,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
+
 router.post('/verify', async (req, res) => {
     const { token } = req.body;
 
@@ -104,18 +105,24 @@ router.post('/verify', async (req, res) => {
     }
 
     try {
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        // Check if user exists in the database
         const user = await prisma.user.findUnique({
-            where: { verificationCode:token },
+            where: { id: decoded.userId },
         });
 
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
 
+        // Check if user is already verified
         if (user.verified) {
             return res.status(400).json({ message: 'User is already verified.' });
         }
 
+        // Update the user's verified status
         await prisma.user.update({
             where: { id: user.id },
             data: { verified: true },
@@ -123,6 +130,10 @@ router.post('/verify', async (req, res) => {
 
         return res.json({ message: 'Email has been successfully verified!' });
     } catch (error) {
+        // Handle verification errors
+        if (error.name === 'TokenExpiredError') {
+            return res.status(400).json({ message: 'Verification token has expired.' });
+        }
         return res.status(400).json({ message: 'Invalid verification token.' });
     }
 });
