@@ -30,8 +30,8 @@ const upload = multer({
     storage: storage,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
     fileFilter: (req, file, cb) => {
-        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-            return cb(new Error('Only image files (jpg, jpeg, png) are allowed!'), false);
+        if (!file.originalname.match(/\.(jpg|jpeg|png|webp)$/)) {
+            return cb(new Error('Only image files (jpg, jpeg, png, webp) are allowed!'), false);
         }
         cb(null, true);
     }

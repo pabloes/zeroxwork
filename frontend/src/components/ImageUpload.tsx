@@ -153,7 +153,7 @@ const ImageUpload: React.FC = () => {
                 <div className="uk-section uk-section-small">
                     <AccountQuota add={totalSize} />
                     <div className="uk-container">
-                        <p className="uk-text-center">Please make sure your images are in JPEG or PNG format and do not exceed 5MB in size. Images will be publicly visible.</p>
+                        <p className="uk-text-center">Please make sure your images are in JPEG or PNG or WEBP format and do not exceed 5MB in size. Images will be publicly visible.</p>
                         <div>
                             <FileUpload ref={fileUploadRef} name="demo[]" url="/api/images/upload" accept="image/*" maxFileSize={5000000} customUpload
                                         uploadHandler={handleUpload as any}
