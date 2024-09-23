@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import UIkit from "uikit";
@@ -17,13 +17,13 @@ const VerifyEmail = () => {
             // Call the verify endpoint
             axios
                 .post('/api/auth/verify', { token })
-                .then((response) => {
+                .then(() => {
                     setMessage('Your email has been successfully verified!');
                     UIkit.notification({message:'Your email has been successfully verified!\nRedirecting to Login Page...', status:"success"});
                     // Optionally, redirect to login or home page
                     setTimeout(() => navigate('/login'), 3000); // Redirect to login after 3 seconds
                 })
-                .catch((error) => {
+                .catch(() => {
                     setMessage('Verification failed. Invalid or expired token.');
                 });
         } else {
