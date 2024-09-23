@@ -172,6 +172,7 @@ router.get('/get-all', verifyToken, async (req: Request, res: Response) => {
         });
 
         const imageList = images.map(image => ({
+            ...image,
             id: image.id,
             fileName: image.fileName,
             fileUrl: `${req.protocol}://${req.get('host')}/api/images/user-uploaded-images/${image.fileName}`, // URL completa

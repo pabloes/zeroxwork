@@ -154,7 +154,7 @@ const ImageUpload: React.FC = () => {
 
     return (
         <>
-            {isUploading ? <p>Uploading and Scanning...</p> :
+            {isUploading ? <p>Uploading and Scanning, please wait...</p> :
                 <div className="uk-section uk-section-small">
                     <AccountQuota add={totalSize} />
                     <div className="uk-container">

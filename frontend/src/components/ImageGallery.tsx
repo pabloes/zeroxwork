@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import UIkit from 'uikit';
+import {Link} from "react-router-dom";
 
 type Image = {
     id: number;
@@ -50,26 +51,28 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, onDelete }) => {
             {/* Render Images Based on View Type */}
             <div className={`image-gallery ${viewType}`}>
                 {images.map(image => (
-                    <div key={image.id} className="image-item uk-box-shadow-hover-small">
-                        <img src={image.fileUrl} alt={image.fileName} className="thumbnail" />
-                        <div className="image-info">
-                            <button
-                                className="uk-button uk-button-small uk-button-default"
-                                onClick={() => handleCopyUrl(image.fileUrl)}
-                            >
-                                Copy URL
-                            </button>
+                    <Link to={`/uploaded-image-page/${image.sha256Hash}`}>
+                        <div key={image.id} className="image-item uk-box-shadow-hover-small">
+                            <img src={image.fileUrl} alt={image.fileName} className="thumbnail" />
+                            <div className="image-info">
+                                <button
+                                    className="uk-button uk-button-small uk-button-default"
+                                    onClick={(e) => (e.preventDefault(),handleCopyUrl(image.fileUrl))}
+                                >
+                                    Copy URL
+                                </button>
 
-                            <span>{new Date(image.uploadDate).toLocaleString()}</span>
-                            {image.dangerous && <p style={{ color: 'red' }}>⚠️ Dangerous</p>}
+                                <span>{new Date(image.uploadDate).toLocaleString()}</span>
+                                {image.dangerous && <p style={{ color: 'red' }}>⚠️ Dangerous</p>}
+                            </div>
+                            <button
+                                className="uk-button uk-button-danger uk-margin-top"
+                                onClick={(e) => (e.preventDefault(),onDelete(image))}
+                            >
+                                Delete
+                            </button>
                         </div>
-                        <button
-                            className="uk-button uk-button-danger uk-margin-top"
-                            onClick={() => onDelete(image)}
-                        >
-                            Delete
-                        </button>
-                    </div>
+                    </Link>
                 ))}
             </div>
 
