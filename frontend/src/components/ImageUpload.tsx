@@ -10,6 +10,7 @@ import { ProgressBar } from 'primereact/progressbar';
 import { Button } from 'primereact/button';
 import { Tooltip } from 'primereact/tooltip';
 import { Tag } from 'primereact/tag';
+import AccountQuota from "./AccountQuota";
 
 const ImageUpload: React.FC = () => {
     const { isAuthenticated } = useAuth(); // Check if the user is authenticated
@@ -113,10 +114,6 @@ const ImageUpload: React.FC = () => {
                 {chooseButton}
                 {uploadButton}
                 {cancelButton}
-                <div className="flex align-items-center gap-3 ml-auto">
-                    <span>{formatedValue} / 5 MB</span>
-                    <ProgressBar value={value} showValue={false} style={{ width: '10rem', height: '12px' }}></ProgressBar>
-                </div>
             </div>
         );
     };
@@ -159,10 +156,7 @@ const ImageUpload: React.FC = () => {
         <>
             {isUploading ? <p>Uploading and Scanning...</p> :
                 <div className="uk-section uk-section-small">
-                    <div className="uk-container uk-text-center">
-                        <Link to={"/my-images"}>🌃 Navigate to my image gallery</Link>
-                    </div>
-
+                    <AccountQuota add={totalSize} />
                     <div className="uk-container">
                         <p className="uk-text-center">Please make sure your images are in JPEG or PNG format and do not exceed 5MB in size. Images will be publicly visible.</p>
                         <div>
