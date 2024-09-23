@@ -11,9 +11,10 @@ type Image = {
 
 type ImageGalleryProps = {
     images: Image[];
+    onDelete: Function;
 };
 
-const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
+const ImageGallery: React.FC<ImageGalleryProps> = ({ images, onDelete }) => {
     const [viewType, setViewType] = useState<'list' | 'grid'>('list');
 
     // Function to handle copying URL to clipboard
@@ -49,7 +50,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
             {/* Render Images Based on View Type */}
             <div className={`image-gallery ${viewType}`}>
                 {images.map(image => (
-                    <div key={image.id} className="image-item">
+                    <div key={image.id} className="image-item uk-box-shadow-hover-small">
                         <img src={image.fileUrl} alt={image.fileName} className="thumbnail" />
                         <div className="image-info">
                             <button
@@ -58,9 +59,16 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
                             >
                                 Copy URL
                             </button>
+
                             <span>{new Date(image.uploadDate).toLocaleString()}</span>
                             {image.dangerous && <p style={{ color: 'red' }}>⚠️ Dangerous</p>}
                         </div>
+                        <button
+                            className="uk-button uk-button-danger uk-margin-top"
+                            onClick={() => onDelete(image.id)}
+                        >
+                            Delete
+                        </button>
                     </div>
                 ))}
             </div>
@@ -81,6 +89,10 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
                     margin-right: 15px;
                 }
 
+                .image-gallery.list .image-item .uk-button-danger {
+                  position:absolute;
+                  right:30px;
+                }
                 .image-gallery.grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

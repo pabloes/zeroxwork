@@ -10,7 +10,19 @@ const MyImagesPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const token = localStorage.getItem('authToken');
     const {isAuthenticated} = useAuth();
-
+    const handleDelete = async (id: string) => {
+        try {
+            await axios.delete(`/api/images/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`, // Include the token in headers
+                }
+            });
+            // Filtra la imagen eliminada
+            setImages((prevImages) => prevImages.filter((image) => image._id !== id));
+        } catch (err) {
+            setError('Failed to delete image.');
+        }
+    };
     useEffect(() => {
         const fetchImages = async () => {
             try {
@@ -52,7 +64,7 @@ if(!isAuthenticated){
                     <Link to={"/image-upload"}>🏞️ Public Image upload</Link>
                 </div>
                 {images.length > 0 ? (
-                    <ImageGallery images={images} />
+                    <ImageGallery images={images} onDelete={handleDelete} />
                 ) : (
                     <p>No images uploaded yet.</p>
                 )}
