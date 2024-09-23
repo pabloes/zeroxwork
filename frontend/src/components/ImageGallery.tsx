@@ -65,7 +65,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, onDelete }) => {
                         </div>
                         <button
                             className="uk-button uk-button-danger uk-margin-top"
-                            onClick={() => onDelete(image.id)}
+                            onClick={() => onDelete(image)}
                         >
                             Delete
                         </button>

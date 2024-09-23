@@ -6,6 +6,7 @@ import BrainWallet from "../pages/BrainWallet";
 import OldBrainWallet from "../pages/OldBrainWallet";
 import MyImagesPage from "../pages/MyImagesPage";
 import AccountPage from "../pages/Account";
+import ImageUploadedPage from "../pages/ImageUploadedPage";
 
 export const pageRoutes = [
     {RouteElement:Home, title:`Welcome`, path:`/`, props:{}},
@@ -17,4 +18,5 @@ export const pageRoutes = [
     {RouteElement:OldBrainWallet, title:`(Old) Brain Wallet`, path:`/old-brain-wallet`, props:{}},
     {RouteElement:MyImagesPage, title:`My Images`, path:`/my-images`, props:{}},
     {RouteElement:AccountPage, title:`Account`, path:`/account`, props:{}},
+    {RouteElement:ImageUploadedPage, title:`Uploaded image`, path: `/uploaded-image-page/:sha256`, props: {}}
 ]
