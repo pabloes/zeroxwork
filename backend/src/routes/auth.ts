@@ -73,22 +73,34 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-router.post("/verify", async (req, res) => {
-    const {token} = req.query;
+router.post('/api/auth/verify', async (req, res) => {
+    const { token } = req.body;
+
+    if (!token) {
+        return res.status(400).json({ message: 'Token is required.' });
+    }
+
     try {
-        //TODO check that the verificationCode is the same than in database
-        const user = await prisma.user.findFirst({ where: { verificationCode:token  } });
-        if(!user){
-            return res.status(400).send({error:"Wrong code"})
-        }else if(user){
-            // Update the user's verified status
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { verified: true },
-            });
+        const user = await prisma.user.findUnique({
+            where: { verificationCode:token },
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
         }
-    }catch(error){
-        return res.send({error})
+
+        if (user.verified) {
+            return res.status(400).json({ message: 'User is already verified.' });
+        }
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { verified: true },
+        });
+
+        return res.json({ message: 'Email has been successfully verified!' });
+    } catch (error) {
+        return res.status(400).json({ message: 'Invalid verification token.' });
     }
 });
 
