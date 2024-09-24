@@ -37,12 +37,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000', // Proxy to the backend server
+        target: 'http://localhost:3001', // Proxy to the backend server
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'), // Adjust the path if needed
       },
       '/admin': {
-        target: 'http://localhost:3000', // Proxy to the backend server
+        target: 'http://localhost:3001', // Proxy to the backend server
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'), // Adjust the path if needed
       },

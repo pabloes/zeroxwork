@@ -232,7 +232,7 @@ async function uploadHttpHandler (req: Request, res: Response) {
     }
 
     try {
-        const {userId} = req.user;
+        const userId = req.user.id;
         const {usedQuota, maxQuota} = await getUserQuota(userId);
 
         if (((req.file.size + usedQuota) > maxQuota)) {

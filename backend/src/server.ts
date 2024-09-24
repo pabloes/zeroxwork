@@ -25,7 +25,9 @@ const run = async () => {
     const app = express();
 
     app.use(express.json());
-    app.use(cors());
+    app.use(cors({
+        allowedHeaders:['Content-Type', 'Authorization', "X-API-Key"]
+    }));
     app.use(
         session({
             secret: process.env.SESSION_SECRET || 'localhost',

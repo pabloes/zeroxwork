@@ -10,7 +10,7 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
 
     try {
         const verified = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
-        req.user = verified; // Assuming user information is stored in the token
+        req.user = {verified, id:verified.userId}; // Assuming user information is stored in the token
         if((verified.exp *1000) < Date.now()){
             throw new jwt.TokenExpiredError("Session expired", verified.iat);
         }
@@ -24,7 +24,7 @@ export async function authenticateApiKey(req, res, next) {
     const apiKey = req.header('X-API-Key'); // Leer API Key del header
 
     if (!apiKey) {
-        return res.status(401).json({ message: 'API Key es requerida.' });
+        return res.status(401).json({ message: 'API Key is missing.' });
     }
 
     try {
