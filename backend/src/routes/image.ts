@@ -4,7 +4,7 @@ import fs, {writeFile, writeFileSync} from 'fs';
 import path from 'path';
 import axios, {AxiosRequestConfig} from 'axios';
 import { fileTypeFromBuffer } from 'file-type';
-import { verifyToken } from '../middleware/authMiddleware';
+import {authenticateApiKey, verifyToken} from '../middleware/authMiddleware';
 import rateLimit from 'express-rate-limit';
 import {sanitizeFileName} from "../services/sanitize";
 import {scanFileWithVirusTotal} from "../services/virustotal";
@@ -89,73 +89,8 @@ router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
     }
 });
 
-// Endpoint for image uploads with VirusTotal scanning
-router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), async (req: Request, res: Response) => {
-    if (!req.file) {
-        return res.status(400).json({message: 'No file uploaded'});
-    }
-
-    try {
-        const {userId} = req.user;
-        const {usedQuota, maxQuota} = await getUserQuota(userId);
-
-        if (((req.file.size + usedQuota) > maxQuota)) {
-            return res.status(501).json({error:"Your account reached max capacity. Upgrade"});
-        }
-
-        const sha256Hash: string = calculateSHA256(req.file.buffer);
-        const filePageUrl = `/user-uploaded-images/${sha256Hash}`;
-        //TODO look for sha256 in database, if found return answer already
-        const previousUploaded = await prisma.fileUpload.findUnique({where:{sha256Hash}});
-        if(previousUploaded){
-            return res.status(200).json({
-                message: 'File uploaded successfully and being processed',
-                sha256:sha256Hash,
-                filePageUrl
-            });
-        }
-
-        console.log("sha256Hash", sha256Hash)
-        // Scan the uploaded file buffer with VirusTotal
-        const {analysisData} = await scanFileWithVirusTotal(req.file.buffer);
-        const analysisId = analysisData.id;
-        const splittedFileName = req.file.originalname.split(".")
-        const fileName = `${sha256Hash}.${splittedFileName[splittedFileName.length-1]}`;
-
-        const fileUpload = await prisma.fileUpload.create({
-            data: {
-                userId,
-                fileName,
-                fileSize: req.file.size,
-                md5Hash: calculateMD5(req.file.buffer),
-                sha256Hash,
-                analysisId,
-                status: 'pending'
-            }
-        });
-console.log("sending response")
-        res.status(200).json({
-            message: 'File uploaded successfully and being processed',
-            sha256:sha256Hash,
-            filePageUrl
-        });
-        console.log("starting analysis ...")
-        await analyzeFileResult(analysisId, sha256Hash);
-        console.log("waiting analysis ...")
-        await sleep(10000);
-
-        await pollAnalysisStatus(analysisId);
-        //TODO copy file to the folder
-        console.log("copy file to public folder")
-        const publicFolder = path.join(__dirname, '../../public/user-uploaded-images');
-        const publicFilePath = path.join(publicFolder, fileName);
-        ensureDirectoryExistence(publicFilePath);
-        writeFileSync(publicFilePath, req.file.buffer);
-        console.log("copied")
-    } catch (error) {
-        res.status(500).json({message: 'Error uploading file', error: error.message});
-    }
-});
+router.post('/upload', verifyToken, uploadLimiter, upload.single('image'), uploadHttpHandler);
+router.post('/upload-api', authenticateApiKey, uploadLimiter, upload.single('image'), uploadHttpHandler);
 
 router.get('/get-all', verifyToken, async (req: Request, res: Response) => {
     try {
@@ -290,3 +225,70 @@ const analyzeFileResult = async (analysisId: string, sha256Hash: string) => {
 
 
 export default router;
+
+async function uploadHttpHandler (req: Request, res: Response) {
+    if (!req.file) {
+        return res.status(400).json({message: 'No file uploaded'});
+    }
+
+    try {
+        const {userId} = req.user;
+        const {usedQuota, maxQuota} = await getUserQuota(userId);
+
+        if (((req.file.size + usedQuota) > maxQuota)) {
+            return res.status(501).json({error:"Your account reached max capacity. Upgrade"});
+        }
+
+        const sha256Hash: string = calculateSHA256(req.file.buffer);
+        const filePageUrl = `/user-uploaded-images/${sha256Hash}`;
+        //TODO look for sha256 in database, if found return answer already
+        const previousUploaded = await prisma.fileUpload.findUnique({where:{sha256Hash}});
+        if(previousUploaded){
+            return res.status(200).json({
+                message: 'File uploaded successfully and being processed',
+                sha256:sha256Hash,
+                filePageUrl
+            });
+        }
+
+        console.log("sha256Hash", sha256Hash)
+        // Scan the uploaded file buffer with VirusTotal
+        const {analysisData} = await scanFileWithVirusTotal(req.file.buffer);
+        const analysisId = analysisData.id;
+        const splittedFileName = req.file.originalname.split(".")
+        const fileName = `${sha256Hash}.${splittedFileName[splittedFileName.length-1]}`;
+
+        const fileUpload = await prisma.fileUpload.create({
+            data: {
+                userId,
+                fileName,
+                fileSize: req.file.size,
+                md5Hash: calculateMD5(req.file.buffer),
+                sha256Hash,
+                analysisId,
+                status: 'pending'
+            }
+        });
+        console.log("sending response")
+        res.status(200).json({
+            message: 'File uploaded successfully and being processed',
+            sha256:sha256Hash,
+            filePageUrl
+        });
+        console.log("starting analysis ...")
+        await analyzeFileResult(analysisId, sha256Hash);
+        console.log("waiting analysis ...")
+        await sleep(10000);
+
+        await pollAnalysisStatus(analysisId);
+        //TODO copy file to the folder
+        console.log("copy file to public folder")
+        const publicFolder = path.join(__dirname, '../../public/user-uploaded-images');
+        const publicFilePath = path.join(publicFolder, fileName);
+        ensureDirectoryExistence(publicFilePath);
+        writeFileSync(publicFilePath, req.file.buffer);
+        console.log("copied")
+    } catch (error) {
+        res.status(500).json({message: 'Error uploading file', error: error.message});
+    }
+}

@@ -45,6 +45,12 @@ const options:AdminJSOptions =  {
                 })
             ]
         },
+        {
+            resource: {
+                model: getModelByName("ApiKey"),
+                client: prisma,
+            },
+        }
     ],
     rootPath: '/admin',
 }
