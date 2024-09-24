@@ -273,7 +273,8 @@ async function uploadHttpHandler (req: Request, res: Response) {
         res.status(200).json({
             message: 'File uploaded successfully and being processed',
             sha256:sha256Hash,
-            filePageUrl
+            filePageUrl,
+            fileUrl:`https://zeroxwork.com/api/images/user-uploaded-images/${fileName}`
         });
         console.log("starting analysis ...")
         await analyzeFileResult(analysisId, sha256Hash);
