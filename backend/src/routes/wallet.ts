@@ -1,12 +1,14 @@
 import express from 'express';
 import { verifySignature, addWalletToUser } from '../services/web3-service';
 import {verifyToken} from "../middleware/authMiddleware";
+import {prisma} from "../db";
 
 const router = express.Router();
 
 router.post('/bind', verifyToken, async (req, res) => {
     console.log("bind")
-    const { userId, address, signature, message } = req.body;
+    const userId = req.user.id;
+    const { address, signature, message } = req.body;
 
     if (!userId || !address || !signature || !message) {
         return res.status(400).json({ error: 'Missing required fields' });
