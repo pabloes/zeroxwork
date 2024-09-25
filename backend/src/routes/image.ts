@@ -56,7 +56,7 @@ const ensureDirectoryExistence = (filePath: string): void => {
 
 router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
     const { id } = req.params;
-    const userId = parseInt(req.user.userId); // Asumiendo que `req.user` tiene la información del usuario autenticado
+    const userId = parseInt(req.user.id); // Asumiendo que `req.user` tiene la información del usuario autenticado
 
     try {
         // Verificar que el archivo existe y pertenece al usuario
@@ -94,7 +94,7 @@ router.post('/upload-api', authenticateApiKey, uploadLimiter, upload.single('ima
 
 router.get('/get-all', verifyToken, async (req: Request, res: Response) => {
     try {
-        const userId = parseInt(req.user.userId); // Asumiendo que `req.user` tiene la información del usuario autenticado
+        const userId = parseInt(req.user.id); // Asumiendo que `req.user` tiene la información del usuario autenticado
 
         const images = await prisma.fileUpload.findMany({
             where: { userId },

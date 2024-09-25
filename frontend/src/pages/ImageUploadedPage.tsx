@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import {formatFileSize} from "../services/format-file-size";
 import UIkit from "uikit";
+import {api} from "../services/axios-setup";
 
 const UploadedImagePage: React.FC = () => {
     const { sha256 } = useParams<{ sha256: string }>();
@@ -12,7 +13,7 @@ const UploadedImagePage: React.FC = () => {
     useEffect(() => {
         const fetchFileStatus = async () => {
             try {
-                const response = await axios.get(`/api/images/file-status/${sha256}`);
+                const response = await api.get(`/images/file-status/${sha256}`);
                 setFileData(response.data);
                 setLoading(false);
             } catch (error) {

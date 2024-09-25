@@ -4,7 +4,8 @@ import ImageGallery from '../components/ImageGallery';
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import UIkit from "uikit";
-import ConfirmActionModal from '../components/ConfirmActionModal'; // Asegúrate de que la ruta esté correcta
+import ConfirmActionModal from '../components/ConfirmActionModal';
+import {api} from "../services/axios-setup"; // Asegúrate de que la ruta esté correcta
 
 const MyImagesPage: React.FC = () => {
     const [images, setImages] = useState<any[]>([]);
@@ -18,11 +19,7 @@ const MyImagesPage: React.FC = () => {
 
     const handleDelete = async (id: string) => {
         try {
-            await axios.delete(`/api/images/${id}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`, // Include the token in headers
-                }
-            });
+            await api.delete(`/images/${id}`);
             // Filtra la imagen eliminada
             setImages((prevImages) => prevImages.filter((image) => image.id !== id));
             UIkit.notification({ message: `File deleted`, status: 'success' });
@@ -44,11 +41,7 @@ const MyImagesPage: React.FC = () => {
     useEffect(() => {
         const fetchImages = async () => {
             try {
-                const response = await axios.get('/api/images/get-all', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`, // Include the token in headers
-                    }
-                }); // Ajusta el endpoint si es necesario
+                const response = await api.get('/images/get-all'); // Ajusta el endpoint si es necesario
 
                 setImages(response.data);
                 setLoading(false);

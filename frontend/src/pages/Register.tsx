@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios, {AxiosError} from 'axios';
-import UIkit from 'uikit'; // Asegúrate de tener UIkit instalado
+import UIkit from 'uikit';
+import {api} from "../services/axios-setup"; // Asegúrate de tener UIkit instalado
 
 const Register: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ const Register: React.FC = () => {
         setIsSubmitting(true); // Activa el estado de carga
 
         try {
-            await axios.post('/api/auth/register', { email, password });
+            await api.post('/auth/register', { email, password });
             setIsRegistered(true); // Muestra el mensaje de verificación
         } catch (axiosError:AxiosError|any) {
             const errorMessage = (typeof axiosError?.response?.data?.error === "string" ? axiosError?.response?.data?.error : axiosError?.response?.data?.error?.message) || 'Error registering user.'

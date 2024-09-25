@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { jwtDecode } from "jwt-decode";
+import {api} from "../services/axios-setup";
 
 interface AuthContextType {
     user: any;
@@ -40,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const login = async (email: string, password: string) => {
         try {
             // Send login request to the backend and receive the JWT
-            const response = await axios.post('/api/auth/login', { email, password });
+            const response = await api.post('/auth/login', { email, password });
 
             // Extract the JWT from the response
             const { token } = response.data;

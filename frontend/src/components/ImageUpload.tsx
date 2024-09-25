@@ -8,6 +8,7 @@ import {FileUpload, FileUploadUploadEvent} from 'primereact/fileupload';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import AccountQuota from "./AccountQuota";
+import {api} from "../services/axios-setup";
 
 const ImageUpload: React.FC = () => {
     const { isAuthenticated } = useAuth(); // Check if the user is authenticated
@@ -41,10 +42,9 @@ const ImageUpload: React.FC = () => {
             }
 
             // Send the file to the backend for VirusTotal scanning and uploading
-            const response = await axios.post('/api/images/upload', formData, {
+            const response = await api.post('/images/upload', formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}`, // Include the token in headers
+                    'Content-Type': 'multipart/form-data'
                 },
             });
 

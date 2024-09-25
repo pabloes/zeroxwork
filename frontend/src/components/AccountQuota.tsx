@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import UIkit from 'uikit';
 import {formatFileSize} from "../services/format-file-size";
+import {api} from "../services/axios-setup";
 
 const AccountQuota: React.FC<any> = ({add = 0}) => {
     const [usedQuota, setUsedQuota] = useState<number>(0);
@@ -12,9 +13,7 @@ const AccountQuota: React.FC<any> = ({add = 0}) => {
     useEffect(() => {
         const fetchQuota = async () => {
             try {
-                const response = await axios.get('/api/user/quota', {headers:{
-                        'Authorization': `Bearer ${token}`, // Include the token in headers
-                    }});
+                const response = await api.get('/user/quota');
                 setUsedQuota(response.data.usedQuota);
                 setMaxQuota(response.data.maxQuota);
             } catch (error) {

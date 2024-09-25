@@ -17,7 +17,7 @@ import {sleep} from "../services/sleep.ts"
 
 router.get('/quota', verifyToken, async (req: Request, res: Response) => {
     try {
-        res.json(await getUserQuota(req.user.userId));
+        res.json(await getUserQuota(req.user.id));
     } catch (error) {
         res.status(500).json({ message: 'Error fetching quota information', error: error.message });
     }

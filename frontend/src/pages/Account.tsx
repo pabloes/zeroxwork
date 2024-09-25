@@ -1,5 +1,6 @@
 import {Link} from "react-router-dom";
 import AccountQuota from "../components/AccountQuota";
+import BindWallet from "../components/BindWallet";
 
 const AccountPage: React.FC = () => {
 
@@ -10,6 +11,8 @@ const AccountPage: React.FC = () => {
             <Link to={"/image-upload"}>🏞️ Public Image upload</Link>
             <br/>
             <AccountQuota />
+            <br/>
+            <BindWallet />
         </div>
     );
 };
