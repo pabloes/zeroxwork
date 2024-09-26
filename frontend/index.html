@@ -42,5 +42,36 @@
 <!-- UIkit Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/uikit@3.21.11/dist/js/uikit.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/uikit@3.21.11/dist/js/uikit-icons.min.js"></script>
+<!-- Incluye esto en tu index.html dentro del body -->
+<div id="cookie-consent" style="display: none;">
+  <div class="uk-alert-primary uk-position-bottom-center uk-width-1-1 uk-padding-small" uk-alert>
+    <p>
+      Este sitio utiliza cookies para mejorar la experiencia del usuario. Al continuar navegando, aceptas el uso de cookies.
+      <button class="uk-button uk-button-primary" id="accept-cookies">Aceptar</button>
+    </p>
+  </div>
+</div>
+
+<script>
+  // Verificar si el usuario ya ha aceptado las cookies
+  if (!localStorage.getItem('cookiesAccepted')) {
+    document.getElementById('cookie-consent').style.display = 'block';
+  }
+
+  document.getElementById('accept-cookies').addEventListener('click', function () {
+    localStorage.setItem('cookiesAccepted', 'true');
+    document.getElementById('cookie-consent').style.display = 'none';
+
+    // Cargar Google Analytics y AdSense solo después de aceptar cookies
+    gtag('js', new Date());
+    gtag('config', 'G-VRK5XLEKNL');
+
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-9225623006292034",
+      enable_page_level_ads: true
+    });
+  });
+</script>
+
 </body>
 </html>
