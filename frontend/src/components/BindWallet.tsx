@@ -64,7 +64,7 @@ const BindWallet: React.FC = () => {
     };
 
     return (
-        <div className="uk-container uk-margin-top">
+        <div className="uk-container ">
             {!isConnected ? (
                 <button
                     className="uk-button uk-button-primary uk-margin-small-right"
