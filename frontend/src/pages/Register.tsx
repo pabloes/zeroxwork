@@ -9,7 +9,9 @@ const Register: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false); // Estado para el botón de carga
     const [isRegistered, setIsRegistered] = useState(false); // Estado para mostrar el mensaje
     const [message, setMessage] = useState('');
-
+    const [acceptTerms, setAcceptTerms] = useState(false);
+    const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+    const [acceptResponsibility, setAcceptResponsibility] = useState(false);
     const handleRegisterSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         setIsSubmitting(true); // Activa el estado de carga
@@ -54,6 +56,42 @@ const Register: React.FC = () => {
                                 required
                             />
                         </div>
+                        <div className="uk-margin">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    className="uk-checkbox"
+                                    checked={acceptTerms}
+                                    onChange={() => setAcceptTerms(!acceptTerms)}
+                                    required
+                                />{' '}
+                                I have read and agree to the <a href="/terms" target="_blank">Terms and Conditions</a>.
+                            </label>
+                        </div>
+                        <div className="uk-margin">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    className="uk-checkbox"
+                                    checked={acceptPrivacy}
+                                    onChange={() => setAcceptPrivacy(!acceptPrivacy)}
+                                    required
+                                />{' '}
+                                I have read and agree to the <a href="/privacy" target="_blank">Privacy Policy</a>.
+                            </label>
+                        </div>
+                        <div className="uk-margin">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    className="uk-checkbox"
+                                    checked={acceptResponsibility}
+                                    onChange={() => setAcceptResponsibility(!acceptResponsibility)}
+                                    required
+                                />{' '}
+                                I accept full responsibility for any content I upload and acknowledge that I may be held legally liable for any harm caused. I will indemnify ZEROxWORK in the event of any legal action arising from my content.
+                            </label>
+                        </div>
                         <button
                             type="submit"
                             className={`uk-button uk-button-primary ${isSubmitting ? 'uk-disabled' : ''}`}
@@ -62,6 +100,7 @@ const Register: React.FC = () => {
                             {isSubmitting ? 'Registering...' : 'Register'}
                         </button>
                     </form>
+
                 ) : (
                     <div className="uk-alert-success" uk-alert="true">
                         <p>Thank you for registering! Please check your email to verify your account.</p>

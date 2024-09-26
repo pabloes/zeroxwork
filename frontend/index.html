@@ -1,16 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VRK5XLEKNL"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-VRK5XLEKNL');
-  </script>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+  <meta name="theme-color" content="#ffffff">
+  <title>ZEROxWORK</title>
+
+  <!-- Íconos y Favicon -->
   <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
   <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
   <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
@@ -25,15 +23,6 @@
   <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="manifest" href="/manifest.json">
-  <meta name="msapplication-TileColor" content="#ffffff">
-  <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
-  <meta name="theme-color" content="#ffffff">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-
-  <title>ZEROxWORK</title>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9225623006292034"
-          crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -42,20 +31,47 @@
 <!-- UIkit Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/uikit@3.21.11/dist/js/uikit.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/uikit@3.21.11/dist/js/uikit-icons.min.js"></script>
-<!-- Incluye esto en tu index.html dentro del body -->
+
+<!-- Aviso de Cookies -->
 <div id="cookie-consent" style="display: none;">
   <div class="uk-alert-primary uk-position-bottom-center uk-width-1-1 uk-padding-small" uk-alert>
     <p>
       Este sitio utiliza cookies para mejorar la experiencia del usuario. Al continuar navegando, aceptas el uso de cookies.
+      <a href="/privacy-policy" class="uk-link-reset">Política de privacidad</a>
       <button class="uk-button uk-button-primary" id="accept-cookies">Aceptar</button>
     </p>
   </div>
 </div>
 
 <script>
+  // Función para cargar Google Analytics
+  function loadGoogleAnalytics() {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=G-VRK5XLEKNL`;
+    document.head.appendChild(script);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-VRK5XLEKNL');
+  }
+
+  // Función para cargar Google AdSense
+  function loadGoogleAdSense() {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9225623006292034";
+    script.crossorigin = "anonymous";
+    document.head.appendChild(script);
+  }
+
   // Verificar si el usuario ya ha aceptado las cookies
   if (!localStorage.getItem('cookiesAccepted')) {
     document.getElementById('cookie-consent').style.display = 'block';
+  } else {
+    // Cargar los scripts si las cookies ya fueron aceptadas
+    loadGoogleAnalytics();
+    loadGoogleAdSense();
   }
 
   document.getElementById('accept-cookies').addEventListener('click', function () {
@@ -63,13 +79,8 @@
     document.getElementById('cookie-consent').style.display = 'none';
 
     // Cargar Google Analytics y AdSense solo después de aceptar cookies
-    gtag('js', new Date());
-    gtag('config', 'G-VRK5XLEKNL');
-
-    (adsbygoogle = window.adsbygoogle || []).push({
-      google_ad_client: "ca-pub-9225623006292034",
-      enable_page_level_ads: true
-    });
+    loadGoogleAnalytics();
+    loadGoogleAdSense();
   });
 </script>
 
