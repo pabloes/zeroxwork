@@ -21,7 +21,7 @@ router.post('/bind', verifyToken, async (req, res) => {
     }
 
     // Añadir la wallet al usuario
-    await addWalletToUser(userId, address);
+    await addWalletToUser(userId, address.toLowerCase());
     res.json({ success: true });
 });
 
@@ -31,6 +31,7 @@ router.get('/wallets', verifyToken, async (req, res) => {
         const userId = req.user.id; // Obtener el ID del usuario desde el token
         const wallets = await prisma.wallet.findMany({
             where: { userId },
+            include: { walletDecentralandNames:true }
         });
         res.json(wallets);
     } catch (error) {

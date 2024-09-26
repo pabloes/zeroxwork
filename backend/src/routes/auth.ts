@@ -7,6 +7,7 @@ const router = Router();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 import jwt from 'jsonwebtoken';
+import {updateWalletNames} from "../services/decentraland-names";
 // Register Endpoint
 router.post('/register', async (req, res) => {
     const { email, password } = req.body;
@@ -87,7 +88,13 @@ router.post('/login', async (req: Request, res: Response) => {
             JWT_SECRET,
             { expiresIn: 10000 }
         );
+        const wallets = await prisma.wallet.findMany({
+            where: { userId: user.id },
+        });
 
+        for (const wallet of wallets) {
+            await updateWalletNames(wallet.address);
+        }
         // Enviar el token como respuesta
         res.json({ token });
     } catch (error) {

@@ -37,6 +37,8 @@ model Wallet {
   user      User    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  walletDecentralandNames WalletDecentralandNames[]
+
 }
 
 model FileUpload {
@@ -68,4 +70,13 @@ model ApiKey {
 
   @@index([userId])
   @@map("api_keys") // Cambia el nombre de la tabla si es necesario
+}
+
+model WalletDecentralandNames {
+  id        Int      @id @default(autoincrement())
+  walletId  Int
+  wallet    Wallet   @relation(fields: [walletId], references: [id])
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

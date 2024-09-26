@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, useConnect, useSignMessage, useDisconnect } from 'wagmi';
 import { api } from '../services/axios-setup';
+import 'uikit/dist/css/uikit.min.css';
 
 const BindWallet: React.FC = () => {
     const { address, isConnected } = useAccount();
@@ -11,21 +12,18 @@ const BindWallet: React.FC = () => {
     const [message] = useState(`Timestamp:${Date.now()}:Binding wallet`);
     const [wallets, setWallets] = useState<any[]>([]); // Estado para las wallets vinculadas
 
-    // Efecto para detectar cambios en `data` y ejecutar la lógica correspondiente
     useEffect(() => {
         if (data) {
             bindWallet(data);
         }
     }, [data]);
 
-    // Efecto para manejar errores de la firma
     useEffect(() => {
         if (isError) {
             console.error('Error signing message');
         }
     }, [isError]);
 
-    // Efecto para obtener las wallets vinculadas cuando el usuario se conecta
     useEffect(() => {
         if (isConnected) {
             fetchWallets();
@@ -56,7 +54,6 @@ const BindWallet: React.FC = () => {
         }
     };
 
-    // Función para obtener las wallets vinculadas al usuario
     const fetchWallets = async () => {
         try {
             const response = await api.get('/wallet/wallets'); // Solicitud al endpoint para obtener las wallets
@@ -98,9 +95,24 @@ const BindWallet: React.FC = () => {
                         <h3 className="uk-card-title">Linked Wallets</h3>
                         {wallets.length > 0 ? (
                             <ul className="uk-list uk-list-divider">
-                                {wallets.map((wallet) => (
+                                {wallets?.map((wallet) => (
                                     <li key={wallet.id}>
                                         <span className="uk-label uk-label-success">{wallet.address}</span>
+                                        <p>
+                                            Decentraland names: {wallet.walletDecentralandNames?.map((name) => (
+                                            <><span key={name.id} className="uk-badge">
+                                            {name.name}
+                                            </span><span>&nbsp;</span></>
+                                        ))}
+                                        </p>
+                                        <ul className="uk-list">
+
+                                            {wallet.walletDecentralandNames?.map((name) => (
+                                                <li key={name.id}>
+
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </li>
                                 ))}
                             </ul>

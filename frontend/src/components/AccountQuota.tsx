@@ -15,7 +15,7 @@ const AccountQuota: React.FC<any> = ({add = 0}) => {
             try {
                 const response = await api.get('/user/quota');
                 setUsedQuota(response.data.usedQuota);
-                setMaxQuota(response.data.maxQuota);
+                setMaxQuota(response.data.maxQuota + response.data.extraQuota);
             } catch (error) {
                 UIkit.notification({ message: 'Failed to load quota information.', status: 'danger' });
             } finally {

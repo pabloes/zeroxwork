@@ -1,5 +1,6 @@
 import {hashMessage, recoverAddress, Signature} from 'viem';
 import {prisma} from "../db";
+import {updateWalletNames} from "./decentraland-names";
 
 export async function verifySignature(address: string, signature: Signature, message: string) {
     // Crear el hash del mensaje
@@ -13,10 +14,12 @@ export async function verifySignature(address: string, signature: Signature, mes
 }
 
 export async function addWalletToUser(userId: number, address: string) {
-    return await prisma.wallet.findFirst({where:{userId}}) || await prisma.wallet.create({
+    const result =  await prisma.wallet.findFirst({where:{userId}}) || await prisma.wallet.create({
         data: {
             address,
             userId,
         },
     });
+    await updateWalletNames(address.toLowerCase());
+    return result;
 }

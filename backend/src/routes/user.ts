@@ -28,6 +28,7 @@ export async function getUserQuota(userId){
         where: { id: userId },
         select: {
             maxQuota: true,
+            extraQuota: true,
             fileUploads: {
                 select: {
                     fileSize: true
@@ -40,8 +41,9 @@ export async function getUserQuota(userId){
     const totalUsedQuota = user.fileUploads.reduce((sum, file) => sum + file.fileSize, 0);
 
     return {
+        ...user,
         usedQuota: totalUsedQuota,
-        maxQuota: user.maxQuota
+
     }
 }
 
