@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import ImageGallery from '../components/ImageGallery';
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
@@ -14,7 +13,6 @@ const MyImagesPage: React.FC = () => {
     const [showModal, setShowModal] = useState<boolean>(false);
     const [imageToDelete, setImageToDelete] = useState<any | null>(null); // Cambiar a objeto para almacenar la imagen completa
 
-    const token = localStorage.getItem('authToken');
     const { isAuthenticated } = useAuth();
 
     const handleDelete = async (id: string) => {

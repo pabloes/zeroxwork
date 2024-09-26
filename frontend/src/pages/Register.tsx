@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios, {AxiosError} from 'axios';
+import {AxiosError} from 'axios';
 import UIkit from 'uikit';
 import {api} from "../services/axios-setup"; // Asegúrate de tener UIkit instalado
 

@@ -7,7 +7,7 @@ const BindWallet: React.FC = () => {
     const { address, isConnected } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
-    const { signMessage, data, isLoading, isError } = useSignMessage();
+    const { signMessage, data, isPending, isError } = useSignMessage();
 
     const [message] = useState(`Timestamp:${Date.now()}:Binding wallet`);
     const [wallets, setWallets] = useState<any[]>([]); // Estado para las wallets vinculadas
@@ -82,9 +82,9 @@ const BindWallet: React.FC = () => {
                         <button
                             className="uk-button uk-button-secondary uk-margin-small-right"
                             onClick={handleSignMessage}
-                            disabled={isLoading}
+                            disabled={isPending}
                         >
-                            {isLoading ? 'Signing...' : 'Bind Wallet'}
+                            {isPending ? 'Signing...' : 'Bind Wallet'}
                         </button>
                         <button className="uk-button uk-button-danger" onClick={() => disconnect()}>
                             Disconnect
@@ -99,20 +99,12 @@ const BindWallet: React.FC = () => {
                                     <li key={wallet.id}>
                                         <span className="uk-label uk-label-success">{wallet.address}</span>
                                         <p>
-                                            Decentraland names: {wallet.walletDecentralandNames?.map((name) => (
-                                            <><span key={name.id} className="uk-badge">
-                                            {name.name}
+                                            Decentraland names: {wallet.walletDecentralandNames?.map((nameNFT:any) => (
+                                            <><span key={nameNFT.id} className="uk-badge">
+                                            {nameNFT.name}
                                             </span><span>&nbsp;</span></>
                                         ))}
                                         </p>
-                                        <ul className="uk-list">
-
-                                            {wallet.walletDecentralandNames?.map((name) => (
-                                                <li key={name.id}>
-
-                                                </li>
-                                            ))}
-                                        </ul>
                                     </li>
                                 ))}
                             </ul>

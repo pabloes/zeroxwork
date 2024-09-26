@@ -1,5 +1,4 @@
 import React, {useRef, useState} from 'react';
-import axios from 'axios';
 import UIkit from 'uikit'; // Ensure you have UIkit installed for notifications
 import { useAuth } from '../context/AuthContext'; // Import your AuthContext to check user authentication
 import {Link, useNavigate} from 'react-router-dom';

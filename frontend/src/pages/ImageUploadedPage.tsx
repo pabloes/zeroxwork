@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
 import {formatFileSize} from "../services/format-file-size";
 import UIkit from "uikit";
 import {api} from "../services/axios-setup";

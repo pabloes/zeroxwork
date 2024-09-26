@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import UIkit from 'uikit';
 import {formatFileSize} from "../services/format-file-size";
 import {api} from "../services/axios-setup";
@@ -9,7 +8,6 @@ const AccountQuota: React.FC<any> = ({add = 0}) => {
     const [usedQuota, setUsedQuota] = useState<number>(0);
     const [maxQuota, setMaxQuota] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
-    const token = localStorage.getItem('authToken');
 
     useEffect(() => {
         const fetchQuota = async () => {

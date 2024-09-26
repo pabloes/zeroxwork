@@ -5,5 +5,8 @@ export const wagmiConfig = createConfig({
     transports: {
         [mainnet.id]: http(),
         [sepolia.id]: http(),
+        [polygon.id]: http(),
+        [optimism.id]: http(),
+        [arbitrum.id]: http()
     },
 })

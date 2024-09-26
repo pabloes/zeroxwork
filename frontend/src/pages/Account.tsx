@@ -1,4 +1,3 @@
-import {Link} from "react-router-dom";
 import AccountQuota from "../components/AccountQuota";
 import BindWallet from "../components/BindWallet";
 
