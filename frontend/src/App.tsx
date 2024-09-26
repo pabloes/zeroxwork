@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { BrowserRouter as Router, Route, Routes,Navigate } from 'react-router-dom';
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -36,7 +36,11 @@ export default App;
 
 function PrivateRoute({ children, ...rest }) {
     const { isAuthenticated } = useAuth();
-
+    useEffect(()=>{
+        if(!isAuthenticated){
+            alert("You need to Register and Login to access this page")
+        }
+    },[])
     return (
         isAuthenticated ? children : <Navigate to="/login" />
     );
