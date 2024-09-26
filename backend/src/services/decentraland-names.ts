@@ -2,7 +2,19 @@
 
 import axios from 'axios';
 import {prisma} from "../db";
-
+export async function updateUserExtraSpace(user:{wallets:{walletDecentralandNames:[]}[]}){
+    let pointsPerNames = 0;
+    user.wallets.forEach(wallet => wallet.walletDecentralandNames.forEach(nameNFT => {
+        pointsPerNames++;
+    }));
+    console.log("pointsPerNames",pointsPerNames)
+    const updateResult = await prisma.user.update({
+        where: { id: user.id },
+        data: { extraQuota:pointsPerNames*1024*1024*5 },
+    })
+    console.log("updateUserExtraSpace",updateResult);
+    return updateResult;
+}
 export async function updateWalletNames(walletAddress: string) {
     try {
         const response = await axios.get(
@@ -34,13 +46,6 @@ export async function updateWalletNames(walletAddress: string) {
 
         await prisma.walletDecentralandNames.createMany({
             data: walletNames,
-        });
-
-        // Actualiza la cuota del usuario (5 MB por cada nombre Decentraland)
-        const extraQuota = nameNFTs.length * 5 * 1024 * 1024; // 5 MB por nombre
-        await prisma.user.update({
-            where: { id: wallet.userId },
-            data: { extraQuota },
         });
 
         return walletNames;

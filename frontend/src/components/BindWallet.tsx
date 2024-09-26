@@ -5,7 +5,7 @@ import 'uikit/dist/css/uikit.min.css';
 import ConfirmActionModal from "./ConfirmActionModal";
 import UIkit from "uikit";
 
-const BindWallet: React.FC = () => {
+const BindWallet: React.FC = ({onAddWallet, onRemoveWallet}) => {
     const { address, isConnected } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
@@ -38,6 +38,7 @@ const BindWallet: React.FC = () => {
             await api.delete(`/wallet/${address}`);
             setWallets((prevImages) => prevImages.filter((wallet) => wallet.address !== address));
             UIkit.notification({ message: `Wallet removed`, status: 'success' });
+            if(onRemoveWallet) onRemoveWallet();
         } catch (err) {
             setError('Failed to remove wallet.');
         }
@@ -67,8 +68,9 @@ const BindWallet: React.FC = () => {
                 signature,
                 message,
             });
-            alert('Wallet bound successfully!');
-            fetchWallets(); // Actualiza la lista de wallets después de vincular
+            await UIkit.notification('Wallet bound successfully!');
+            await fetchWallets(); // Actualiza la lista de wallets después de vincular
+            if(onAddWallet) onAddWallet();
         } catch (error) {
             console.error(error);
             alert('Failed to bind wallet');

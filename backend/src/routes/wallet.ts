@@ -2,6 +2,7 @@ import express, {Request, Response} from 'express';
 import { verifySignature, addWalletToUser } from '../services/web3-service';
 import {verifyToken} from "../middleware/authMiddleware";
 import {prisma} from "../db";
+import {updateUserExtraSpace, updateWalletNames} from "../services/decentraland-names";
 
 const router = express.Router();
 
@@ -19,10 +20,21 @@ router.post('/bind', verifyToken, async (req, res) => {
     if (!isValid) {
         return res.status(400).json({ error: 'Invalid signature' });
     }
-
-    // Añadir la wallet al usuario
     await addWalletToUser(userId, address.toLowerCase());
-    res.json({ success: true });
+    const user = await prisma.user.findUnique({
+        where: { id:userId },
+        include: {
+            wallets: {
+                include: {
+                    walletDecentralandNames: true
+                }
+            }
+        }
+    });
+    // Añadir la wallet al usuario
+
+    await updateUserExtraSpace(user);
+    res.json({ success: true, user });
 });
 
 // Endpoint para obtener las wallets vinculadas al usuario
@@ -48,6 +60,18 @@ router.delete("/:address", verifyToken,async (req: Request, res: Response) => {
             return res.status(500).send({error: "Not found", message:"Not found"});
         }
         const result = await prisma.wallet.delete({where:{id:foundWallet.id}});
+        const user = await prisma.user.findUnique({
+            where: { id:userId },
+            include: {
+                wallets: {
+                    include: {
+                        walletDecentralandNames: true
+                    }
+                }
+            }
+        });
+        await updateUserExtraSpace(user);
+
         res.status(200).json({ message: 'Wallet removed successfully' });
     }catch(error){
         console.error('Error removing wallet:', error);
