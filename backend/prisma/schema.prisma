@@ -34,7 +34,7 @@ model Wallet {
   id        Int     @id @default(autoincrement())
   address   String  @unique
   userId    Int
-  user      User    @relation(fields: [userId], references: [id])
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   walletDecentralandNames WalletDecentralandNames[]
@@ -52,7 +52,7 @@ model FileUpload {
   analysisId String?
   status     String   @default("pending")
   dangerous  Boolean  @default(false)
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([sha256Hash])
@@ -66,7 +66,7 @@ model ApiKey {
   userId      Int      // Relación con el usuario
   createdAt   DateTime @default(now())
   lastUsedAt  DateTime? // Última vez que se usó la API Key
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("api_keys") // Cambia el nombre de la tabla si es necesario
@@ -75,7 +75,7 @@ model ApiKey {
 model WalletDecentralandNames {
   id        Int      @id @default(autoincrement())
   walletId  Int
-  wallet    Wallet   @relation(fields: [walletId], references: [id])
+  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

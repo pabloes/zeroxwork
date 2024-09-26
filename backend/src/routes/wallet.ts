@@ -1,4 +1,4 @@
-import express from 'express';
+import express, {Request, Response} from 'express';
 import { verifySignature, addWalletToUser } from '../services/web3-service';
 import {verifyToken} from "../middleware/authMiddleware";
 import {prisma} from "../db";
@@ -39,5 +39,20 @@ router.get('/wallets', verifyToken, async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+router.delete("/:address", verifyToken,async (req: Request, res: Response) => {
+    try{
+        const {address} = req.params
+        const userId = parseInt(req.user.id); // Asumiendo que `req.user` tiene la información del usuario autenticado
+        const foundWallet = await prisma.wallet.findFirst({where:{userId, address}})
+        if(!foundWallet){
+            return res.status(500).send({error: "Not found", message:"Not found"});
+        }
+        const result = await prisma.wallet.delete({where:{id:foundWallet.id}});
+        res.status(200).json({ message: 'Wallet removed successfully' });
+    }catch(error){
+        console.error('Error removing wallet:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 
+});
 export default router;

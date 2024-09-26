@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useAccount, useConnect, useSignMessage, useDisconnect } from 'wagmi';
 import { api } from '../services/axios-setup';
 import 'uikit/dist/css/uikit.min.css';
+import ConfirmActionModal from "./ConfirmActionModal";
+import UIkit from "uikit";
 
 const BindWallet: React.FC = () => {
     const { address, isConnected } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
     const { signMessage, data, isPending, isError } = useSignMessage();
-
+    const [showDeleteWalletModal, setShowDeleteWalletModal] = useState<boolean>(false);
+    const [walletToDelete, setWalletToDelete] = useState<any | null>(null); // Cambiar a objeto para almacenar la imagen completa
+    const [error, setError] = useState<string | null>(null);
     const [message] = useState(`Timestamp:${Date.now()}:Binding wallet`);
     const [wallets, setWallets] = useState<any[]>([]); // Estado para las wallets vinculadas
 
@@ -29,7 +33,24 @@ const BindWallet: React.FC = () => {
             fetchWallets();
         }
     }, [isConnected]);
+    const handleDeleteWallet = async (address: string) => {
+        try {
+            await api.delete(`/wallet/${address}`);
+            setWallets((prevImages) => prevImages.filter((wallet) => wallet.address !== address));
+            UIkit.notification({ message: `Wallet removed`, status: 'success' });
+        } catch (err) {
+            setError('Failed to remove wallet.');
+        }
+    };
+    const closeDeleteModal = () => {
+        setShowDeleteWalletModal(false);
+        setWalletToDelete(null);
+    };
 
+    const openDeleteWalletModal = (wallet: any) => {
+        setWalletToDelete(wallet); // Almacenar el objeto de la imagen completa
+        setShowDeleteWalletModal(true);
+    };
     const handleSignMessage = async () => {
         try {
             await signMessage({ message });
@@ -97,14 +118,31 @@ const BindWallet: React.FC = () => {
                             <ul className="uk-list uk-list-divider">
                                 {wallets?.map((wallet) => (
                                     <li key={wallet.id}>
-                                        <span className="uk-label uk-label-success">{wallet.address}</span>
+                                        <span className="uk-label uk-label-success">{wallet.address}</span>&nbsp;
+                                        <button className="uk-icon-button uk-border-circle uk-button-danger" uk-icon={'trash'} onClick={()=>openDeleteWalletModal(wallet)}></button>
+                                        <ConfirmActionModal
+                                            show={showDeleteWalletModal}
+                                            onClose={closeDeleteModal}
+                                            onConfirm={() => {
+                                                if (walletToDelete) {
+                                                    handleDeleteWallet(walletToDelete.address);
+                                                }
+                                            }}
+                                            title="Confirm Removal"
+                                            message="Are you sure you want to remove this wallet?"
+                                            confirmButtonText="Delete"
+                                            cancelButtonText="Cancel"
+                                            wordToType="remove"
+                                        />
                                         <p>
                                             Decentraland names: {wallet.walletDecentralandNames?.map((nameNFT:any) => (
-                                            <><span key={nameNFT.id} className="uk-badge">
-                                            {nameNFT.name}
-                                            </span><span>&nbsp;</span></>
+                                            <span key={nameNFT.id}>
+                                                <span className="uk-badge">{nameNFT.name}</span>
+                                                <span>&nbsp;</span>
+                                            </span>
                                         ))}
                                         </p>
+
                                     </li>
                                 ))}
                             </ul>
