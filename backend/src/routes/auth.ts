@@ -79,7 +79,7 @@ router.post('/login', async (req: Request, res: Response) => {
             }
         });
         if (!user) {
-            return res.status(401).json({ error: 'Invalid email or password.' });
+            return res.status(401).json({ error: 'User does not exist' });
         }else if(!user.verified){
             return res.status(403).json({ error: 'Email not verified. Look your mail inbox.', userId:user.id });
         }

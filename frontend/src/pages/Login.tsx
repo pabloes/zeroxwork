@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import UIkit from 'uikit';
 import {useAuth} from "../context/AuthContext";
-import {api} from "../services/axios-setup"; // Ensure UIkit is installed
+import {api} from "../services/axios-setup";
+import {Link} from "react-router-dom"; // Ensure UIkit is installed
 
 const Login: React.FC = () => {
     const { login } = useAuth(); // Get the login function from the AuthContext
@@ -77,6 +78,7 @@ const Login: React.FC = () => {
                 </form>
                 {message && <p className="uk-text-danger">{message}</p>}
                 {message.indexOf("Email not verified") >= 0 && !sendingVerification ? <a onClick={sendVerificationMailAgain}>Send verification mail again</a> :null}
+                {message.indexOf("not exist") >= 0 ? <Link to={"/register"}>Register a new account</Link> :null}
             </div>
         </div>
     );
