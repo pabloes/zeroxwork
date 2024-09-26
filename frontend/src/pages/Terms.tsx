@@ -3,7 +3,6 @@ import React from 'react';
 const Terms: React.FC = () => {
     return (
         <div className="uk-container uk-margin-large-top uk-margin-large-bottom">
-            <h1>Terms and Conditions</h1>
             <p>
                 Welcome to ZEROxWORK. By using our services, you agree to be bound by the following Terms and Conditions.
                 If you do not agree with these terms, please do not use our services.

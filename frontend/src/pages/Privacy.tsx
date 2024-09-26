@@ -3,7 +3,6 @@ import React from 'react';
 const Privacy: React.FC = () => {
     return (
         <div className="uk-container uk-margin-large-top uk-margin-large-bottom">
-            <h1>Privacy Policy</h1>
             <p>
                 Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you use our services.
             </p>
