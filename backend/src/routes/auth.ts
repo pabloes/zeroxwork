@@ -38,27 +38,29 @@ router.post('/register', async (req, res) => {
             },
         });
 
-        // Create a verification token
-        const verificationToken = jwt.sign(
-            { userId: newUser.id },
-            JWT_SECRET,
-            { expiresIn: '6h' } // Token expires in 1 hour
-        );
+        await sendVerificationMail(newUser.id, email);
 
-        // Send verification email
-        const verificationUrl = `http://zeroxwork.com/verify?token=${verificationToken}`;
-        await sendMail(
-            email,
-            "ZEROxWORK email verification",
-            `<p>Please click on the following link to verify your account, the token expires in 6 hours:</p>
-                        <a href="${verificationUrl}">Verify Email</a>`
-        );
         res.json({ message: 'Registration successful! Please check your email to verify your account. The token expires in 6 hours.' });
     } catch (error) {
         console.error('Error during registration:', error);
         res.status(500).json({ message: 'Internal server error. Please try again later.' });
     }
 });
+
+async function sendVerificationMail(userId, email){
+    const verificationToken = jwt.sign(
+        { userId },
+        JWT_SECRET,
+        { expiresIn: '6h' } // Token expires in 1 hour
+    );
+    const verificationUrl = `https://zeroxwork.com/verify?token=${verificationToken}`;
+    await sendMail(
+        email,
+        "ZEROxWORK email verification",
+        `<p>Please click on the following link to verify your account, the token expires in 6 hours:</p>
+                        <a href="${verificationUrl}">Verify Email</a>`
+    );
+}
 
 router.post('/login', async (req: Request, res: Response) => {
     const { email, password } = req.body;
@@ -73,7 +75,7 @@ router.post('/login', async (req: Request, res: Response) => {
         if (!user) {
             return res.status(401).json({ error: 'Invalid email or password.' });
         }else if(!user.verified){
-            return res.status(403).json({ error: 'Email not verified. Look your mail inbox.' });
+            return res.status(403).json({ error: 'Email not verified. Look your mail inbox.', userId:user.id });
         }
 
         // Verificar que la contraseña sea correcta con argon2
@@ -103,6 +105,15 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
+router.post('/send-verification-mail', async(req,res)=>{
+    const {email, userId} = req.body;
+    try {
+        await sendVerificationMail(userId, email);
+        return res.send({ok:true});
+    }catch(error){
+        return res.status(400).json({ message: 'Something wrong happened.' });
+    }
+});
 
 router.post('/verify', async (req, res) => {
     const { token } = req.body;

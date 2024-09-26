@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import UIkit from 'uikit';
-import {useAuth} from "../context/AuthContext"; // Ensure UIkit is installed
+import {useAuth} from "../context/AuthContext";
+import {api} from "../services/axios-setup"; // Ensure UIkit is installed
 
 const Login: React.FC = () => {
     const { login } = useAuth(); // Get the login function from the AuthContext
     const [email, setEmail] = useState('');
+    const [userId, setUserId] = useState(0);
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
     const [message, setMessage] = useState('');
+    const [sendingVerification, setSendingVerification] = useState(false);
 
     const handleLoginSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -18,6 +21,9 @@ const Login: React.FC = () => {
             await login(email, password);
             window.location.href = '/';
         } catch (error: any) {
+            if(error.response.data.userId){
+                setUserId(error.response.data.userId)
+            }
             const errorMessage = error?.response?.data?.error || 'Error logging in.';
             setMessage(errorMessage);
             UIkit.notification({ message: errorMessage, status: 'danger' });
@@ -25,6 +31,14 @@ const Login: React.FC = () => {
             setIsSubmitting(false); // Deactivate loading state
         }
     };
+    async function sendVerificationMailAgain(){
+        setSendingVerification(true);
+        await api.post(`/auth/send-verification-mail`, {
+            userId,
+            email
+        });
+        UIkit.notification({message:"Verification mail sent", status:"warning"})
+    }
 
     return (
         <div className="uk-section uk-section-small">
@@ -62,6 +76,7 @@ const Login: React.FC = () => {
                     </button>
                 </form>
                 {message && <p className="uk-text-danger">{message}</p>}
+                {message.indexOf("Email not verified") >= 0 && !sendingVerification ? <a onClick={sendVerificationMailAgain}>Send verification mail again</a> :null}
             </div>
         </div>
     );
