@@ -1,25 +1,48 @@
 import { Router, Request, Response } from 'express';
-import fs, {writeFile, writeFileSync} from 'fs';
-import path from 'path';
-import axios, {AxiosRequestConfig} from 'axios';
-import { fileTypeFromBuffer } from 'file-type';
 import { verifyToken } from '../middleware/authMiddleware';
-import rateLimit from 'express-rate-limit';
-import {sanitizeFileName} from "../services/sanitize";
-import {scanFileWithVirusTotal} from "../services/virustotal";
-import {fileURLToPath} from "url";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const router = Router();
-import * as crypto from "crypto";
 import {prisma} from "../db";
-import {sleep} from "../services/sleep.ts"
+
 
 router.get('/quota', verifyToken, async (req: Request, res: Response) => {
     try {
         res.json(await getUserQuota(req.user.id));
     } catch (error) {
         res.status(500).json({ message: 'Error fetching quota information', error: error.message });
+    }
+});
+
+router.post('/set-default-name', verifyToken, async (req: Request, res: Response) => {
+    const { nameId } = req.body;
+    const userId = req.user.id;
+
+    try {
+        // Check if the nameId is valid and belongs to the user's wallet
+        const name = await prisma.walletDecentralandNames.findFirst({
+            where: {
+                id: nameId,
+                wallet: {
+                    userId: userId,
+                },
+            },
+        });
+
+        if (!name) {
+            return res.status(404).json({ message: 'Name not found or does not belong to the user.' });
+        }
+
+        // Update user's defaultNameId
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                defaultNameId: nameId,
+            },
+        });
+
+        return res.json({ message: 'Default name updated successfully.' });
+    } catch (error) {
+        console.error('Error setting default name:', error);
+        return res.status(500).json({ message: 'Error setting default name', error: error.message });
     }
 });
 

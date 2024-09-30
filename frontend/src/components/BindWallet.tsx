@@ -4,6 +4,7 @@ import { api } from '../services/axios-setup';
 import 'uikit/dist/css/uikit.min.css';
 import ConfirmActionModal from "./ConfirmActionModal";
 import UIkit from "uikit";
+
 // Define props interface
 interface BindWalletProps {
     onAddWallet: () => void;
@@ -16,10 +17,11 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
     const { disconnect } = useDisconnect();
     const { signMessage, data, isPending, isError } = useSignMessage();
     const [showDeleteWalletModal, setShowDeleteWalletModal] = useState<boolean>(false);
-    const [walletToDelete, setWalletToDelete] = useState<any | null>(null); // Cambiar a objeto para almacenar la imagen completa
+    const [walletToDelete, setWalletToDelete] = useState<any | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [message] = useState(`Timestamp:${Date.now()}:Binding wallet`);
-    const [wallets, setWallets] = useState<any[]>([]); // Estado para las wallets vinculadas
+    const [wallets, setWallets] = useState<any[]>([]);
+    const [defaultIdentity, setDefaultIdentity] = useState<string | null>(null); // New state for default identity
 
     useEffect(() => {
         if (data) {
@@ -38,25 +40,28 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
             fetchWallets();
         }
     }, [isConnected]);
+
     const handleDeleteWallet = async (address: string) => {
         try {
             await api.delete(`/wallet/${address}`);
             setWallets((prevImages) => prevImages.filter((wallet) => wallet.address !== address));
             UIkit.notification({ message: `Wallet removed`, status: 'success' });
-            if(onRemoveWallet) onRemoveWallet();
+            if (onRemoveWallet) onRemoveWallet();
         } catch (err) {
             setError('Failed to remove wallet.');
         }
     };
+
     const closeDeleteModal = () => {
         setShowDeleteWalletModal(false);
         setWalletToDelete(null);
     };
 
     const openDeleteWalletModal = (wallet: any) => {
-        setWalletToDelete(wallet); // Almacenar el objeto de la imagen completa
+        setWalletToDelete(wallet);
         setShowDeleteWalletModal(true);
     };
+
     const handleSignMessage = async () => {
         try {
             await signMessage({ message });
@@ -75,7 +80,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
             });
             await UIkit.notification('Wallet bound successfully!');
             await fetchWallets(); // Actualiza la lista de wallets después de vincular
-            if(onAddWallet) onAddWallet();
+            if (onAddWallet) onAddWallet();
         } catch (error) {
             console.error(error);
             alert('Failed to bind wallet');
@@ -84,15 +89,26 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
 
     const fetchWallets = async () => {
         try {
-            const response = await api.get('/wallet/wallets'); // Solicitud al endpoint para obtener las wallets
+            const response = await api.get('/wallet/wallets');
             setWallets(response.data);
         } catch (error) {
             console.error('Error fetching wallets:', error);
         }
     };
 
+    const setDefaultName = async (nameId: number) => {
+        try {
+            await api.post('/user/set-default-name', { nameId });
+            setDefaultIdentity(nameId.toString());
+            UIkit.notification({ message: `Default identity set`, status: 'success' });
+        } catch (error) {
+            console.error('Error setting default identity:', error);
+            UIkit.notification({ message: `Failed to set default identity`, status: 'danger' });
+        }
+    };
+
     return (
-        <div className="uk-container ">
+        <div className="uk-container">
             {!isConnected ? (
                 <button
                     className="uk-button uk-button-primary uk-margin-small-right"
@@ -126,7 +142,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                                 {wallets?.map((wallet) => (
                                     <li key={wallet.id}>
                                         <span className="uk-label uk-label-success">{wallet.address}</span>&nbsp;
-                                        <button className="uk-icon-button uk-border-circle uk-button-danger" uk-icon={'trash'} onClick={()=>openDeleteWalletModal(wallet)}></button>
+                                        <button className="uk-icon-button uk-border-circle uk-button-danger" uk-icon={'trash'} onClick={() => openDeleteWalletModal(wallet)}></button>
                                         <ConfirmActionModal
                                             show={showDeleteWalletModal}
                                             onClose={closeDeleteModal}
@@ -142,14 +158,19 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                                             wordToType="remove"
                                         />
                                         <p>
-                                            Decentraland names: {wallet.walletDecentralandNames?.map((nameNFT:any) => (
-                                            <span key={nameNFT.id}>
-                                                <span className="uk-badge">{nameNFT.name}</span>
-                                                <span>&nbsp;</span>
-                                            </span>
+                                            <label>Select Decentraland Digital Identity</label>: {wallet.walletDecentralandNames?.map((nameNFT: any) => (
+                                            <button
+                                                key={nameNFT.id}
+                                                className={`uk-button ${nameNFT.id == defaultIdentity ? 'uk-button-primary' : ''}`}
+                                                onClick={() => setDefaultName(nameNFT.id)}
+                                                style={{ cursor: 'pointer', marginRight: '5px' }}
+                                            >
+                                                {nameNFT.id}
+                                                d:{defaultIdentity}:d
+                                                    {nameNFT.name}
+                                                </button>
                                         ))}
                                         </p>
-
                                     </li>
                                 ))}
                             </ul>
@@ -157,7 +178,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                             <p>No wallets linked yet.</p>
                         )}
                     </div>
-                    {error && <p style={{color:"red"}}>{error}</p>}
+                    {error && <p style={{ color: "red" }}>{error}</p>}
                 </>
             )}
         </div>

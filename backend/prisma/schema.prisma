@@ -13,33 +13,44 @@ enum Role {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
-  password String
-  role     Role     @default(USER)
-  createdAt DateTime @default(now())
-  verified          Boolean  @default(false)
-  verificationCode  String?
-  updatedAt         DateTime @updatedAt
-  maxQuota          Int      @default(5242880)
-  extraQuota        Int      @default(0)
-  fileUploads       FileUpload[]
-  apiKeys           ApiKey[]
-  wallets           Wallet[]
-  articles          Article[]
+  id                 Int      @id @default(autoincrement())
+  email              String   @unique
+  password           String
+  role               Role     @default(USER)
+  createdAt          DateTime @default(now())
+  verified           Boolean  @default(false)
+  verificationCode   String?
+  updatedAt          DateTime @updatedAt
+  maxQuota           Int      @default(5242880)
+  extraQuota         Int      @default(0)
+  fileUploads        FileUpload[]
+  apiKeys            ApiKey[]
+  wallets            Wallet[]
+  articles           Article[]
+  defaultNameId      Int?     @unique // Mark this as unique for one-to-one relation
+  defaultName        WalletDecentralandNames? @relation(fields: [defaultNameId], references: [id]) // Relation to default Name
 
   @@map("users")
 }
 
 model Wallet {
-  id        Int     @id @default(autoincrement())
-  address   String  @unique
-  userId    Int
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                        Int     @id @default(autoincrement())
+  address                   String  @unique
+  userId                    Int
+  user                      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  walletDecentralandNames   WalletDecentralandNames[]
+}
+
+model WalletDecentralandNames {
+  id        Int      @id @default(autoincrement())
+  walletId  Int
+  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  walletDecentralandNames WalletDecentralandNames[]
-
+  user      User?    @relation
 }
 
 model FileUpload {
@@ -64,37 +75,28 @@ model FileUpload {
 
 model ApiKey {
   id          Int      @id @default(autoincrement())
-  key         String   @unique // API Key única
-  userId      Int      // Relación con el usuario
+  key         String   @unique
+  userId      Int
   createdAt   DateTime @default(now())
-  lastUsedAt  DateTime? // Última vez que se usó la API Key
+  lastUsedAt  DateTime?
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("api_keys")
 }
 
-model WalletDecentralandNames {
-  id        Int      @id @default(autoincrement())
-  walletId  Int
-  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Article {
   id        Int      @id @default(autoincrement())
-  title     String   // Título del artículo
-  content   String   // Contenido del artículo en formato Markdown
+  title     String
+  content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  userId    Int      // Relación con el usuario que creó el artículo
+  userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  thumbnail String?  // Nueva columna para almacenar la URL del thumbnail
-  published Boolean  @default(false)  // New field to mark whether the article is published
-  featured  Boolean  @default(false)  // New field to indicate if the article is featured
+  thumbnail String?
+  published Boolean  @default(false)
+  featured  Boolean  @default(false)
 
   @@index([userId])
-  @@map("articles")  // Cambia el nombre de la tabla si es necesario
+  @@map("articles")
 }
