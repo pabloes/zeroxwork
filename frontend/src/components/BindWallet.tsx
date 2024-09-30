@@ -3,6 +3,7 @@ import { useAccount, useConnect, useSignMessage, useDisconnect } from 'wagmi';
 import { api } from '../services/axios-setup';
 import 'uikit/dist/css/uikit.min.css';
 import UIkit from 'uikit';
+import ConfirmActionModal from './ConfirmActionModal'; // Import the confirmation modal
 import { useQuery } from '@tanstack/react-query'; // Import React Query
 
 interface BindWalletProps {
@@ -18,6 +19,8 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
     const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
     const [defaultIdentity, setDefaultIdentity] = useState<number | null>(null); // Store selected identity
     const [selectedName, setSelectedName] = useState<string | null>(null); // Store selected name
+    const [showDeleteWalletModal, setShowDeleteWalletModal] = useState<boolean>(false);
+    const [walletToDelete, setWalletToDelete] = useState<any | null>(null); // Wallet to be deleted
 
     // Fetch user information (default name, etc.)
     const { data: userInfo, isLoading: isLoadingUserInfo } = useQuery({
@@ -104,6 +107,37 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
         }
     };
 
+    const openDeleteWalletModal = (wallet: any) => {
+        setWalletToDelete(wallet);
+        setShowDeleteWalletModal(true);
+    };
+
+    const closeDeleteWalletModal = () => {
+        setShowDeleteWalletModal(false);
+        setWalletToDelete(null);
+    };
+
+    const handleDeleteWallet = async (walletAddress: string) => {
+        try {
+            await api.delete(`/wallet/${walletAddress}`);
+
+            // If the deleted wallet is the current selected wallet, clear the digital identity
+            if (walletAddress === selectedWallet) {
+                setSelectedWallet(null);
+                setSelectedName(null);
+                setDefaultIdentity(null);
+            }
+
+            refetchWallets(); // Refetch the wallets after deletion
+            UIkit.notification('Wallet removed successfully!', { status: 'success' });
+            if (onRemoveWallet) onRemoveWallet();
+        } catch (error) {
+            console.error('Failed to remove wallet', error);
+            UIkit.notification('Failed to remove wallet', { status: 'danger' });
+        }
+        closeDeleteWalletModal(); // Close the confirmation modal
+    };
+
     return (
         <div className="uk-container">
             {!isConnected ? (
@@ -137,8 +171,13 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                         ) : (
                             <ul className="uk-list uk-list-divider">
                                 {wallets?.map((wallet: any) => (
-                                    <li key={wallet.id} onClick={() => handleWalletSelect(wallet.address)}>
-                                        <span className="uk-label uk-label-success">{wallet.address}</span>&nbsp;
+                                    <li key={wallet.id}>
+                                        <span className="uk-label uk-label-success">{wallet.address}</span>
+                                        <button
+                                            className="uk-icon-button uk-border-circle uk-button-danger uk-margin-left"
+                                            uk-icon="trash"
+                                            onClick={() => openDeleteWalletModal(wallet)}
+                                        ></button>
                                         <p>
                                             <label>Select Decentraland Digital Identity</label>: {wallet.walletDecentralandNames?.map((nameNFT: any) => (
                                             <button
@@ -158,25 +197,39 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                     </div>
 
                     {/* Display the Decentraland avatar and selected name */}
-                    {selectedWallet && (
-                        <div className="uk-card uk-card-default uk-card-body uk-margin-top">
-                            <h3 className="uk-card-title">Digital Identity</h3>
-                            <div className="uk-flex uk-flex-middle">
+                    {selectedWallet && selectedName && (
+                        <div className="uk-card uk-card-default uk-card-body uk-margin-top uk-flex uk-flex-center uk-padding">
+                            <div className="uk-flex uk-flex-middle uk-flex-column uk-text-center">
+                                <h3 className="uk-card-title">Digital Identity</h3>
                                 {/* Avatar image */}
                                 {avatarUrl ? (
                                     <img
                                         src={avatarUrl}
                                         alt="Decentraland Avatar"
                                         className="uk-border-circle"
-                                        style={{ width: '100px', height: '100px' }}
+                                        style={{ width: '150px', height: '150px', marginBottom: '15px', border: '3px solid #e5e5e5' }}
                                     />
                                 ) : (
                                     <p>No avatar available</p>
                                 )}
                                 {/* Selected name */}
-                                <h2 className="uk-margin-left">{selectedName || 'No name selected'}</h2>
+                                <p className="uk-margin-top uk-text-large uk-text-bold">{selectedName}</p>
                             </div>
                         </div>
+                    )}
+
+                    {/* Confirmation Modal for Deleting Wallet */}
+                    {walletToDelete && (
+                        <ConfirmActionModal
+                            show={showDeleteWalletModal}
+                            onClose={closeDeleteWalletModal}
+                            onConfirm={() => handleDeleteWallet(walletToDelete.address)}
+                            title="Confirm Wallet Deletion"
+                            message="Are you sure you want to delete this wallet? This action cannot be undone."
+                            confirmButtonText="Delete"
+                            cancelButtonText="Cancel"
+                            wordToType="delete"
+                        />
                     )}
                 </>
             )}
