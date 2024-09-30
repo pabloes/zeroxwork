@@ -2,11 +2,14 @@ import React, { useState, useMemo } from 'react';
 import SimpleMDE from 'react-simplemde-editor';
 import 'easymde/dist/easymde.min.css';
 import { api } from '../../services/axios-setup'; // Import your Axios instance
+import {useNavigate} from 'react-router-dom';
+import UIkit from "uikit";
 
 const CreateArticle: React.FC = () => {
     const [title, setTitle] = useState<string>('');
     const [content, setContent] = useState<string>('');
     const [thumbnail, setThumbnail] = useState<string>(''); // Nuevo estado para la URL del thumbnail
+    const navigate = useNavigate();
 
     // Manejar el cambio en el contenido del artículo
     const handleContentChange = (value: string) => {
@@ -22,10 +25,12 @@ const CreateArticle: React.FC = () => {
                 content,
                 thumbnail, // Enviar también el thumbnail al backend
             });
-            alert('Article created successfully!');
+            debugger;
+            UIkit.notification(``, `success`)
+            navigate(`/view-article/${response.data.data.id}`)
         } catch (error) {
             console.error('Error creating article:', error);
-            alert('Error creating article');
+            UIkit.notification(`Error creating article`, `error`)
         }
     };
 

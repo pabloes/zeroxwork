@@ -29,6 +29,8 @@ const MyArticles: React.FC = () => {
     return (
         <div className="uk-container uk-margin-large-top">
             <h2>Your Articles</h2>
+            <Link to={`/create-article`}>Create new article</Link>
+            <br/>
             <div className="uk-grid-small uk-child-width-1-3@s uk-child-width-1-4@m uk-grid-match" data-uk-grid>
                 {articles.map(article => (
                     <div className="uk-flex uk-width-1-3@m uk-width-1-2@s" key={article.id}>

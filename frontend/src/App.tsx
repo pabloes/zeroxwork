@@ -38,7 +38,7 @@ function PrivateRoute({ children, ...rest }) {
     const { isAuthenticated, isAuthResolved } = useAuth();
     useEffect(()=>{
         if(isAuthResolved && isAuthenticated !== undefined && !isAuthenticated){
-            alert("You need to Register and Login to access this page" + typeof isAuthenticated)
+            alert("You need to Register and Login to access this page")
         }
     },[isAuthResolved])
     return (

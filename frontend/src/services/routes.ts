@@ -32,7 +32,7 @@ export const pageRoutes = [
     {RouteElement:Privacy, title:"Privacy Policy", path:"/privacy", props:{}},
 
     {RouteElement:CreateArticle, title:"Create a new post", path:"/create-article", props:{}, auth:true},
-    {RouteElement:ViewArticle, title:"", path:"/view-article/:id", props:{}, auth:true},
+    {RouteElement:ViewArticle, title:"", path:"/view-article/:id", props:{}, auth:false},
     {RouteElement:EditArticle, title:"", path:"/edit-article/:id", props:{}, auth:true},
     {RouteElement:MyArticles, title:"My articles", path:"/my-articles", props:{}, auth:true},
 ]
