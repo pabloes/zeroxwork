@@ -1,20 +1,48 @@
 import { Router } from 'express';
-import { prisma } from '../db';  // Asegúrate de tener la instancia de Prisma configurada
+import { prisma } from '../db';
+import {verifyToken} from "../middleware/authMiddleware";  // Asegúrate de tener la instancia de Prisma configurada
 const router = Router();
 
 // Crear un artículo
-router.post('/articles', async (req, res) => {
-    const { title, content } = req.body;
-    try {
+router.post('/articles', verifyToken, async (req, res) => {
+    const { title, content, thumbnail } = req.body;
+    const userId = req.user.id;
+
+    try {    // Validación básica
+        if (!title || !content) {
+            return res.status(400).json({ error: 'Title and content are required' });
+        }
+
         const article = await prisma.article.create({
             data: {
+                userId,
                 title,
                 content,
+                thumbnail: thumbnail || null, // Si el thumbnail es opcional
             },
         });
         res.status(201).json(article);
     } catch (error) {
         res.status(500).json({ message: 'Error creating article', error: error.message });
+    }
+});
+// Actualizar un artículo
+router.put('/articles/:id', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const { title, content,thumbnail } = req.body;
+    try {
+        if (!title || !content) {
+            return res.status(400).json({ error: 'Title and content are required' });
+        }
+        const updatedArticle = await prisma.article.update({
+            where: { id: Number(id) },
+            data: { title, content,
+                thumbnail: thumbnail || null, // Si el thumbnail es opcional
+            },
+        });
+        res.status(200).json(updatedArticle);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating article', error: error.message });
     }
 });
 
@@ -44,23 +72,10 @@ router.get('/articles/:id', async (req, res) => {
     }
 });
 
-// Actualizar un artículo
-router.put('/articles/:id', async (req, res) => {
-    const { id } = req.params;
-    const { title, content } = req.body;
-    try {
-        const updatedArticle = await prisma.article.update({
-            where: { id: Number(id) },
-            data: { title, content },
-        });
-        res.status(200).json(updatedArticle);
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating article', error: error.message });
-    }
-});
+
 
 // Eliminar un artículo
-router.delete('/articles/:id', async (req, res) => {
+router.delete('/articles/:id', verifyToken, async (req, res) => {
     const { id } = req.params;
     try {
         await prisma.article.delete({

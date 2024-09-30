@@ -36,3 +36,11 @@ html, body {
 #root {
   overflow: auto;
 }
+
+.markdown-body img {
+  width: 300px;
+  height: auto;
+  display: inline-block;
+  float: right;
+  margin-left: 20px;
+}

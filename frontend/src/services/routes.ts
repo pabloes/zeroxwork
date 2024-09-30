@@ -12,6 +12,7 @@ import Terms from "../pages/Terms";
 import Privacy from "../pages/Privacy";
 import CreateArticle from "../pages/Blog/create-article";
 import ViewArticle from "../pages/Blog/view-article";
+import EditArticle from "../pages/Blog/edit-article";
 
 export const pageRoutes = [
     {RouteElement:Home, title:`Welcome`, path:`/`, props:{}},
@@ -30,5 +31,6 @@ export const pageRoutes = [
     {RouteElement:Privacy, title:"Privacy Policy", path:"/privacy", props:{}},
 
     {RouteElement:CreateArticle, title:"Create a new post", path:"/create-article", props:{}, auth:true},
-    {RouteElement:ViewArticle, title:"View article", path:"/create-article", props:{}, auth:true},
+    {RouteElement:ViewArticle, title:"", path:"/view-article/:id", props:{}, auth:true},
+    {RouteElement:EditArticle, title:"", path:"/edit-article/:id", props:{}, auth:true},
 ]

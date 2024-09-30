@@ -13,6 +13,7 @@ import argon2 from 'argon2';
 import imageRoutes from './routes/image';
 import userRoutes from "./routes/user";
 import walletRoutes from "./routes/wallet";
+import blogRoutes from "./routes/blog";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -59,6 +60,7 @@ const run = async () => {
     app.use('/api/images', imageRoutes);
     app.use('/api/user', userRoutes);
     app.use('/api/wallet', walletRoutes);
+    app.use('/api/blog', blogRoutes);
 
     const port = process.env.PORT || 3000;
     console.log("Listening...")
