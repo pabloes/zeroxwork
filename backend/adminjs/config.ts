@@ -50,6 +50,30 @@ const options:AdminJSOptions =  {
                 model: getModelByName("ApiKey"),
                 client: prisma,
             },
+        },
+        {
+            resource: {
+                model: getModelByName("Article"),
+                client: prisma,
+            },
+        },
+        {
+            resource: {
+                model: getModelByName("FileUpload"),
+                client: prisma,
+            },
+        },
+        {
+            resource: {
+                model: getModelByName("Wallet"),
+                client: prisma,
+            },
+        },
+        {
+            resource: {
+                model: getModelByName("WalletDecentralandNames"),
+                client: prisma,
+            },
         }
     ],
     rootPath: '/admin',

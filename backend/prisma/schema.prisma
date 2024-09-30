@@ -92,6 +92,7 @@ model Article {
   userId    Int      // Relación con el usuario que creó el artículo
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   thumbnail String?  // Nueva columna para almacenar la URL del thumbnail
+  published Boolean  @default(false)  // New field to mark whether the article is published
 
   @@index([userId])
   @@map("articles")  // Cambia el nombre de la tabla si es necesario
