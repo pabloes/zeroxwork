@@ -11,29 +11,42 @@ const Header: React.FC = () => {
     };
 
     return (
-        <header className="uk-background-muted uk-padding">
-            <nav className="uk-navbar-container uk-navbar-transparent" uk-navbar="true">
+        <header className="uk-background-muted uk-padding-small">
+            <nav className="uk-navbar-container uk-navbar" uk-navbar="true">
                 <div className="uk-navbar-left">
+                    {/* Logo with link */}
                     <a href="/" className="uk-navbar-item uk-logo">
                         <img src={logo} alt="ZEROxWORK Logo" width="120" /> {/* Use imported logo */}
                     </a>
                 </div>
+
+                {/* Center Title */}
                 <div className="uk-navbar-center">
-                    <h1>{contextTitle}</h1>
+                    <h1 className="uk-visible@m">{contextTitle}</h1> {/* Hide title on mobile */}
                 </div>
+
+                {/* Right Side with Account Links */}
                 <div className="uk-navbar-right">
                     <ul className="uk-navbar-nav">
                         {isAuthenticated ? (
                             <>
-                                <li><Link to="/account">👤 My Account</Link></li>
-                                {/* Replace the logout link with a button */}
+                                {/* Dropdown for authenticated users */}
                                 <li>
-                                    <a
-                                        className="uk-button uk-button-link uk-text-danger"
-                                        onClick={handleLogout}
-                                    >
-                                        ⏏️ Logout
-                                    </a>
+                                    <a href="#">👤 My Account</a>
+                                    <div className="uk-navbar-dropdown">
+                                        <ul className="uk-nav uk-navbar-dropdown-nav">
+                                            <li><Link to="/account">Settings</Link></li>
+                                            <li className="uk-nav-divider"></li>
+                                            <li>
+                                                <a
+                                                    onClick={handleLogout}
+                                                    className="uk-text-danger"
+                                                >
+                                                    ⏏️ Logout
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </li>
                             </>
                         ) : (
@@ -45,6 +58,11 @@ const Header: React.FC = () => {
                     </ul>
                 </div>
             </nav>
+
+            {/* Page title on mobile view */}
+            <div className="uk-hidden@m uk-text-center uk-margin-small-top">
+                <h2>{contextTitle}</h2>
+            </div>
         </header>
     );
 };
