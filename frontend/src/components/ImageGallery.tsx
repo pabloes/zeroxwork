@@ -53,8 +53,8 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, onDelete }) => {
             {/* Render Images Based on View Type */}
             <div className={`image-gallery ${viewType}`}>
                 {images.map(image => (
-                    <Link to={`/uploaded-image-page/${image.sha256Hash}`}>
-                        <div key={image.id} className="image-item uk-box-shadow-hover-small">
+                    <Link key={image.id} to={`/uploaded-image-page/${image.sha256Hash}`}>
+                        <div className="image-item uk-box-shadow-hover-small">
                             <img src={image.fileUrl} alt={image.fileName} className="thumbnail" />
                             <div className="image-info">
                                 <button
