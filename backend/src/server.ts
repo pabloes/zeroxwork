@@ -23,7 +23,7 @@ const run = async () => {
     await initializeDb();
 
     const app = express();
-
+    app.set('trust proxy', 1);
     app.use(express.json());
     app.use(cors({
         allowedHeaders:['Content-Type', 'Authorization', "X-API-Key"]
