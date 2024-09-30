@@ -10,6 +10,8 @@ import ImageUploadedPage from "../pages/ImageUploadedPage";
 import VerifyEmail from "../pages/VerifyEmail";
 import Terms from "../pages/Terms";
 import Privacy from "../pages/Privacy";
+import CreateArticle from "../pages/Blog/create-article";
+import ViewArticle from "../pages/Blog/view-article";
 
 export const pageRoutes = [
     {RouteElement:Home, title:`Welcome`, path:`/`, props:{}},
@@ -23,6 +25,10 @@ export const pageRoutes = [
     {RouteElement:AccountPage, title:`Account`, path:`/account`, props:{}, auth:true},
     {RouteElement:ImageUploadedPage, title:`Uploaded image`, path: `/uploaded-image-page/:sha256`, props: {}, auth:true},
     {RouteElement:VerifyEmail, title:"Verify Email", path:"/verify", props:{}},
+
     {RouteElement:Terms, title:"Terms and Conditions", path:"/terms", props:{}},
     {RouteElement:Privacy, title:"Privacy Policy", path:"/privacy", props:{}},
+
+    {RouteElement:CreateArticle, title:"Create a new post", path:"/create-article", props:{}, auth:true},
+    {RouteElement:ViewArticle, title:"View article", path:"/create-article", props:{}, auth:true},
 ]
