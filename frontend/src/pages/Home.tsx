@@ -7,6 +7,8 @@ interface Article {
     title: string;
     thumbnail: string | null;  // Thumbnail is optional (nullable in your schema)
     createdAt: string;         // Use createdAt as the publication date
+    authorAddress?: string;
+    author?: string;
 }
 
 const HomeDashboard: React.FC = () => {
@@ -36,7 +38,15 @@ const HomeDashboard: React.FC = () => {
                                     {/* Overlay with title and publication date */}
                                     <div className="uk-overlay uk-overlay-primary uk-position-bottom uk-light">
                                         <h3 className="uk-card-title">{article.title}</h3>
-                                        <p className="uk-text-meta">Published on: {new Date(article.createdAt).toLocaleDateString()}</p>
+                                        <br/>
+                                        {article.authorAddress && <p className="uk-text-meta">
+                                            <img
+                                            src={`/api/user/decentraland-avatar/${article.authorAddress}`}
+                                            alt="Author Avatar"
+                                            className="uk-border-circle"
+                                            style={{ width: '32px', height: '32px', marginRight: '10px', float:"none", marginLeft:"6px" }}
+                                        />{article.author}  |  {new Date(article.createdAt).toLocaleDateString()}
+                                        </p> || null}
                                     </div>
                                 </div>
                             </div>

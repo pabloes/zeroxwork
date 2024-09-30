@@ -31,7 +31,12 @@ const ArticlePage: React.FC = () => {
                     <p className="uk-text-meta">
                         <b>Published on:&nbsp;</b>{new Date(article.createdAt).toLocaleDateString()}&nbsp;|&nbsp;
                         <b>Last update:&nbsp;</b>{new Date(article.updatedAt).toLocaleDateString()}&nbsp;|&nbsp;
-                        {/*<b>Author:</b>&nbsp;{article.author.name}*/}
+                        <b>Author:</b>&nbsp;<img
+                        src={`/api/user/decentraland-avatar/${article.authorAddress}`}
+                        alt="Author Avatar"
+                        className="uk-border-circle"
+                        style={{ width: '32px', height: '32px', marginRight: '10px', float:"none", marginLeft:"6px" }}
+                    />{article.author}
                     </p>
                     <PageTitle title={article.title}/>
                     <ReactMarkdown>{article.content}</ReactMarkdown>
