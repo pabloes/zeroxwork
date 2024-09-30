@@ -45,8 +45,7 @@ const UploadedImagePage: React.FC = () => {
     };
     return (
         <div>
-            <section className="uk-container">
-                <h2>Uploaded File Information</h2>
+            <section className="uk-section uk-container">
                 <div><button
                     className="uk-button uk-button-small uk-button-default uk-margin-left"
                     onClick={handleCopyUrl}

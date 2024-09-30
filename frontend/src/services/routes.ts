@@ -25,7 +25,7 @@ export const pageRoutes = [
     {RouteElement:OldBrainWallet, title:`(Old) Brain Wallet`, path:`/old-brain-wallet`, props:{}},
     {RouteElement:MyImagesPage, title:`My Images`, path:`/my-images`, props:{}, auth:true},
     {RouteElement:AccountPage, title:`Account`, path:`/account`, props:{}, auth:true},
-    {RouteElement:ImageUploadedPage, title:`Uploaded image`, path: `/uploaded-image-page/:sha256`, props: {}, auth:true},
+    {RouteElement:ImageUploadedPage, title:`Uploaded image information`, path: `/uploaded-image-page/:sha256`, props: {}, auth:true},
     {RouteElement:VerifyEmail, title:"Verify Email", path:"/verify", props:{}},
 
     {RouteElement:Terms, title:"Terms and Conditions", path:"/terms", props:{}},
