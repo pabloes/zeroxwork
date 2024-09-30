@@ -35,13 +35,13 @@ const Header: React.FC = () => {
                                     <a href="#">👤 My Account</a>
                                     <div className="uk-navbar-dropdown">
                                         <ul className="uk-nav uk-navbar-dropdown-nav">
-                                            <li><Link to="/account">Settings</Link></li>
+                                            <li><Link to="/my-articles">📝 My Articles</Link></li>
+                                            <li><Link to="/my-images">🖼️ My Images</Link></li> {/* New Links */}
+                                            <li className="uk-nav-divider"></li>
+                                            <li><Link to="/account">⚙️ Settings</Link></li>
                                             <li className="uk-nav-divider"></li>
                                             <li>
-                                                <a
-                                                    onClick={handleLogout}
-                                                    className="uk-text-danger"
-                                                >
+                                                <a onClick={handleLogout} className="uk-text-danger">
                                                     ⏏️ Logout
                                                 </a>
                                             </li>
