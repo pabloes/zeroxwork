@@ -1,43 +1,57 @@
 import React, { useState, useMemo } from 'react';
 import SimpleMDE from 'react-simplemde-editor';
 import 'easymde/dist/easymde.min.css';
+import { useNavigate } from 'react-router-dom';
+import UIkit from 'uikit';
+import { useMutation } from '@tanstack/react-query'; // Import React Query's useMutation
 import { api } from '../../services/axios-setup'; // Import your Axios instance
-import {useNavigate} from 'react-router-dom';
-import UIkit from "uikit";
+
+// Service function for creating a new article
+const createArticle = async (newArticle: { title: string; content: string; thumbnail: string }) => {
+    const response = await api.post('/blog/articles', newArticle);
+    return response.data;
+};
 
 const CreateArticle: React.FC = () => {
     const [title, setTitle] = useState<string>('');
     const [content, setContent] = useState<string>('');
-    const [thumbnail, setThumbnail] = useState<string>(''); // Nuevo estado para la URL del thumbnail
+    const [thumbnail, setThumbnail] = useState<string>(''); // State for thumbnail URL
     const navigate = useNavigate();
 
-    // Manejar el cambio en el contenido del artículo
+    // React Query mutation for creating an article
+    const mutation = useMutation({
+        mutationFn: createArticle,
+        onSuccess: (data) => {
+            console.log("data",data)
+            UIkit.notification('Article created successfully!', { status: 'success' });
+            navigate(`/view-article/${data.id}`); // Navigate to the created article
+        },
+        onError: (error) => {
+            console.log("error",error)
+            UIkit.notification('Error creating article.', { status: 'danger' });
+        }
+    });
+
+    // Handle article content change
     const handleContentChange = (value: string) => {
         setContent(value);
     };
 
-    // Manejar la subida del artículo
-    const handleSubmit = async (e: React.FormEvent) => {
+    // Handle form submission for creating an article
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const response = await api.post('/blog/articles', {
-                title,
-                content,
-                thumbnail, // Enviar también el thumbnail al backend
-            });
-            debugger;
-            UIkit.notification(``, `success`)
-            navigate(`/view-article/${response.data.data.id}`)
-        } catch (error) {
-            console.error('Error creating article:', error);
-            UIkit.notification(`Error creating article`, `error`)
-        }
+        // Trigger the mutation
+        mutation.mutate({
+            title,
+            content,
+            thumbnail
+        });
     };
 
     // Memoize the options for SimpleMDE to avoid losing focus
     const editorOptions = useMemo(() => {
         return {
-            placeholder: "Write your content...",
+            placeholder: 'Write your content...',
             spellChecker: false,
         } as SimpleMDE.Options;
     }, []);
@@ -68,19 +82,19 @@ const CreateArticle: React.FC = () => {
                             id="thumbnail"
                             type="url"
                             value={thumbnail}
-                            onChange={(e) => setThumbnail(e.target.value)} // Actualizar el estado del thumbnail
+                            onChange={(e) => setThumbnail(e.target.value)} // Update thumbnail state
                             placeholder="Enter image URL"
                         />
                     </div>
 
-                    {/* Mostrar la vista previa de la imagen si la URL es válida */}
+                    {/* Display thumbnail preview if valid URL is present */}
                     {thumbnail && (
                         <div className="uk-margin">
                             <img
                                 src={thumbnail}
                                 alt="Thumbnail preview"
                                 style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'cover' }}
-                                onError={() => setThumbnail('')} // Si la URL es inválida, limpiamos el estado del thumbnail
+                                onError={() => setThumbnail('')} // Clear thumbnail if URL is invalid
                             />
                         </div>
                     )}
@@ -98,8 +112,8 @@ const CreateArticle: React.FC = () => {
                 </div>
 
                 <div className="uk-margin">
-                    <button className="uk-button uk-button-primary" type="submit">
-                        Submit
+                    <button className="uk-button uk-button-primary" type="submit" disabled={mutation.isLoading}>
+                        {mutation.isLoading ? 'Submitting...' : 'Submit'}
                     </button>
                 </div>
             </form>
