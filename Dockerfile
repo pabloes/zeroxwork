@@ -46,6 +46,8 @@ RUN mkdir -p public/user-uploaded-images
 RUN chmod -R 755 public/user-uploaded-images
 RUN mkdir -p public/banned-images
 RUN chmod -R 755 public/banned-images
+RUN mkdir -p secret
+RUN chmod -R 755 secret
 
 # Run the backend's production start script and Prisma commands
 CMD npx prisma generate && npx prisma migrate deploy && npm run prod
