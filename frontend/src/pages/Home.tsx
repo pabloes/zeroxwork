@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'; // Assuming you're using React Router
-import { api } from '../services/axios-setup'; // Fixed the import path for Axios
+import { api } from '../services/axios-setup';
+import {useQuery} from "@tanstack/react-query"; // Fixed the import path for Axios
 
 interface Article {
     id: number;
@@ -10,22 +11,10 @@ interface Article {
 }
 
 const HomeDashboard: React.FC = () => {
-    const [articles, setArticles] = useState<Article[]>([]);
-
-    // Fetch articles on component mount
-    useEffect(() => {
-        const fetchArticles = async () => {
-            try {
-                const response = await api.get('/blog/articles');
-                setArticles(response.data);
-            } catch (error) {
-                console.error('Error fetching articles:', error);
-            }
-        };
-
-        fetchArticles();
-    }, []);
-
+    const { data: articles = [], isLoading, error } = useQuery({
+        queryKey: ['articles'],
+        queryFn: fetchArticles,
+    });
     return (
         <div className="uk-container uk-margin-large-top">
             <div className="uk-grid uk-flex-center" uk-grid="true">
@@ -58,6 +47,11 @@ const HomeDashboard: React.FC = () => {
             </div>
         </div>
     );
+
+    async function fetchArticles() {
+        const response = await api.get('/blog/articles');
+        return response.data;
+    }
 };
 
 export default HomeDashboard;
