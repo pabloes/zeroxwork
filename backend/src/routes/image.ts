@@ -218,7 +218,7 @@ async function uploadHttpHandler (req: Request, res: Response) {
     if (!req.file) {
         return res.status(400).json({message: 'No file uploaded'});
     }
-
+    let responseIsSent = false;
     try {
         const userId = req.user.id;
         const {usedQuota, maxQuota} = await getUserQuota(userId);
@@ -258,12 +258,7 @@ async function uploadHttpHandler (req: Request, res: Response) {
             }
         });
         console.log("sending response")
-        res.status(200).json({
-            message: 'File uploaded successfully and being processed',
-            sha256:sha256Hash,
-            filePageUrl,
-            fileUrl:`https://zeroxwork.com/api/images/user-uploaded-images/${fileName}`
-        });
+
         console.log("waiting analysis ...")
         const resolvedAnalysisData = await pollAnalysisStatus(analysisId, sha256Hash);
 
@@ -274,8 +269,9 @@ async function uploadHttpHandler (req: Request, res: Response) {
         const publicFilePath = path.join(publicFolder, fileName);
         ensureDirectoryExistence(publicFilePath);
         writeFileSync(publicFilePath, req.file.buffer);
-        console.log("copied")
+        console.log("copied, detecting with google vision AI")
         const [result] = await client.safeSearchDetection(req.file.buffer);
+        console.log("detected")
         const detections = result.safeSearchAnnotation;
 
         console.log('Safe search result:');
@@ -302,9 +298,16 @@ async function uploadHttpHandler (req: Request, res: Response) {
             //TODO move from public to banned
             await promisify(fs.rename)(publicFilePath, bannedFilePath);
             console.log(`Image ${sha256Hash} marked as banned due to inappropriate content.\n Moved from:${publicFilePath}\nto:${bannedFilePath}`);
-            return;
         }
+
+        res.status(200).json({
+            message: 'File uploaded successfully and being processed',
+            sha256:sha256Hash,
+            filePageUrl,
+            fileUrl:`https://zeroxwork.com/api/images/user-uploaded-images/${fileName}`
+        });
     } catch (error) {
+        console.log("error",error)
         res.status(500).json({message: 'Error uploading file', error: error.message});
     }
 }
