@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAccount, useConnect, useSignMessage, useDisconnect } from 'wagmi';
 import { api } from '../services/axios-setup';
 import 'uikit/dist/css/uikit.min.css';
-import ConfirmActionModal from "./ConfirmActionModal";
-import UIkit from "uikit";
+import UIkit from 'uikit';
+import { useQuery } from '@tanstack/react-query'; // Import React Query
 
-// Define props interface
 interface BindWalletProps {
     onAddWallet: () => void;
     onRemoveWallet: () => void;
@@ -15,95 +14,93 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
     const { address, isConnected } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
-    const { signMessage, data, isPending, isError } = useSignMessage();
-    const [showDeleteWalletModal, setShowDeleteWalletModal] = useState<boolean>(false);
-    const [walletToDelete, setWalletToDelete] = useState<any | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [message] = useState(`Timestamp:${Date.now()}:Binding wallet`);
-    const [wallets, setWallets] = useState<any[]>([]);
-    const [defaultIdentity, setDefaultIdentity] = useState<string | null>(null); // New state for default identity
+    const { signMessage, data, isPending } = useSignMessage();
+    const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
+    const [defaultIdentity, setDefaultIdentity] = useState<number | null>(null); // Store selected identity
+    const [selectedName, setSelectedName] = useState<string | null>(null); // Store selected name
 
+    // Fetch user information (default name, etc.)
+    const { data: userInfo, isLoading: isLoadingUserInfo } = useQuery({
+        queryKey: ['userInfo'],
+        queryFn: async () => {
+            const response = await api.get('/user/me'); // Fetch the user info from your backend
+            return response.data;
+        },
+        enabled: isConnected,
+    });
+
+    // Fetch wallets using useQuery
+    const { data: wallets, isLoading: isLoadingWallets, refetch: refetchWallets } = useQuery({
+        queryKey: ['wallets'],
+        queryFn: async () => {
+            const response = await api.get('/wallet/wallets');
+            return response.data;
+        },
+        enabled: isConnected,
+    });
+
+    // Set the default name and wallet when user info is available
+    useEffect(() => {
+        if (userInfo?.defaultName) {
+            setDefaultIdentity(userInfo.defaultName.id); // Set the default identity from user info
+            setSelectedName(userInfo.defaultName.name); // Set the default name
+            setSelectedWallet(userInfo.defaultName.walletAddress); // Set the wallet linked to the default name
+        }
+    }, [userInfo]);
+
+    // Fetch avatar for the selected wallet (directly as image URL)
+    const avatarUrl = selectedWallet ? `/api/user/decentraland-avatar/${selectedWallet}` : null;
+
+    // Bind wallet once the signature is available
     useEffect(() => {
         if (data) {
             bindWallet(data);
         }
     }, [data]);
 
-    useEffect(() => {
-        if (isError) {
-            console.error('Error signing message');
-        }
-    }, [isError]);
-
-    useEffect(() => {
-        if (isConnected) {
-            fetchWallets();
-        }
-    }, [isConnected]);
-
-    const handleDeleteWallet = async (address: string) => {
-        try {
-            await api.delete(`/wallet/${address}`);
-            setWallets((prevImages) => prevImages.filter((wallet) => wallet.address !== address));
-            UIkit.notification({ message: `Wallet removed`, status: 'success' });
-            if (onRemoveWallet) onRemoveWallet();
-        } catch (err) {
-            setError('Failed to remove wallet.');
-        }
-    };
-
-    const closeDeleteModal = () => {
-        setShowDeleteWalletModal(false);
-        setWalletToDelete(null);
-    };
-
-    const openDeleteWalletModal = (wallet: any) => {
-        setWalletToDelete(wallet);
-        setShowDeleteWalletModal(true);
-    };
-
     const handleSignMessage = async () => {
         try {
-            await signMessage({ message });
+            await signMessage({ message: 'Binding wallet' });
         } catch (error) {
-            console.error('Error initiating signature:', error);
+            console.error('Error signing message:', error);
         }
     };
 
     const bindWallet = async (signature: string) => {
         try {
             await api.post('wallet/bind', {
-                userId: 1, // ID del usuario logueado, cámbialo según sea necesario
+                userId: 1, // ID del usuario logueado
                 address,
                 signature,
-                message,
+                message: 'Binding wallet',
             });
             await UIkit.notification('Wallet bound successfully!');
-            await fetchWallets(); // Actualiza la lista de wallets después de vincular
+            refetchWallets(); // Refetch wallets after binding
             if (onAddWallet) onAddWallet();
         } catch (error) {
-            console.error(error);
-            alert('Failed to bind wallet');
+            console.error('Failed to bind wallet', error);
+            UIkit.notification('Failed to bind wallet', { status: 'danger' });
         }
     };
 
-    const fetchWallets = async () => {
-        try {
-            const response = await api.get('/wallet/wallets');
-            setWallets(response.data);
-        } catch (error) {
-            console.error('Error fetching wallets:', error);
-        }
+    const handleWalletSelect = (walletAddress: string) => {
+        setSelectedWallet(walletAddress); // Set the selected wallet
     };
 
-    const setDefaultName = async (nameId: number) => {
+    const setDefaultName = async (nameId: number, name: string, walletAddress: string) => {
         try {
+            // Save the selected default name to the backend
             await api.post('/user/set-default-name', { nameId });
-            setDefaultIdentity(nameId.toString());
-            UIkit.notification({ message: `Default identity set`, status: 'success' });
+
+            // Update the local state to reflect the new default name and wallet
+            setDefaultIdentity(nameId);
+            setSelectedName(name); // Update selected name
+            setSelectedWallet(walletAddress); // Update wallet
+
+            UIkit.notification('Default digital identity set successfully!', { status: 'success' });
         } catch (error) {
-            console.error('Error setting default identity:', error);
-            UIkit.notification({ message: `Failed to set default identity`, status: 'danger' });
+            console.error('Failed to set default name', error);
+            UIkit.notification('Failed to set default digital identity', { status: 'danger' });
         }
     };
 
@@ -120,9 +117,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                 <>
                     <div className="uk-card uk-card-default uk-card-body uk-margin-top">
                         <h3 className="uk-card-title">Account Details</h3>
-                        <p>
-                            Connected as <span className="uk-label">{address}</span>
-                        </p>
+                        <p>Connected as <span className="uk-label">{address}</span></p>
                         <button
                             className="uk-button uk-button-secondary uk-margin-small-right"
                             onClick={handleSignMessage}
@@ -137,48 +132,52 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
 
                     <div className="uk-card uk-card-default uk-card-body uk-margin-top">
                         <h3 className="uk-card-title">Linked Wallets</h3>
-                        {wallets.length > 0 ? (
+                        {isLoadingWallets ? (
+                            <p>Loading wallets...</p>
+                        ) : (
                             <ul className="uk-list uk-list-divider">
-                                {wallets?.map((wallet) => (
-                                    <li key={wallet.id}>
+                                {wallets?.map((wallet: any) => (
+                                    <li key={wallet.id} onClick={() => handleWalletSelect(wallet.address)}>
                                         <span className="uk-label uk-label-success">{wallet.address}</span>&nbsp;
-                                        <button className="uk-icon-button uk-border-circle uk-button-danger" uk-icon={'trash'} onClick={() => openDeleteWalletModal(wallet)}></button>
-                                        <ConfirmActionModal
-                                            show={showDeleteWalletModal}
-                                            onClose={closeDeleteModal}
-                                            onConfirm={() => {
-                                                if (walletToDelete) {
-                                                    handleDeleteWallet(walletToDelete.address);
-                                                }
-                                            }}
-                                            title="Confirm Removal"
-                                            message="Are you sure you want to remove this wallet?"
-                                            confirmButtonText="Delete"
-                                            cancelButtonText="Cancel"
-                                            wordToType="remove"
-                                        />
                                         <p>
                                             <label>Select Decentraland Digital Identity</label>: {wallet.walletDecentralandNames?.map((nameNFT: any) => (
                                             <button
                                                 key={nameNFT.id}
-                                                className={`uk-button ${nameNFT.id == defaultIdentity ? 'uk-button-primary' : ''}`}
-                                                onClick={() => setDefaultName(nameNFT.id)}
+                                                className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
+                                                onClick={() => setDefaultName(nameNFT.id, nameNFT.name, wallet.address)}
                                                 style={{ cursor: 'pointer', marginRight: '5px' }}
                                             >
-                                                {nameNFT.id}
-                                                d:{defaultIdentity}:d
-                                                    {nameNFT.name}
-                                                </button>
+                                                {nameNFT.name}
+                                            </button>
                                         ))}
                                         </p>
                                     </li>
                                 ))}
                             </ul>
-                        ) : (
-                            <p>No wallets linked yet.</p>
                         )}
                     </div>
-                    {error && <p style={{ color: "red" }}>{error}</p>}
+
+                    {/* Display the Decentraland avatar and selected name */}
+                    {selectedWallet && (
+                        <div className="uk-card uk-card-default uk-card-body uk-margin-top">
+                            <h3 className="uk-card-title">Digital Identity</h3>
+                            <div className="uk-flex uk-flex-middle">
+                                {/* Avatar image */}
+                                {avatarUrl ? (
+                                    <img
+                                        src={avatarUrl}
+                                        alt="Decentraland Avatar"
+                                        className="uk-border-circle"
+                                        style={{ width: '100px', height: '100px' }}
+                                    />
+                                ) : (
+                                    <p>No avatar available</p>
+                                )}
+                                {/* Selected name */}
+                                <h2 className="uk-margin-left">{selectedName || 'No name selected'}</h2>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
         </div>
