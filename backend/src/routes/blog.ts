@@ -50,7 +50,7 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
 // Obtener todos los artículos
 router.get('/articles', async (req, res) => {
     try {
-        const articles = await prisma.article.findMany();
+        const articles = await prisma.article.findMany({where:{published:true}});
         res.status(200).json(articles);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching articles', error: error.message });
@@ -61,7 +61,11 @@ router.get(`/my-articles`, verifyToken, async (req,res)=>{
         const articles = await prisma.article.findMany({
             where:{
                 userId:req.user.id
-            }
+            },
+            orderBy: [
+                { featured: 'desc' }, // Sort by featured first, with true values first
+                { createdAt: 'desc' }, // Optionally, sort by creation date next
+            ],
         });
         res.status(200).json(articles);
     } catch (error) {
