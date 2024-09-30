@@ -1,41 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom'; // Assuming you're using React Router
+import { useQuery } from '@tanstack/react-query'; // React Query for data fetching
 import { api } from '../../services/axios-setup'; // Axios instance for API requests
+
+// Service function to fetch user's articles
+const fetchMyArticles = async () => {
+    const response = await api.get('/blog/my-articles'); // Endpoint for user's articles
+    return response.data;
+};
 
 interface Article {
     id: number;
     title: string;
-    thumbnail: string | null;  // Thumbnail is optional (nullable in your schema)
-    createdAt: string;         // Use createdAt as the publication date
+    thumbnail: string | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
 const MyArticles: React.FC = () => {
-    const [articles, setArticles] = useState<Article[]>([]);
+    const { data: articles = [], isLoading, error } = useQuery({
+        queryKey: ['my-articles'],
+        queryFn: fetchMyArticles,
+    });
 
-    // Fetch articles created by the authenticated user
-    useEffect(() => {
-        const fetchMyArticles = async () => {
-            try {
-                const response = await api.get('/blog/my-articles'); // Assuming you have an endpoint for the user's articles
-                setArticles(response.data);
-            } catch (error) {
-                console.error('Error fetching articles:', error);
-            }
-        };
+    if (isLoading) {
+        return <div>Loading articles...</div>;
+    }
 
-        fetchMyArticles();
-    }, []);
+    if (error) {
+        return <div>Error fetching articles.</div>;
+    }
 
     return (
         <div className="uk-container uk-margin-large-top">
-            <h2>Your Articles</h2>
-            <Link to={`/create-article`}>Create new article</Link>
+            <div className="uk-flex uk-flex-between uk-flex-middle">
+                <Link to={`/create-article`} className="uk-button uk-button-primary">
+                    ✙ Create new article
+                </Link>
+            </div>
             <br/>
             <div className="uk-grid-small uk-child-width-1-3@s uk-child-width-1-4@m uk-grid-match" data-uk-grid>
                 {articles.map(article => (
                     <div className="uk-flex uk-width-1-3@m uk-width-1-2@s" key={article.id}>
                         <Link to={`/view-article/${article.id}`} className="uk-link-reset uk-flex-first">
-                            <div className="uk-card uk-card-default uk-card-hover">
+                            <div className="uk-card uk-card-hover">
                                 <div className="uk-cover-container">
                                     {article.thumbnail ? (
                                         <img
