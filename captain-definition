@@ -8,7 +8,7 @@
     },
     {
       "volumeName": "/home/pablo/ZeroxWork/.vision-api-credential.json",
-      "containerPath": "/usr/src/app/backend/secret/.vision-api-credential.json"
+      "containerPath": "/usr/src/app/backend/.vision-api-credential.json"
     }
   ]
 }
