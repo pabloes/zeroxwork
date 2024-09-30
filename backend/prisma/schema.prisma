@@ -25,7 +25,8 @@ model User {
   extraQuota        Int      @default(0)
   fileUploads       FileUpload[]
   apiKeys           ApiKey[]
-  wallets  Wallet[]
+  wallets           Wallet[]
+  articles          Article[]
 
   @@map("users")
 }
@@ -58,7 +59,7 @@ model FileUpload {
   @@index([userId])
   @@index([sha256Hash])
 
-  @@map("file_uploads") // Cambia el nombre de la tabla si es necesario
+  @@map("file_uploads")
 }
 
 model ApiKey {
@@ -70,7 +71,7 @@ model ApiKey {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@map("api_keys") // Cambia el nombre de la tabla si es necesario
+  @@map("api_keys")
 }
 
 model WalletDecentralandNames {
@@ -80,4 +81,17 @@ model WalletDecentralandNames {
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Article {
+  id        Int      @id @default(autoincrement())
+  title     String   // Título del artículo
+  content   String   // Contenido del artículo en formato Markdown
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int      // Relación con el usuario que creó el artículo
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("articles")  // Cambia el nombre de la tabla si es necesario
 }
