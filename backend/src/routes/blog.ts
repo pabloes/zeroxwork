@@ -26,6 +26,7 @@ router.post('/articles', verifyToken, async (req, res) => {
         res.status(500).json({ message: 'Error creating article', error: error.message });
     }
 });
+
 // Actualizar un artículo
 router.put('/articles/:id', verifyToken, async (req, res) => {
     const { id } = req.params;
@@ -55,7 +56,18 @@ router.get('/articles', async (req, res) => {
         res.status(500).json({ message: 'Error fetching articles', error: error.message });
     }
 });
-
+router.get(`/my-articles`, verifyToken, async (req,res)=>{
+    try {
+        const articles = await prisma.article.findMany({
+            where:{
+                userId:req.user.id
+            }
+        });
+        res.status(200).json(articles);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching articles', error: error.message });
+    }
+})
 // Obtener un artículo por ID
 router.get('/articles/:id', async (req, res) => {
     const { id } = req.params;
