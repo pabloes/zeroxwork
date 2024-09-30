@@ -4,8 +4,13 @@ import { api } from '../services/axios-setup';
 import 'uikit/dist/css/uikit.min.css';
 import ConfirmActionModal from "./ConfirmActionModal";
 import UIkit from "uikit";
+// Define props interface
+interface BindWalletProps {
+    onAddWallet: () => void;
+    onRemoveWallet: () => void;
+}
 
-const BindWallet: React.FC = ({onAddWallet, onRemoveWallet}) => {
+const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) => {
     const { address, isConnected } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
@@ -152,6 +157,7 @@ const BindWallet: React.FC = ({onAddWallet, onRemoveWallet}) => {
                             <p>No wallets linked yet.</p>
                         )}
                     </div>
+                    {error && <p style={{color:"red"}}>{error}</p>}
                 </>
             )}
         </div>

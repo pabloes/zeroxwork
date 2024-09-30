@@ -58,7 +58,7 @@ const EditArticle: React.FC = () => {
         return {
             placeholder: "Edit your content...",
             spellChecker: false,
-        } as SimpleMDE.Options;
+        };
     }, []);
 
     // Show loading state while fetching the article

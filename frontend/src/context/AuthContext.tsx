@@ -9,6 +9,7 @@ interface AuthContextType {
     logout: () => void;
     contextTitle:string;
     setContextTitle:Function;
+    isAuthResolved:boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

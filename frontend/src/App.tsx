@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {ReactNode, useEffect} from 'react';
 import { BrowserRouter as Router, Route, Routes,Navigate } from 'react-router-dom';
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -34,7 +34,7 @@ const App: React.FC = () => {
 
 export default App;
 
-function PrivateRoute({ children, ...rest }) {
+function PrivateRoute({ children }: { children: ReactNode }) {
     const { isAuthenticated, isAuthResolved } = useAuth();
     useEffect(()=>{
         if(isAuthResolved && isAuthenticated !== undefined && !isAuthenticated){

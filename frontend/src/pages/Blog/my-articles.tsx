@@ -42,7 +42,7 @@ const MyArticles: React.FC = () => {
         mutationFn: (articleId: number) => deleteArticle(articleId),
         onSuccess: () => {
             UIkit.notification('Article deleted successfully!', { status: 'success' });
-            queryClient.invalidateQueries(['my-articles']); // Invalidate and refetch the updated list
+            queryClient.invalidateQueries({ queryKey: ['my-articles'] }); // Corrected invalidateQueries call
         },
         onError: () => {
             UIkit.notification('Error deleting article.', { status: 'danger' });
@@ -85,7 +85,7 @@ const MyArticles: React.FC = () => {
             </div>
             <br/>
             <div className="uk-grid-small uk-child-width-1-3@s uk-child-width-1-4@m uk-grid-match" data-uk-grid>
-                {articles.map(article => (
+                {articles.map((article:Article) => (
                     <div className="uk-flex uk-width-1-3@m uk-width-1-2@s" key={article.id}>
                         <Link to={`/view-article/${article.id}`} className="uk-link-reset uk-flex-first">
                             <div className="uk-card uk-card-hover">

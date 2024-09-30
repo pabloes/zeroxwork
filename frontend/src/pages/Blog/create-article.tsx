@@ -18,19 +18,21 @@ const CreateArticle: React.FC = () => {
     const [thumbnail, setThumbnail] = useState<string>(''); // State for thumbnail URL
     const navigate = useNavigate();
 
-    // React Query mutation for creating an article
     const mutation = useMutation({
         mutationFn: createArticle,
         onSuccess: (data) => {
-            console.log("data",data)
+            console.log("data", data);
             UIkit.notification('Article created successfully!', { status: 'success' });
             navigate(`/view-article/${data.id}`); // Navigate to the created article
         },
         onError: (error) => {
-            console.log("error",error)
+            console.log("error", error);
             UIkit.notification('Error creating article.', { status: 'danger' });
-        }
+        },
     });
+
+// Instead of destructuring `isLoading`, destructure `status` from mutation
+    const { status } = mutation;
 
     // Handle article content change
     const handleContentChange = (value: string) => {
@@ -53,8 +55,10 @@ const CreateArticle: React.FC = () => {
         return {
             placeholder: 'Write your content...',
             spellChecker: false,
-        } as SimpleMDE.Options;
+        };
     }, []);
+// Check the status for loading state
+    const isLoading = status === 'pending';
 
     return (
         <div className="uk-container uk-margin-large-top">
@@ -112,8 +116,8 @@ const CreateArticle: React.FC = () => {
                 </div>
 
                 <div className="uk-margin">
-                    <button className="uk-button uk-button-primary" type="submit" disabled={mutation.isLoading}>
-                        {mutation.isLoading ? 'Submitting...' : 'Submit'}
+                    <button className="uk-button uk-button-primary" type="submit" disabled={isLoading}>
+                        {isLoading ? 'Submitting...' : 'Submit'}
                     </button>
                 </div>
             </form>

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import UIkit from 'uikit';
 import {formatFileSize} from "../services/format-file-size";
 import {api} from "../services/axios-setup";
-import {Link} from "react-router-dom";
 
 const AccountQuota: React.FC<any> = ({add = 0, changes = 0}) => {
     const [usedQuota, setUsedQuota] = useState<number>(0);

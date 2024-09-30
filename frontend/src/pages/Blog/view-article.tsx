@@ -1,4 +1,3 @@
-import React, {useEffect, useState} from 'react';
 import ReactMarkdown from 'react-markdown';
 import {api} from "../../services/axios-setup";
 import {useParams} from 'react-router-dom';
@@ -12,7 +11,7 @@ const ArticlePage: React.FC = () => {
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
     // Fetch the article using useQuery
-    const { data: article, isLoading, error } = useQuery({
+    const { data: article } = useQuery({
         queryKey: ['article', id], // Unique key based on the article ID
         queryFn: () => fetchArticleById(id as string), // Pass the id to the fetch function
     });
