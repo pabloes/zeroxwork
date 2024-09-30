@@ -34,11 +34,11 @@ const CreateArticle: React.FC = () => {
 // Instead of destructuring `isLoading`, destructure `status` from mutation
     const { status } = mutation;
 
-    const handleThumbnailError = (error)=>{
+/*    const handleThumbnailError = (error:any)=>{
         console.error(error);
         debugger;
         setThumbnail("")
-    }
+    }*/
 
     // Handle article content change
     const handleContentChange = (value: string) => {
