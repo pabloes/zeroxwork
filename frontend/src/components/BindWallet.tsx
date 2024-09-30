@@ -23,7 +23,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
     const [walletToDelete, setWalletToDelete] = useState<any | null>(null); // Wallet to be deleted
 
     // Fetch user information (default name, etc.)
-    const { data: userInfo, isLoading: isLoadingUserInfo } = useQuery({
+    const { data: userInfo } = useQuery({
         queryKey: ['userInfo'],
         queryFn: async () => {
             const response = await api.get('/user/me'); // Fetch the user info from your backend
@@ -84,10 +84,6 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
             console.error('Failed to bind wallet', error);
             UIkit.notification('Failed to bind wallet', { status: 'danger' });
         }
-    };
-
-    const handleWalletSelect = (walletAddress: string) => {
-        setSelectedWallet(walletAddress); // Set the selected wallet
     };
 
     const setDefaultName = async (nameId: number, name: string, walletAddress: string) => {
