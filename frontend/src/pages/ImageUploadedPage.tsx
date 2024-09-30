@@ -56,7 +56,7 @@ const UploadedImagePage: React.FC = () => {
                 <div><strong>Upload Date:</strong> {new Date(fileData.uploadDate).toLocaleString()}</div>
                 <div><strong>Status:</strong> {fileData.status}</div>
                 <div className={fileData.dangerous?"uk-alert-danger":""}><strong>Dangerous:</strong> {fileData.dangerous ? 'Yes' : 'No'}</div>
-
+                <div className={fileData.banned?"uk-alert-danger":""}><strong>Banned:</strong> {fileData.banned ? 'Yes' : 'No'}</div>
                 {fileData.dangerous ? (
                     <p style={{ color: 'red' }}>Warning: This file has been flagged as dangerous.</p>
                 ) : null}

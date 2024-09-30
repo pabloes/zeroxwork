@@ -35,13 +35,13 @@ const App: React.FC = () => {
 export default App;
 
 function PrivateRoute({ children, ...rest }) {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isAuthResolved } = useAuth();
     useEffect(()=>{
-        if(!isAuthenticated){
-            alert("You need to Register and Login to access this page")
+        if(isAuthResolved && isAuthenticated !== undefined && !isAuthenticated){
+            alert("You need to Register and Login to access this page" + typeof isAuthenticated)
         }
-    },[])
+    },[isAuthResolved])
     return (
-        isAuthenticated ? children : <Navigate to="/login" />
+        (isAuthenticated || !isAuthResolved) ? children : <Navigate to="/login" />
     );
 }

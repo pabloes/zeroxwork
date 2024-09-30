@@ -16,6 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<any>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [isAuthResolved, setIsAuthResolved] = useState<boolean>(false);
     const [contextTitle, setContextTitle] = useState<string>("")
     // Load user from localStorage if available
     useEffect(() => {
@@ -35,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 localStorage.removeItem('authToken'); // Remove invalid token
             }
         }
+        setIsAuthResolved(true);
     }, []);
 
     const login = async (email: string, password: string) => {
@@ -66,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated, login, logout, contextTitle, setContextTitle }}>
+        <AuthContext.Provider value={{ user, isAuthenticated, login, logout, contextTitle, setContextTitle, isAuthResolved }}>
             {children}
         </AuthContext.Provider>
     );

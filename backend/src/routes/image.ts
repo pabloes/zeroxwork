@@ -1,23 +1,28 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import fs, {writeFile, writeFileSync} from 'fs';
+import fs, { writeFileSync } from 'fs';
 import path from 'path';
-import axios, {AxiosRequestConfig} from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import { fileTypeFromBuffer } from 'file-type';
-import {authenticateApiKey, verifyToken} from '../middleware/authMiddleware';
+import { authenticateApiKey, verifyToken } from '../middleware/authMiddleware';
 import rateLimit from 'express-rate-limit';
-import {sanitizeFileName} from "../services/sanitize";
-import {scanFileWithVirusTotal} from "../services/virustotal";
-import {fileURLToPath} from "url";
+import { sanitizeFileName } from "../services/sanitize";
+import { scanFileWithVirusTotal } from "../services/virustotal";
+import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const router = Router();
 import * as crypto from "crypto";
-import {prisma} from "../db";
-import {sleep} from "../services/sleep.ts"
-import {getUserQuota} from "./user";
+import { prisma } from "../db";
+import { sleep } from "../services/sleep.ts"
+import { getUserQuota } from "./user";
+import { ImageAnnotatorClient } from '@google-cloud/vision';
+import {promisify} from "util";
 
-// Configure multer for in-memory storage to validate and scan files
+// Configure Google Cloud Vision Client
+const client = new ImageAnnotatorClient();
+
+// Configure multer for in-memory storage
 const storage = multer.memoryStorage();
 const calculateSHA256 = (fileBuffer: Buffer): string => {
     return crypto.createHash('sha256').update(fileBuffer).digest('hex');
@@ -174,7 +179,7 @@ router.get('/file-status/:sha256', async (req: Request, res: Response) => {
     }
 });
 
-const pollAnalysisStatus = async (analysisId: string, retries: number = 60, delay: number = 10000): Promise<any> => {
+const pollAnalysisStatus = async (analysisId: string, sha256Hash:string, retries: number = 60, delay: number = 10000): Promise<any> => {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await axios.get(`https://www.virustotal.com/api/v3/analyses/${analysisId}`, {
@@ -186,6 +191,14 @@ const pollAnalysisStatus = async (analysisId: string, retries: number = 60, dela
             const status = response.data.data.attributes.status;
 
             if (status === 'completed') {
+                const stats = response.data.data.attributes.stats;
+                await prisma.fileUpload.update({
+                    where: { sha256Hash: sha256Hash },
+                    data: {
+                        status: 'completed',
+                        dangerous: !!(stats.malicious || stats.suspicious || 0)
+                    }
+                });
                 return response.data.data;
             }
 
@@ -196,31 +209,6 @@ const pollAnalysisStatus = async (analysisId: string, retries: number = 60, dela
     }
 
     throw new Error('Analysis did not complete in time.');
-};
-
-const analyzeFileResult = async (analysisId: string, sha256Hash: string) => {
-    try {
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        const response = await axios.get(`https://www.virustotal.com/api/v3/analyses/${analysisId}`, {
-            headers: { 'x-apikey': process.env.VIRUS_TOTAL_KEY! }
-        } as AxiosRequestConfig);
-
-        const analysisData = response.data.data;
-        const status = analysisData.attributes.status;
-
-        if (status === 'completed') {
-            const stats = analysisData.attributes.stats;
-            await prisma.fileUpload.update({
-                where: { sha256Hash: sha256Hash },
-                data: {
-                    status: 'completed',
-                    dangerous: !!(stats.malicious || stats.suspicious || 0)
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Error analyzing file result:', error.message);
-    }
 };
 
 
@@ -276,19 +264,46 @@ async function uploadHttpHandler (req: Request, res: Response) {
             filePageUrl,
             fileUrl:`https://zeroxwork.com/api/images/user-uploaded-images/${fileName}`
         });
-        console.log("starting analysis ...")
-        await analyzeFileResult(analysisId, sha256Hash);
         console.log("waiting analysis ...")
-        await sleep(10000);
+        const resolvedAnalysisData = await pollAnalysisStatus(analysisId, sha256Hash);
 
-        await pollAnalysisStatus(analysisId);
         //TODO copy file to the folder
+        console.log("resolvedAnalysisData",resolvedAnalysisData)
         console.log("copy file to public folder")
         const publicFolder = path.join(__dirname, '../../public/user-uploaded-images');
         const publicFilePath = path.join(publicFolder, fileName);
         ensureDirectoryExistence(publicFilePath);
         writeFileSync(publicFilePath, req.file.buffer);
         console.log("copied")
+        const [result] = await client.safeSearchDetection(req.file.buffer);
+        const detections = result.safeSearchAnnotation;
+
+        console.log('Safe search result:');
+        console.log(`Adult: ${detections.adult}`);
+        console.log(`Medical: ${detections.medical}`);
+        console.log(`Spoof: ${detections.spoof}`);
+        console.log(`Violence: ${detections.violence}`);
+        console.log(`Racy: ${detections.racy}`);
+
+        // Check if the image contains inappropriate content
+        if (
+            detections.adult === 'LIKELY' || detections.adult === 'VERY_LIKELY' ||
+            detections.violence === 'LIKELY' || detections.violence === 'VERY_LIKELY' ||
+            detections.racy === 'LIKELY' || detections.racy === 'VERY_LIKELY'
+        ) {
+            // Update database to mark image as banned
+            await prisma.fileUpload.update({
+                where: { sha256Hash },
+                data: { banned: true }
+            });
+            const bannedFolder = path.join(__dirname, '../../public/banned-images');
+            const bannedFilePath =  path.join(bannedFolder, fileName);
+            ensureDirectoryExistence(bannedFilePath);
+            //TODO move from public to banned
+            await promisify(fs.rename)(publicFilePath, bannedFilePath);
+            console.log(`Image ${sha256Hash} marked as banned due to inappropriate content.\n Moved from:${publicFilePath}\nto:${bannedFilePath}`);
+            return;
+        }
     } catch (error) {
         res.status(500).json({message: 'Error uploading file', error: error.message});
     }

@@ -53,6 +53,7 @@ model FileUpload {
   status     String   @default("pending")
   dangerous  Boolean  @default(false)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  banned     Boolean  @default(false)
 
   @@index([userId])
   @@index([sha256Hash])
