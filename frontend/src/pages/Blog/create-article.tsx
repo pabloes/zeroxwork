@@ -34,6 +34,12 @@ const CreateArticle: React.FC = () => {
 // Instead of destructuring `isLoading`, destructure `status` from mutation
     const { status } = mutation;
 
+    const handleThumbnailError = (error)=>{
+        console.error(error);
+        debugger;
+        setThumbnail("")
+    }
+
     // Handle article content change
     const handleContentChange = (value: string) => {
         setContent(value);
@@ -98,7 +104,9 @@ const CreateArticle: React.FC = () => {
                                 src={thumbnail}
                                 alt="Thumbnail preview"
                                 style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'cover' }}
-                                onError={() => setThumbnail('')} // Clear thumbnail if URL is invalid
+/*
+                                onError={handleThumbnailError} // Clear thumbnail if URL is invalid
+*/
                             />
                         </div>
                     )}

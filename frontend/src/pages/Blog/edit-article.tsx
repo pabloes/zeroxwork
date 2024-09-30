@@ -105,7 +105,9 @@ const EditArticle: React.FC = () => {
                                 src={thumbnail}
                                 alt="Thumbnail preview"
                                 style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'cover' }}
+/*
                                 onError={() => setThumbnail('')} // Clear thumbnail if the URL is invalid
+*/
                             />
                         </div>
                     )}
