@@ -161,7 +161,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                     </div>
 
                     <div className="uk-card uk-card-default uk-card-body uk-margin-top">
-                        <h3 className="uk-card-title">Linked Wallets</h3>
+                        <h3 className="uk-card-title">Linked Wallets with names</h3>
                         {isLoadingWallets ? (
                             <p>Loading wallets...</p>
                         ) : (
