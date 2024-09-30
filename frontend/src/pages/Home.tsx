@@ -1,36 +1,63 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom'; // Assuming you're using React Router
+import { api } from '../services/axios-setup'; // Fixed the import path for Axios
 
+interface Article {
+    id: number;
+    title: string;
+    thumbnail: string | null;  // Thumbnail is optional (nullable in your schema)
+    createdAt: string;         // Use createdAt as the publication date
+}
 
-const Home: React.FC = () => {
-/*
-    const isLoggedIn = false; // Cambia esto por la lógica real de autenticación
-*/
+const HomeDashboard: React.FC = () => {
+    const [articles, setArticles] = useState<Article[]>([]);
+
+    // Fetch articles on component mount
+    useEffect(() => {
+        const fetchArticles = async () => {
+            try {
+                const response = await api.get('/blog/articles');
+                setArticles(response.data);
+            } catch (error) {
+                console.error('Error fetching articles:', error);
+            }
+        };
+
+        fetchArticles();
+    }, []);
 
     return (
-        <>
-            <div className="uk-section uk-section-large uk-text-center">
+        <div className="uk-container uk-margin-large-top">
+            <div className="uk-grid uk-flex-center" uk-grid="true">
+                {articles.map(article => (
+                    <div className="uk-flex uk-width-1-2@m uk-width-1-2@s" key={article.id}>
+                        <Link to={`/view-article/${article.id}`} className="uk-link-reset uk-flex-first">
+                            <div className="uk-card uk-card-hover">
+                                <div className="uk-cover-container">
+                                    {article.thumbnail ? (
+                                        <img
+                                            src={article.thumbnail}
+                                            alt={article.title}
+                                            data-uk-cover
+                                        />
+                                    ) : (
+                                        <div className="uk-placeholder">No image available</div>
+                                    )}
+                                    <canvas width="600" height="400"></canvas> {/* Placeholder for aspect ratio */}
 
-                <div className="uk-container uk-text-center">
-                    <Link to={"/brain-wallet"}>🧠 Brain wallet generator</Link>
-                </div>
-                <br/>
-                <div className="uk-container uk-text-center">
-                    <Link to={"/image-upload"}>🏞️ Public Image upload</Link>
-                </div>
-                <br/>
-          {/*      <div className="uk-container">
-                    <h1 className="uk-heading-line"><span>Deploy your server in easy steps!</span></h1>
-                    <p>With our service, you can deploy and publish your server, fully synced with your GitHub repository, in just a few clicks.</p>
-                    {isLoggedIn ? (
-                        <Link to="/manage-servers" className="uk-button uk-button-primary">Manage Your Servers</Link>
-                    ) : (
-                        <Link to="/register" className="uk-button uk-button-primary">Register for Free</Link>
-                    )}
-                </div>*/}
+                                    {/* Overlay with title and publication date */}
+                                    <div className="uk-overlay uk-overlay-primary uk-position-bottom uk-light">
+                                        <h3 className="uk-card-title">{article.title}</h3>
+                                        <p className="uk-text-meta">Published on: {new Date(article.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Link>
+                    </div>
+                ))}
             </div>
-        </>
+        </div>
     );
 };
 
-export default Home;
+export default HomeDashboard;

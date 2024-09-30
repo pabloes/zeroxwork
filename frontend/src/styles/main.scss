@@ -44,3 +44,11 @@ html, body {
   float: right;
   margin-left: 20px;
 }
+.uk-overlay-primary {
+  background-color: rgba(0, 0, 0, 0.6); /* Black background with 60% opacity */
+}
+
+.uk-card-title,
+.uk-text-meta {
+  margin: 0; /* Reduce margin inside the overlay */
+}
