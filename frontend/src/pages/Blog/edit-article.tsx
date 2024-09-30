@@ -3,37 +3,44 @@ import SimpleMDE from 'react-simplemde-editor';
 import 'easymde/dist/easymde.min.css';
 import { useParams, useNavigate } from 'react-router-dom'; // Assuming you're using React Router
 import { api } from '../../services/axios-setup';
-import PageTitle from "../../components/PageTitle"; // Import your Axios instance
+import PageTitle from "../../components/PageTitle";
+import {useMutation, useQuery} from "@tanstack/react-query";
+import UIkit from "uikit"; // Import your Axios instance
 
 const EditArticle: React.FC = () => {
     const { id } = useParams<{ id: string }>(); // Get article ID from the URL
     const navigate = useNavigate();
-    const [article, setArticle] = useState({});
-    const [title, setTitle] = useState<string>('');
-    const [content, setContent] = useState<string>('');
-    const [thumbnail, setThumbnail] = useState<string>(''); // State for the thumbnail URL
-    const [isLoading, setIsLoading] = useState<boolean>(true); // Loading state for data fetch
 
-    // Fetch the existing article data on mount
+
+    // Fetch the article data using useQuery
+    const { data: article, isLoading } = useQuery({
+        queryKey: ['article', id],
+        queryFn: () => fetchArticleById(id as string),
+    });
+
+    // Mutation for updating the article
+    const mutation = useMutation({
+        mutationFn: (updatedArticle: any) => updateArticleById(id as string, updatedArticle),
+        onSuccess: () => {
+            UIkit.notification('Article updated successfully!', "success");
+            navigate(`/view-article/${id}`);
+        },
+        onError: () => {
+            UIkit.notification('Article updated successfully!', "error");
+        }
+    });
+    // Local state for the form inputs
+    const [title, setTitle] = useState<string>(article?.title || '');
+    const [content, setContent] = useState<string>(article?.content || '');
+    const [thumbnail, setThumbnail] = useState<string>(article?.thumbnail || '');
+    // UseEffect to populate the form when article data is available
     useEffect(() => {
-        const fetchArticle = async () => {
-            try {
-                const response = await api.get(`/blog/articles/${id}`);
-                const article = response.data;
-                setArticle(article);
-                setTitle(article.title);
-                setContent(article.content);
-                setThumbnail(article.thumbnail || ''); // Set the thumbnail if available
-                setIsLoading(false);
-            } catch (error) {
-                console.error('Error fetching article:', error);
-                alert('Error fetching article');
-                setIsLoading(false);
-            }
-        };
-
-        fetchArticle();
-    }, [id]);
+        if (article) {
+            setTitle(article.title);
+            setContent(article.content);
+            setThumbnail(article.thumbnail || '');
+        }
+    }, [article]);
 
     // Handle article content change
     const handleContentChange = (value: string) => {
@@ -41,20 +48,9 @@ const EditArticle: React.FC = () => {
     };
 
     // Handle article update
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            await api.put(`/blog/articles/${id}`, {
-                title,
-                content,
-                thumbnail, // Send thumbnail to backend
-            });
-            alert('Article updated successfully!');
-            navigate(`/view-article/${id}`); // Redirect to blog page or article list after update
-        } catch (error) {
-            console.error('Error updating article:', error);
-            alert('Error updating article');
-        }
+        mutation.mutate({ title, content, thumbnail }); // Trigger the mutation
     };
 
     // Memoize the options for SimpleMDE to avoid losing focus
@@ -72,7 +68,7 @@ const EditArticle: React.FC = () => {
 
     return (
         <div className="uk-container uk-margin-large-top">
-            <PageTitle title={`Edit post: ${article.title}`} />
+            <PageTitle title={`Edit post: ${article?.title}`} />
             <form className="uk-form-stacked" onSubmit={handleSubmit}>
                 <div className="uk-margin">
                     <label className="uk-form-label" htmlFor="title">Title:</label>
@@ -137,3 +133,14 @@ const EditArticle: React.FC = () => {
 };
 
 export default EditArticle;
+
+
+async function fetchArticleById (id: string) {
+    const response = await api.get(`/blog/articles/${id}`);
+    return response.data;
+}
+
+async function updateArticleById (id: string, data: any) {
+    const response = await api.put(`/blog/articles/${id}`, data);
+    return response.data;
+}

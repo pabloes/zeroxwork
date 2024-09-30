@@ -5,24 +5,18 @@ import {useParams} from 'react-router-dom';
 import PageTitle from "../../components/PageTitle";
 import {useAuth} from "../../context/AuthContext";
 import {useNavigate} from 'react-router-dom';
+import {useQuery} from "@tanstack/react-query";
 
 const ArticlePage: React.FC = () => {
-    const [article, setArticle] = useState<any>(null);
     const {user} = useAuth();
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
-    useEffect(() => {
-        const fetchArticle = async () => {
-            try {
-                const response = await api.get(`/blog/articles/${id}`); // Use api.get to fetch article
-                setArticle(response.data);
-            } catch (error) {
-                console.error('Error fetching article:', error);
-            }
-        };
+    // Fetch the article using useQuery
+    const { data: article, isLoading, error } = useQuery({
+        queryKey: ['article', id], // Unique key based on the article ID
+        queryFn: () => fetchArticleById(id as string), // Pass the id to the fetch function
+    });
 
-        fetchArticle();
-    }, [id]);
     const handleEditClick = ()=> {
         navigate(`/edit-article/${id}`)
     }
@@ -51,3 +45,8 @@ const ArticlePage: React.FC = () => {
 };
 
 export default ArticlePage;
+
+async function fetchArticleById (id: string) {
+    const response = await api.get(`/blog/articles/${id}`);
+    return response.data;
+}
