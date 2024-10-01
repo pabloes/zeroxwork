@@ -1,5 +1,10 @@
 # Use Node.js base image
 FROM node:20.17.0-alpine
+# Install ClamAV
+RUN apt-get update && \
+    apt-get install -y clamav clamav-daemon && \
+    freshclam
+
 
 # Set the working directory for the root folder (which includes frontend and backend folders)
 WORKDIR /usr/src/app
@@ -47,5 +52,4 @@ RUN chmod -R 755 public/user-uploaded-images
 RUN mkdir -p public/banned-images
 RUN chmod -R 755 public/banned-images
 
-# Run the backend's production start script and Prisma commands
-CMD npx prisma generate && npx prisma migrate deploy && npm run prod
+CMD service clamav-daemon start && npx prisma generate && npx prisma migrate deploy && npm run prod

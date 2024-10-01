@@ -47,11 +47,11 @@ const ImageUpload: React.FC = () => {
                 },
             });
 
-            UIkit.notification({ message: 'File uploaded and being processed.', status: 'success' });
+            UIkit.notification({ message: 'File uploaded and being processed.', status: 'success' , timeout:1000});
             // Redirection to the analysis page after 10 seconds
-            await sleep(8000);
-            UIkit.notification({ message: 'Redirecting...', status: 'success' });
-            await sleep(3000);
+            await sleep(1000);
+            UIkit.notification({ message: 'Redirecting...', status: 'success' , timeout:1000});
+
             navigate(`/uploaded-image-page/${response.data.sha256}`);
         } catch (error: any) {
             // Handle errors from the server, e.g., file being malicious
