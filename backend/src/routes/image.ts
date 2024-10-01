@@ -105,7 +105,8 @@ const uploadHttpHandler =  async (req: Request, res: Response) => {
                 fileSize: req.file.size,
                 md5Hash: calculateMD5(req.file.buffer),
                 sha256Hash,
-                status: 'completed'
+                status: 'completed',
+                banned:mustBan(detections)
             }
         });
 
