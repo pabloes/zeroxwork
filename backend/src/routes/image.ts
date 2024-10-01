@@ -24,7 +24,7 @@ const clamOptions = {
         //path:process.env.CLAMSCAN_BINARY, // Path to clamscan binary on your server
         db: null, // Path to a custom virus definition database
         scanArchives: true, // If true, scan archives (ex. zip, rar, tar, dmg, iso, etc...)
-        active: true // If true, this module will consider using the clamscan binary
+        active: false // If true, this module will consider using the clamscan binary
     },
     clamdscan: {
         socket: process.env.CLAM_AV_SOCKET_FILE||false, // Socket file for connecting via TCP
