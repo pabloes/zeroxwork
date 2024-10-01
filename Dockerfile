@@ -51,4 +51,5 @@ RUN mkdir -p public/banned-images
 RUN chmod -R 755 public/banned-images
 
 # Start ClamAV daemon and backend server
-CMD service clamav-daemon start && npx prisma generate && npx prisma migrate deploy && npm run prod
+CMD systemctl start clamav-daemon && npx prisma generate && npx prisma migrate deploy && npm run prod
+
