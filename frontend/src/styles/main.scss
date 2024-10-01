@@ -52,3 +52,17 @@ html, body {
 .uk-text-meta {
   margin: 0; /* Reduce margin inside the overlay */
 }
+
+/* Custom styles for reducing padding and margin in the overlay */
+.uk-overlay-primary {
+  padding: 10px 20px; /* Reduce padding inside the overlay */
+}
+
+.uk-card-title {
+  font-size: 1.2rem; /* Adjust font size if necessary */
+
+}
+
+.uk-text-meta {
+  font-size: 0.9rem; /* Adjust font size for the metadata */
+}

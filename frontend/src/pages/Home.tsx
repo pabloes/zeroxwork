@@ -38,15 +38,14 @@ const HomeDashboard: React.FC = () => {
                                     {/* Overlay with title and publication date */}
                                     <div className="uk-overlay uk-overlay-primary uk-position-bottom uk-light">
                                         <h3 className="uk-card-title">{article.title}</h3>
-                                        <br/>
-                                        {article.authorAddress && <p className="uk-text-meta">
-                                            <img
+                                        {article.authorAddress && <div className="uk-text-meta">
+                                        <img
                                             src={`/api/user/decentraland-avatar/${article.authorAddress}`}
                                             alt="Author Avatar"
                                             className="uk-border-circle"
-                                            style={{ width: '32px', height: '32px', marginRight: '10px', float:"none", marginLeft:"6px" }}
+                                            style={{ width: '32px', height: '32px', marginRight: '10px', float:"none" }}
                                         />{article.author}  |  {new Date(article.createdAt).toLocaleDateString()}
-                                        </p> || null}
+                                        </div> || null}
                                     </div>
                                 </div>
                             </div>
