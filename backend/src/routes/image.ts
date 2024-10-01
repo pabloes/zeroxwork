@@ -18,6 +18,21 @@ const client = new ImageAnnotatorClient();
 const calculateMD5 = (buffer: Buffer): string => {
     return crypto.createHash('md5').update(buffer).digest('hex');
 };
+// Function to move a file across different filesystems
+const moveFile = (src, dest) => {
+    return new Promise((resolve, reject) => {
+        // Copy the file to the destination
+        fs.copyFile(src, dest, (copyErr) => {
+            if (copyErr) return reject(copyErr);
+
+            // After copying, remove the original file
+            fs.unlink(src, (unlinkErr) => {
+                if (unlinkErr) return reject(unlinkErr);
+                resolve();
+            });
+        });
+    });
+};
 const clamOptions = {
     removeInfected:true,
     clamscan: {
@@ -96,7 +111,7 @@ const uploadHttpHandler =  async (req: Request, res: Response) => {
             const bannedFilePath =  path.join(bannedFolder, fileName);
             ensureDirectoryExistence(bannedFilePath);
             //move from public to banned
-            await promisify(fs.rename)(publicFilePath, bannedFilePath);
+            await moveFile(publicFilePath, bannedFilePath);
             console.log(`Image ${sha256Hash} marked as banned due to inappropriate content.\n Moved from:${publicFilePath}\nto:${bannedFilePath}`);
         }
         // Store file info in the database
