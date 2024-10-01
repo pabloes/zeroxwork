@@ -1,10 +1,10 @@
-# Use Node.js base image
+# Use Node.js Alpine base image
 FROM node:20.17.0-alpine
-# Install ClamAV
-RUN apt-get update && \
-    apt-get install -y clamav clamav-daemon && \
-    freshclam
 
+# Install ClamAV using apk (Alpine's package manager)
+RUN apk update && \
+    apk add clamav clamav-daemon && \
+    freshclam
 
 # Set the working directory for the root folder (which includes frontend and backend folders)
 WORKDIR /usr/src/app
@@ -22,11 +22,9 @@ COPY ./frontend/package.json ./frontend/package-lock.json ./
 # Install frontend dependencies
 RUN npm install
 
-
 # Move to backend folder and copy its files
 WORKDIR /usr/src/app/backend
 COPY ./backend/package.json ./backend/package-lock.json ./
-
 # Install backend dependencies
 RUN npm install
 
@@ -52,4 +50,5 @@ RUN chmod -R 755 public/user-uploaded-images
 RUN mkdir -p public/banned-images
 RUN chmod -R 755 public/banned-images
 
+# Start ClamAV daemon and backend server
 CMD service clamav-daemon start && npx prisma generate && npx prisma migrate deploy && npm run prod
