@@ -29,15 +29,16 @@ const clamOptions = {
     clamdscan: {
         socket: process.env.CLAM_AV_SOCKET_FILE||false, // Socket file for connecting via TCP
         host: process.env.CLAM_AV_HOST || false,
-        port: process.env.CLAM_AV_PORT && Number(process.env.CLAM_AV_PORT )|| false,
+        port: process.env.CLAM_AV_PORT ? Number(process.env.CLAM_AV_PORT ) : false,
         timeout: 60000,
         localFallback: false, // Use local preferred binary to scan if socket/tcp fails
+        active:true
       //  path: process.env.CLAMDSCAN_BINARY, // Path to the clamdscan binary on your server
     }
 } as NodeClam.Options;
 console.log("clamOptions",clamOptions);
 const clamscan = await (new NodeClam().init( clamOptions));
-
+console.log("clamscan connection is OK");
 const router = Router();
 const uploadLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute window
