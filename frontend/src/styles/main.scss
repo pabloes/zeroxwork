@@ -66,3 +66,6 @@ html, body {
 .uk-text-meta {
   font-size: 0.9rem; /* Adjust font size for the metadata */
 }
+.uk-card.markdown-body p {
+  word-break: break-word;
+}
