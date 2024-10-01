@@ -29,7 +29,7 @@ const clamOptions = {
     clamdscan: {
         socket: process.env.CLAM_AV_SOCKET_FILE||false, // Socket file for connecting via TCP
         host: process.env.CLAM_AV_HOST || false,
-        port: process.env.CLAM_AV_PORT || false,
+        port: process.env.CLAM_AV_PORT && Number(process.env.CLAM_AV_PORT )|| false,
         timeout: 60000,
         localFallback: false, // Use local preferred binary to scan if socket/tcp fails
       //  path: process.env.CLAMDSCAN_BINARY, // Path to the clamdscan binary on your server
