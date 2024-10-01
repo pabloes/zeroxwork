@@ -1,9 +1,11 @@
-# Use Node.js Alpine base image
-FROM node:20.17.0-alpine
+# Example for a Debian-based image like bullseye
 
-# Install ClamAV using apk (Alpine's package manager)
-RUN apk update && \
-    apk add clamav clamav-daemon && \
+# Use Node.js base image (Debian-based)
+FROM node:20-bullseye
+
+# Install ClamAV
+RUN apt-get update && \
+    apt-get install -y clamav clamav-daemon && \
     freshclam
 
 # Set the working directory for the root folder (which includes frontend and backend folders)
@@ -44,6 +46,7 @@ ENV NODE_ENV=production
 
 # Set the working directory to the backend folder to run the backend app
 WORKDIR /usr/src/app/backend
+
 # Create the public/user-uploaded-images directory and set permissions
 RUN mkdir -p public/user-uploaded-images
 RUN chmod -R 755 public/user-uploaded-images
@@ -51,5 +54,4 @@ RUN mkdir -p public/banned-images
 RUN chmod -R 755 public/banned-images
 
 # Start ClamAV daemon and backend server
-CMD npx prisma generate && npx prisma migrate deploy && npm run prod
-
+CMD /usr/sbin/clamd && npx prisma generate && npx prisma migrate deploy && npm run prod
