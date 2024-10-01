@@ -18,8 +18,7 @@ const client = new ImageAnnotatorClient();
 const calculateMD5 = (buffer: Buffer): string => {
     return crypto.createHash('md5').update(buffer).digest('hex');
 };
-
-const clamscan = await (new NodeClam().init({
+const clamOptions = {
     removeInfected:true,
     clamscan: {
         path:process.env.CLAMSCAN_BINARY, // Path to clamscan binary on your server
@@ -35,7 +34,9 @@ const clamscan = await (new NodeClam().init({
         localFallback: true, // Use local preferred binary to scan if socket/tcp fails
         path: process.env.CLAMDSCAN_BINARY, // Path to the clamdscan binary on your server
     }
-} as NodeClam.Options));
+} as NodeClam.Options;
+console.log("clamOptions",clamOptions);
+const clamscan = await (new NodeClam().init( clamOptions));
 
 const router = Router();
 const uploadLimiter = rateLimit({
