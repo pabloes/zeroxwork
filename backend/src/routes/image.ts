@@ -21,7 +21,7 @@ const calculateMD5 = (buffer: Buffer): string => {
 const clamOptions = {
     removeInfected:true,
     clamscan: {
-        path:process.env.CLAMSCAN_BINARY, // Path to clamscan binary on your server
+        //path:process.env.CLAMSCAN_BINARY, // Path to clamscan binary on your server
         db: null, // Path to a custom virus definition database
         scanArchives: true, // If true, scan archives (ex. zip, rar, tar, dmg, iso, etc...)
         active: true // If true, this module will consider using the clamscan binary
@@ -31,8 +31,8 @@ const clamOptions = {
         host: process.env.CLAM_AV_HOST || false,
         port: process.env.CLAM_AV_PORT || false,
         timeout: 60000,
-        localFallback: true, // Use local preferred binary to scan if socket/tcp fails
-        path: process.env.CLAMDSCAN_BINARY, // Path to the clamdscan binary on your server
+        localFallback: false, // Use local preferred binary to scan if socket/tcp fails
+      //  path: process.env.CLAMDSCAN_BINARY, // Path to the clamdscan binary on your server
     }
 } as NodeClam.Options;
 console.log("clamOptions",clamOptions);
