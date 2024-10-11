@@ -73,7 +73,7 @@ router.post('/login', async (req: Request, res: Response) => {
             include: {
                 wallets: {
                     include: {
-                        walletDecentralandNames: true
+                        walletNames: true
                     }
                 }
             }

@@ -106,7 +106,7 @@ router.post('/set-default-name', verifyToken, async (req: Request, res: Response
 
     try {
         // Check if the nameId is valid and belongs to the user's wallet
-        const name = await prisma.walletDecentralandNames.findFirst({
+        const name = await prisma.walletNames.findFirst({
             where: {
                 id: nameId,
                 wallet: {

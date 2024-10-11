@@ -26,7 +26,7 @@ router.post('/bind', verifyToken, async (req, res) => {
         include: {
             wallets: {
                 include: {
-                    walletDecentralandNames: true
+                    walletNames: true
                 }
             }
         }
@@ -43,7 +43,7 @@ router.get('/wallets', verifyToken, async (req, res) => {
         const userId = req.user.id; // Obtener el ID del usuario desde el token
         const wallets = await prisma.wallet.findMany({
             where: { userId },
-            include: { walletDecentralandNames:true }
+            include: { walletNames:true }
         });
         res.json(wallets);
     } catch (error) {
@@ -65,7 +65,7 @@ router.delete("/:address", verifyToken,async (req: Request, res: Response) => {
             include: {
                 wallets: {
                     include: {
-                        walletDecentralandNames: true
+                        walletNames: true
                     }
                 }
             }

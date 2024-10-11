@@ -71,7 +71,7 @@ const options:AdminJSOptions =  {
         },
         {
             resource: {
-                model: getModelByName("WalletDecentralandNames"),
+                model: getModelByName("WalletNames"),
                 client: prisma,
             },
         }

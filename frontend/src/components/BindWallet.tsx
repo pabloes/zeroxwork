@@ -175,7 +175,20 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                                             onClick={() => openDeleteWalletModal(wallet)}
                                         ></button>
                                         <p>
-                                            <label>Select Decentraland Digital Identity</label>: {wallet.walletDecentralandNames?.map((nameNFT: any) => (
+                                            <label><b>Select Digital Identity Name</b></label>
+                                            <br/><br/>
+                                            <label>Decentraland names:</label> {wallet.walletNames?.filter(w=>w.subdomain==="dcl").map((nameNFT: any) => (
+                                            <button
+                                                key={nameNFT.id}
+                                                className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
+                                                onClick={() => setDefaultName(nameNFT.id, nameNFT.name, wallet.address)}
+                                                style={{ cursor: 'pointer', marginRight: '5px' }}
+                                            >
+                                                {nameNFT.name}
+                                            </button>
+                                            ))}
+                                            <br/>
+                                            <label>Basenames:</label> {wallet.walletNames?.filter(w=>w.subdomain==="base").map((nameNFT: any) => (
                                             <button
                                                 key={nameNFT.id}
                                                 className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
