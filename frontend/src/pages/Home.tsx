@@ -42,7 +42,10 @@ const HomeDashboard: React.FC = () => {
                                         <h3 className="uk-card-title">{article.title}</h3>
                                         {article.authorAddress && <div className="uk-text-meta">
                                         <img
-                                            src={getNameAvatarImage({name:article.author, address:article.authorAddress})}
+                                            src={getNameAvatarImage({
+                                                name:article!.author as string,
+                                                address:article!.authorAddress as string
+                                            })}
                                             alt="Author Avatar"
                                             className="uk-border-circle"
                                             style={{ width: '32px', height: '32px', marginRight: '10px', float:"none" }}

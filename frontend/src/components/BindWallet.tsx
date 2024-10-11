@@ -7,7 +7,6 @@ import ConfirmActionModal from './ConfirmActionModal'; // Import the confirmatio
 import { useQuery } from '@tanstack/react-query';
 import {OnchainKitProvider} from "@coinbase/onchainkit";
 import {base} from "viem/chains";
-import {Avatar, Identity} from "@coinbase/onchainkit/identity";
 import {getNameAvatarImage} from "../services/get-name-avatar-image"; // Import React Query
 
 interface BindWalletProps {
@@ -54,9 +53,6 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
             setSelectedWallet(userInfo.defaultName.walletAddress); // Set the wallet linked to the default name
         }
     }, [userInfo]);
-
-    // Fetch avatar for the selected wallet (directly as image URL)
-    const avatarUrl = selectedWallet ? `/api/user/decentraland-avatar/${selectedWallet}` : null;
 
     // Bind wallet once the signature is available
     useEffect(() => {
@@ -185,7 +181,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                                                 <br/><br/>
                                                 <div className="uk-card uk-card-default">
                                                     <b >Decentraland names:</b>
-                                                    {wallet.walletNames?.filter(w=>w.subdomain==="dcl").map((nameNFT: any) => (
+                                                    {wallet.walletNames?.filter((w:any)=>w.subdomain==="dcl").map((nameNFT: any) => (
                                                     <button
                                                         key={nameNFT.id}
                                                         className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
@@ -195,11 +191,11 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                                                         {nameNFT.name}
                                                     </button>
                                                     ))}
-                                                    {wallet.walletNames?.filter(w=>w.subdomain==="dcl").length === 0 && <span> No Decentraland name found, get your name at <a href={"https://decentraland.org/marketplace/names/claim"}>https://decentraland.org/marketplace/names/claim</a></span>}
+                                                    {wallet.walletNames?.filter((w:any)=>w.subdomain==="dcl").length === 0 && <span> No Decentraland name found, get your name at <a href={"https://decentraland.org/marketplace/names/claim"}>https://decentraland.org/marketplace/names/claim</a></span>}
                                                 </div>
                                                 <br/>
                                                 <div className="uk-card uk-card-default">
-                                                    <b>Basenames:</b> {wallet.walletNames?.filter(w => w.subdomain === "base").map((nameNFT: any) => (
+                                                    <b>Basenames:</b> {wallet.walletNames?.filter((w:any) => w.subdomain === "base").map((nameNFT: any) => (
                                                     <button
                                                         key={nameNFT.id}
                                                         className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
@@ -209,7 +205,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                                                         {nameNFT.name}
                                                     </button>
                                                 ))}
-                                                    {wallet.walletNames?.filter(w=>w.subdomain==="dcl").length === 0 && <span> No Basenames found, get your name at <a href={"https://www.base.org/names"}>https://www.base.org/names</a></span>}
+                                                    {wallet.walletNames?.filter((w:any)=>w.subdomain==="dcl").length === 0 && <span> No Basenames found, get your name at <a href={"https://www.base.org/names"}>https://www.base.org/names</a></span>}
                                                 </div>
                                             </div>
 
@@ -220,7 +216,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                             </ul>
                         )}
                     </div>
-                    <OnchainKitProvider chain={base}>
+                    <OnchainKitProvider chain={base as any}>
                         {/* Display the Decentraland avatar and selected name */}
                         {selectedWallet && selectedName && (
                             <div className="uk-card uk-card-default uk-card-body uk-margin-top uk-flex uk-flex-center uk-padding">

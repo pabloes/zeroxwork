@@ -2,15 +2,10 @@ import AccountQuota from "../components/AccountQuota";
 import BindWallet from "../components/BindWallet";
 import {useState} from "react";
 import {Link} from "react-router-dom";
-import {OnchainKitProvider} from "@coinbase/onchainkit";
-import {base} from "viem/chains";
-import { Avatar, Identity, Name, Badge, Address } from '@coinbase/onchainkit/identity';
-import {useAccount} from "wagmi";
 
 
 const AccountPage: React.FC = () => {
     const [changes, setChanges] = useState(0);
-    const { address, isConnected } = useAccount();
 
     return (
 
