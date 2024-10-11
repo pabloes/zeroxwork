@@ -175,29 +175,40 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                                             onClick={() => openDeleteWalletModal(wallet)}
                                         ></button>
                                         <p>
-                                            <label><b>Select Digital Identity Name</b></label>
-                                            <br/><br/>
-                                            <label>Decentraland names:</label> {wallet.walletNames?.filter(w=>w.subdomain==="dcl").map((nameNFT: any) => (
-                                            <button
-                                                key={nameNFT.id}
-                                                className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
-                                                onClick={() => setDefaultName(nameNFT.id, nameNFT.name, wallet.address)}
-                                                style={{ cursor: 'pointer', marginRight: '5px' }}
-                                            >
-                                                {nameNFT.name}
-                                            </button>
-                                            ))}
-                                            <br/>
-                                            <label>Basenames:</label> {wallet.walletNames?.filter(w=>w.subdomain==="base").map((nameNFT: any) => (
-                                            <button
-                                                key={nameNFT.id}
-                                                className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
-                                                onClick={() => setDefaultName(nameNFT.id, nameNFT.name, wallet.address)}
-                                                style={{ cursor: 'pointer', marginRight: '5px' }}
-                                            >
-                                                {nameNFT.name}
-                                            </button>
-                                        ))}
+                                            <div className="uk-card uk-card-default">
+                                                <label><b>Select Digital Identity Name:</b></label>
+                                                <br/><br/>
+                                                <div className="uk-card uk-card-default">
+                                                    <b >Decentraland names:</b>
+                                                    {wallet.walletNames?.filter(w=>w.subdomain==="dcl").map((nameNFT: any) => (
+                                                    <button
+                                                        key={nameNFT.id}
+                                                        className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
+                                                        onClick={() => setDefaultName(nameNFT.id, nameNFT.name, wallet.address)}
+                                                        style={{ cursor: 'pointer', marginRight: '5px' }}
+                                                    >
+                                                        {nameNFT.name}
+                                                    </button>
+                                                    ))}
+                                                    {wallet.walletNames?.filter(w=>w.subdomain==="dcl").length === 0 && <span> No Decentraland name found, get your name at <a href={"https://decentraland.org/marketplace/names/claim"}>https://decentraland.org/marketplace/names/claim</a></span>}
+                                                </div>
+                                                <br/>
+                                                <div className="uk-card uk-card-default">
+                                                    <b>Basenames:</b> {wallet.walletNames?.filter(w => w.subdomain === "base").map((nameNFT: any) => (
+                                                    <button
+                                                        key={nameNFT.id}
+                                                        className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
+                                                        onClick={() => setDefaultName(nameNFT.id, nameNFT.name, wallet.address)}
+                                                        style={{cursor: 'pointer', marginRight: '5px'}}
+                                                    >
+                                                        {nameNFT.name}
+                                                    </button>
+                                                ))}
+                                                    {wallet.walletNames?.filter(w=>w.subdomain==="dcl").length === 0 && <span> No Basenames found, get your name at <a href={"https://www.base.org/names"}>https://www.base.org/names</a></span>}
+                                                </div>
+                                            </div>
+
+
                                         </p>
                                     </li>
                                 ))}
