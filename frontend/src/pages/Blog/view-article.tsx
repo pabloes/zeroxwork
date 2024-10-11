@@ -5,6 +5,7 @@ import PageTitle from "../../components/PageTitle";
 import {useAuth} from "../../context/AuthContext";
 import {useNavigate} from 'react-router-dom';
 import {useQuery} from "@tanstack/react-query";
+import {getNameAvatarImage} from "../../services/get-name-avatar-image";
 
 const ArticlePage: React.FC = () => {
     const {user} = useAuth();
@@ -32,7 +33,7 @@ const ArticlePage: React.FC = () => {
                         <b>Published on:&nbsp;</b>{new Date(article.createdAt).toLocaleDateString()}&nbsp;|&nbsp;
                         <b>Last update:&nbsp;</b>{new Date(article.updatedAt).toLocaleDateString()}&nbsp;|&nbsp;
                         <b>Author:</b>&nbsp;<img
-                        src={`/api/user/decentraland-avatar/${article.authorAddress}`}
+                        src={getNameAvatarImage({name:article.author, address:article.authorAddress })}
                         alt="Author Avatar"
                         className="uk-border-circle"
                         style={{ width: '32px', height: '32px', marginRight: '10px', float:"none", marginLeft:"6px" }}

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'; // Assuming you're using React Router
 import { api } from '../services/axios-setup';
-import {useQuery} from "@tanstack/react-query"; // Fixed the import path for Axios
+import {useQuery} from "@tanstack/react-query";
+import {getNameAvatarImage} from "../services/get-name-avatar-image"; // Fixed the import path for Axios
 
 interface Article {
     id: number;
@@ -16,6 +17,7 @@ const HomeDashboard: React.FC = () => {
         queryKey: ['articles'],
         queryFn: fetchArticles,
     });
+
     return (
         <div className="uk-container uk-margin-large-top">
             <div className="uk-grid uk-flex-center" uk-grid="true">
@@ -40,7 +42,7 @@ const HomeDashboard: React.FC = () => {
                                         <h3 className="uk-card-title">{article.title}</h3>
                                         {article.authorAddress && <div className="uk-text-meta">
                                         <img
-                                            src={`/api/user/decentraland-avatar/${article.authorAddress}`}
+                                            src={getNameAvatarImage({name:article.author, address:article.authorAddress})}
                                             alt="Author Avatar"
                                             className="uk-border-circle"
                                             style={{ width: '32px', height: '32px', marginRight: '10px', float:"none" }}
