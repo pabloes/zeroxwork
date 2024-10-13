@@ -35,6 +35,7 @@ router.post('/articles', verifyToken, async (req, res) => {
                 title,
                 content,
                 thumbnail: thumbnail || null, // Si el thumbnail es opcional
+                published:true
             },
             include
         });
