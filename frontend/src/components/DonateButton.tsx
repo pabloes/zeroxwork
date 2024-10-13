@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAccount, useSendTransaction } from 'wagmi';
-import {parseEther, parseUnits} from 'viem';
+import {parseEther} from 'viem';
 import { ConnectKitButton } from 'connectkit';
 
 interface DonateButtonProps {
@@ -15,24 +15,7 @@ const DonateButton: React.FC<DonateButtonProps> = ({ donationAddress }) => {
     const { address, isConnected } = useAccount();
 
     // Enviar la transacción de donación
-    const { sendTransaction } = useSendTransaction({
-        to: donationAddress,
-        value: parseEther(donationAmount), // Convierte el monto a wei
-    });
-
-    // Manejador de envío de donación
-    const handleDonate = async () => {
-        console.log("handleDonate", {
-            to: donationAddress,
-            value: Number(parseEther(donationAmount)),
-        })
-        try {
-            debugger;
-            sendTransaction();
-        } catch (error) {
-            console.error('Error al enviar la donación:', error);
-        }
-    };
+    const { sendTransaction } = useSendTransaction();
 
     return (
         <div>
@@ -52,7 +35,7 @@ const DonateButton: React.FC<DonateButtonProps> = ({ donationAddress }) => {
                         />&nbsp;
                     </label>
                     <button onClick={()=> sendTransaction({
-                        to: donationAddress,
+                        to: donationAddress  as `0x${string}`,
                         value: parseEther(donationAmount),
                     })}>
                         Donar {donationAmount} ETH
