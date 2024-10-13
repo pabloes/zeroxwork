@@ -4,6 +4,7 @@ import App from './App';
 import { WagmiProvider } from 'wagmi'
 import { wagmiConfig } from './wagmi-config'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ConnectKitProvider } from 'connectkit';
 
 // Import UIkit CSS and JS
 import 'uikit/dist/js/uikit.min.js';
@@ -21,10 +22,13 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
         <WagmiProvider config={wagmiConfig}>
             <QueryClientProvider client={queryClient}>
-                <PrimeReactProvider>
-                <App />
-                </PrimeReactProvider>
+                <ConnectKitProvider>
+                    <PrimeReactProvider>
+                        <App />
+                    </PrimeReactProvider>
+                </ConnectKitProvider>
             </QueryClientProvider>
+
         </WagmiProvider>
     </React.StrictMode>,
 );

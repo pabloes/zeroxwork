@@ -17,6 +17,7 @@
     "bip32": "^4.0.0",
     "bip39": "^3.1.0",
     "bitcoinjs-lib": "^6.1.6",
+    "connectkit": "^1.8.2",
     "decentraland-ui": "^5.8.0",
     "ecpair": "^3.0.0-rc.0",
     "ethers": "^6.13.2",

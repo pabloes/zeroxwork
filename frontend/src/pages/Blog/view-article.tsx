@@ -6,6 +6,7 @@ import {useAuth} from "../../context/AuthContext";
 import {useNavigate} from 'react-router-dom';
 import {useQuery} from "@tanstack/react-query";
 import {getNameAvatarImage} from "../../services/get-name-avatar-image";
+import DonateButton from "../../components/DonateButton";
 
 const ArticlePage: React.FC = () => {
     const {user} = useAuth();
@@ -41,6 +42,12 @@ const ArticlePage: React.FC = () => {
                     </p>
                     <PageTitle title={article.title}/>
                     <ReactMarkdown>{article.content}</ReactMarkdown>
+                    <div>
+                        {article.authorAddress && <div className="uk-card uk-card-default">
+                            Make a donation to the author of this article:<br/>
+                            <DonateButton donationAddress={article.authorAddress} />
+                        </div>}
+                    </div>
                 </div>
             ) : (
                 <p>Loading...</p>
