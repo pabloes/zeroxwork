@@ -13,44 +13,43 @@ enum Role {
 }
 
 model User {
-  id                 Int      @id @default(autoincrement())
-  email              String   @unique
-  password           String
-  role               Role     @default(USER)
-  createdAt          DateTime @default(now())
-  verified           Boolean  @default(false)
-  verificationCode   String?
-  updatedAt          DateTime @updatedAt
-  maxQuota           Int      @default(5242880)
-  extraQuota         Int      @default(0)
-  fileUploads        FileUpload[]
-  apiKeys            ApiKey[]
-  wallets            Wallet[]
-  articles           Article[]
-  defaultNameId      Int?     @unique // Mark this as unique for one-to-one relation
-  defaultName        WalletNames? @relation(fields: [defaultNameId], references: [id]) // Updated relation to renamed model
+  id               Int          @id @default(autoincrement())
+  email            String       @unique
+  password         String
+  role             Role         @default(USER)
+  createdAt        DateTime     @default(now())
+  verified         Boolean      @default(false)
+  verificationCode String?
+  updatedAt        DateTime     @updatedAt
+  maxQuota         Int          @default(5242880)
+  extraQuota       Int          @default(0)
+  fileUploads      FileUpload[]
+  apiKeys          ApiKey[]
+  wallets          Wallet[]
+  articles         Article[]
+  defaultNameId    Int?         @unique // Mark this as unique for one-to-one relation
+  defaultName      WalletNames? @relation(fields: [defaultNameId], references: [id]) // Updated relation to renamed model
 
   @@map("users")
 }
 
 model Wallet {
-  id                Int     @id @default(autoincrement())
-  address           String  @unique
-  userId            Int
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  walletNames       WalletNames[] // Updated relation to renamed model
-
-
+  id          Int           @id @default(autoincrement())
+  address     String        @unique
+  userId      Int
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  walletNames WalletNames[] // Updated relation to renamed model
 }
 
-model WalletNames { // Renamed model
+model WalletNames {
+  // Renamed model
   id        Int      @id @default(autoincrement())
   walletId  Int
   wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
   name      String
-  subdomain String?  // New optional subdomain field
+  subdomain String? // New optional subdomain field
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User?    @relation
@@ -74,17 +73,16 @@ model FileUpload {
 
   @@index([userId])
   @@index([sha256Hash])
-
   @@map("file_uploads")
 }
 
 model ApiKey {
-  id          Int      @id @default(autoincrement())
-  key         String   @unique
-  userId      Int
-  createdAt   DateTime @default(now())
-  lastUsedAt  DateTime?
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int       @id @default(autoincrement())
+  key        String    @unique
+  userId     Int
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("api_keys")
@@ -94,6 +92,7 @@ model Article {
   id        Int      @id @default(autoincrement())
   title     String
   content   String
+  script    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   userId    Int

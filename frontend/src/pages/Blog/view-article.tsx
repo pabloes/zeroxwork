@@ -7,6 +7,7 @@ import {useNavigate} from 'react-router-dom';
 import {useQuery} from "@tanstack/react-query";
 import {getNameAvatarImage} from "../../services/get-name-avatar-image";
 import DonateButton from "../../components/DonateButton";
+import InlineArticleScriptRunner from "../../components/InlineArticleScriptRunner";
 
 const ArticlePage: React.FC = () => {
     const {user} = useAuth();
@@ -41,7 +42,15 @@ const ArticlePage: React.FC = () => {
                     />{article.author}
                     </p>
                     <PageTitle title={article.title}/>
-                    <ReactMarkdown>{article.content}</ReactMarkdown>
+                    <div id="article-content">
+                        <ReactMarkdown>{article.content}</ReactMarkdown>
+                    </div>
+                    {article.script && (
+                        <InlineArticleScriptRunner
+                            code={article.script}
+                            targetSelector="#article-content"
+                        />
+                    )}
                     <div>
                         {article.authorAddress && <div className="uk-card uk-card-default">
                             Make a donation to the author of this article:<br/>

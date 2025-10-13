@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { prisma } from '../db';
+import { prisma } from "../db";
 import {verifyToken} from "../middleware/authMiddleware";  // Asegúrate de tener la instancia de Prisma configurada
+import requireAdminIfScript from "../middleware/requireAdminIfScript";
 const router = Router();
 
 const include = {
@@ -20,9 +21,9 @@ const include = {
         },
 };
 // Crear un artículo
-router.post('/articles', verifyToken, async (req, res) => {
-    const { title, content, thumbnail } = req.body;
-    const userId = req.user.id;
+router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => {
+    const { title, content, thumbnail, script } = req.body;
+    const userId = (req as any).user.id;
 
     try {
         if (!title || !content) {
@@ -34,6 +35,7 @@ router.post('/articles', verifyToken, async (req, res) => {
                 userId,
                 title,
                 content,
+                script: script && typeof script === 'string' && script.trim().length ? script : null,
                 thumbnail: thumbnail || null, // Si el thumbnail es opcional
                 published:true
             },
@@ -45,27 +47,30 @@ router.post('/articles', verifyToken, async (req, res) => {
             author: article.user?.defaultName?.name || 'Anonymous', // Send the selected name or 'Anonymous' if no name is set
             authorAddress,
         });
-    } catch (error) {
+    } catch (error:any) {
         res.status(500).json({ message: 'Error creating article', error: error.message });
     }
 });
 
 // Actualizar un artículo
-router.put('/articles/:id', verifyToken, async (req, res) => {
+router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) => {
     const { id } = req.params;
-    const { title, content,thumbnail } = req.body;
+    const { title, content, thumbnail, script } = req.body;
     try {
         if (!title || !content) {
             return res.status(400).json({ error: 'Title and content are required' });
         }
         const updatedArticle = await prisma.article.update({
             where: { id: Number(id) },
-            data: { title, content,
+            data: {
+                title,
+                content,
+                script: script && typeof script === 'string' && script.trim().length ? script : null,
                 thumbnail: thumbnail || null, // Si el thumbnail es opcional
             },
         });
         res.status(200).json(updatedArticle);
-    } catch (error) {
+    } catch (error:any) {
         res.status(500).json({ message: 'Error updating article', error: error.message });
     }
 });

@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import UIkit from 'uikit';
 import { useMutation } from '@tanstack/react-query'; // Import React Query's useMutation
 import { api } from '../../services/axios-setup'; // Import your Axios instance
+import { useAuth } from '../../context/AuthContext';
 
 // Service function for creating a new article
-const createArticle = async (newArticle: { title: string; content: string; thumbnail: string }) => {
+const createArticle = async (newArticle: { title: string; content: string; thumbnail: string; script?: string }) => {
     const response = await api.post('/blog/articles', newArticle);
     return response.data;
 };
@@ -15,8 +16,10 @@ const createArticle = async (newArticle: { title: string; content: string; thumb
 const CreateArticle: React.FC = () => {
     const [title, setTitle] = useState<string>('');
     const [content, setContent] = useState<string>('');
+    const [script, setScript] = useState<string>(''); // ADMIN-only script
     const [thumbnail, setThumbnail] = useState<string>(''); // State for thumbnail URL
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const mutation = useMutation({
         mutationFn: createArticle,
@@ -52,7 +55,8 @@ const CreateArticle: React.FC = () => {
         mutation.mutate({
             title,
             content,
-            thumbnail
+            thumbnail,
+            script: user?.role === 'ADMIN' ? script : undefined,
         });
     };
 
@@ -122,6 +126,27 @@ const CreateArticle: React.FC = () => {
                         />
                     </div>
                 </div>
+
+                {user?.role === 'ADMIN' && (
+                    <div className="uk-margin">
+                        <label className="uk-form-label" htmlFor="script">Script (optional, ADMIN only):</label>
+                        <div className="uk-form-controls">
+                            <textarea
+                                className="uk-textarea"
+                                id="script"
+                                rows={10}
+                                value={script}
+                                onChange={(e) => setScript(e.target.value)}
+                                placeholder={`// Example:\n// import getHtmlCode from 'https://cdn.jsdelivr.net/npm/my-lib@1.0.0/dist/index.esm.js';\n// getArticleElement().append(getHtmlCode());\n// or dynamic:\n// const { default: fn } = await import('lodash-es');\n// getArticleElement().append(fn())`}
+                            />
+                        </div>
+                        <p className="uk-text-meta">
+                            The script runs in-page (not sandboxed). Use getArticleElement() to manipulate the rendered Markdown.
+                            Static and dynamic imports are supported. Bare specifiers (e.g., 'lodash-es') auto-resolve via jsdelivr CDN; full URLs also work.
+                            Your code can access browser APIs (e.g., localStorage) and the current page context.
+                        </p>
+                    </div>
+                )}
 
                 <div className="uk-margin">
                     <button className="uk-button uk-button-primary" type="submit" disabled={isLoading}>
