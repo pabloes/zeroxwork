@@ -81,8 +81,8 @@ const SandboxedArticleScript: React.FC<SandboxedArticleScriptProps> = ({
         root.innerHTML = initialHtml;
       } else if (typeof initialMarkdown === 'string' && initialMarkdown) {
         try {
-          const markedMod = await import('https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.esm.js');
-          const html = markedMod.marked.parse(initialMarkdown);
+          const { marked } = await import('marked');
+          const html = await marked.parse(initialMarkdown);
           root.innerHTML = html;
         } catch {
           root.textContent = initialMarkdown;
