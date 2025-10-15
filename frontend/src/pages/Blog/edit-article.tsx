@@ -6,10 +6,12 @@ import { api } from '../../services/axios-setup';
 import PageTitle from "../../components/PageTitle";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import UIkit from "uikit"; // Import your Axios instance
+import { useAuth } from '../../context/AuthContext';
 
 const EditArticle: React.FC = () => {
     const { id } = useParams<{ id: string }>(); // Get article ID from the URL
     const navigate = useNavigate();
+    const { user } = useAuth();
 
 
     // Fetch the article data using useQuery
@@ -33,12 +35,14 @@ const EditArticle: React.FC = () => {
     const [title, setTitle] = useState<string>(article?.title || '');
     const [content, setContent] = useState<string>(article?.content || '');
     const [thumbnail, setThumbnail] = useState<string>(article?.thumbnail || '');
+    const [script, setScript] = useState<string>(article?.script || ''); // ADMIN-only script
     // UseEffect to populate the form when article data is available
     useEffect(() => {
         if (article) {
             setTitle(article.title);
             setContent(article.content);
             setThumbnail(article.thumbnail || '');
+            setScript(article.script || '');
         }
     }, [article]);
 
@@ -50,7 +54,12 @@ const EditArticle: React.FC = () => {
     // Handle article update
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        mutation.mutate({ title, content, thumbnail }); // Trigger the mutation
+        mutation.mutate({
+            title,
+            content,
+            thumbnail,
+            script: user?.role === 'ADMIN' ? script : undefined
+        }); // Trigger the mutation
     };
 
     // Memoize the options for SimpleMDE to avoid losing focus
@@ -123,6 +132,27 @@ const EditArticle: React.FC = () => {
                         />
                     </div>
                 </div>
+
+                {user?.role === 'ADMIN' && (
+                    <div className="uk-margin">
+                        <label className="uk-form-label" htmlFor="script">Script (optional, ADMIN only):</label>
+                        <div className="uk-form-controls">
+                            <textarea
+                                className="uk-textarea"
+                                id="script"
+                                rows={10}
+                                value={script}
+                                onChange={(e) => setScript(e.target.value)}
+                                placeholder={`// Example:\n// import getHtmlCode from 'https://cdn.jsdelivr.net/npm/my-lib@1.0.0/dist/index.esm.js';\n// getArticleElement().append(getHtmlCode());\n// or dynamic:\n// const { default: fn } = await import('lodash-es');\n// getArticleElement().append(fn())`}
+                            />
+                        </div>
+                        <p className="uk-text-meta">
+                            The script runs in-page (not sandboxed). Use getArticleElement() to manipulate the rendered Markdown.
+                            Static and dynamic imports are supported. Bare specifiers (e.g., 'lodash-es') auto-resolve via jsdelivr CDN; full URLs also work.
+                            Your code can access browser APIs (e.g., localStorage) and the current page context.
+                        </p>
+                    </div>
+                )}
 
                 <div className="uk-margin">
                     <button className="uk-button uk-button-primary" type="submit">

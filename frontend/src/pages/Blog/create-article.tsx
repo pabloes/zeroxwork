@@ -115,7 +115,7 @@ const CreateArticle: React.FC = () => {
                         </div>
                     )}
                 </div>
-
+                {JSON.stringify(user)}
                 <div className="uk-margin">
                     <label className="uk-form-label" htmlFor="content">Content (Markdown):</label>
                     <div className="uk-form-controls">
