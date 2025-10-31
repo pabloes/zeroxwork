@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@coinbase/onchainkit": "^0.33.6",
+    "@solana/web3.js": "^1.98.4",
     "@tanstack/react-query": "^5.56.2",
     "axios": "^1.7.7",
     "bip32": "^4.0.0",
@@ -20,6 +21,7 @@
     "connectkit": "^1.8.2",
     "decentraland-ui": "^5.8.0",
     "ecpair": "^3.0.0-rc.0",
+    "ed25519-hd-key": "^1.3.0",
     "ethers": "^6.13.2",
     "jwt-decode": "^4.0.0",
     "marked": "^12.0.2",

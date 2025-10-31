@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import wasm from 'vite-plugin-wasm';
+
 import {nodePolyfills} from 'vite-plugin-node-polyfills'; // Import node polyfills plugin
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
 
@@ -37,12 +38,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000', // Proxy to the backend server
+        target: 'http://localhost:3001', // Proxy to the backend server
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'), // Adjust the path if needed
       },
       '/admin': {
-        target: 'http://localhost:3000', // Proxy to the backend server
+        target: 'http://localhost:3001', // Proxy to the backend server
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'), // Adjust the path if needed
       },

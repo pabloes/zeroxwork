@@ -10,6 +10,8 @@ import BIP32Factory from 'bip32';
 import * as bip39 from 'bip39';
 import { QRCodeSVG } from 'qrcode.react'; // Correct import for QR Code
 import UIkit from 'uikit';
+import { Keypair } from '@solana/web3.js';
+import { derivePath } from 'ed25519-hd-key';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -24,9 +26,17 @@ const BrainWallet: React.FC = () => {
     const [phrase, setPhrase] = useState<string>('');
     const [mnemonic, setMnemonic] = useState<string | null>(null); // Store the 24-word mnemonic
     const [showMnemonic, setShowMnemonic] = useState<boolean>(false); // Toggle mnemonic and private key visibility
-    const [wallets, setWallets] = useState<any[]>([]); // List of Ethereum and Bitcoin wallets
+    const [wallets, setWallets] = useState<any[]>([]); // List of Ethereum, Bitcoin and Solana wallets
     const [showPhrase, setShowPhrase] = useState<boolean>(false); // Toggle phrase visibility (password input behavior)
     const [qrCodeData, setQrCodeData] = useState<string | null>(null); // For storing the public key for QR code
+
+    // Blockchain filters
+    const [showEth, setShowEth] = useState<boolean>(true);
+    const [showBtc, setShowBtc] = useState<boolean>(true);
+    const [showSol, setShowSol] = useState<boolean>(true);
+
+    // Next wallet index to add (display value, starts at 1)
+    const [nextWalletIndex, setNextWalletIndex] = useState<number>(3);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text).then(() => {
@@ -92,33 +102,46 @@ const BrainWallet: React.FC = () => {
         const btcChildBech32 = rootBtcBech32.derivePath(`m/84'/0'/0'/0/${index}`);
         const btcAddressBech32 = payments.p2wpkh({ pubkey: btcChildBech32.publicKey }).address;
 
+        // Derive Solana keys from the seed (m/44'/501'/0'/0')
+        const solanaPath = `m/44'/501'/${index}'/0'`;
+        const solanaDerivation = derivePath(solanaPath, seed.toString('hex'));
+        const solanaKeypair = Keypair.fromSeed(solanaDerivation.key);
+        const solanaPublicKey = solanaKeypair.publicKey.toBase58();
+        const solanaPrivateKey = Buffer.from(solanaKeypair.secretKey).toString('hex');
+
         return {
+            derivationIndex: index + 1, // Store display index (1-based)
             eth: { privateKey: ethPrivateKey, publicKey: ethAccount.address },
             btcLegacy: { privateKey: btcChildLegacy.toWIF(), publicKey: btcAddressLegacy },
-            btcBech32: { privateKey: btcChildBech32.toWIF(), publicKey: btcAddressBech32 }
+            btcBech32: { privateKey: btcChildBech32.toWIF(), publicKey: btcAddressBech32 },
+            sol: { privateKey: solanaPrivateKey, publicKey: solanaPublicKey }
         };
     }
 
     const addWallet = () => {
-        if (mnemonic) {
+        if (mnemonic && nextWalletIndex > 0) {
             bip39.mnemonicToSeed(mnemonic).then((seed) => {
-                const newIndex = wallets.length; // The next index for derivation
-                const newWallet = deriveWallet(seed, newIndex);
+                const derivationIndex = nextWalletIndex - 1; // Convert display index to internal index (0-based)
+                const newWallet = deriveWallet(seed, derivationIndex);
                 setWallets([...wallets, newWallet]);
+                setNextWalletIndex(nextWalletIndex + 1); // Increment for next suggestion
             });
         }
     };
 
     const removeLastWallet = () => {
         if (wallets.length > 0) {
+            const removedWallet = wallets[wallets.length - 1];
             const updatedWallets = wallets.slice(0, wallets.length - 1); // Remove last wallet
             setWallets(updatedWallets);
+            // Set next index to the removed wallet's index
+            setNextWalletIndex(removedWallet.derivationIndex);
         }
     };
 
     return (
         <div className="uk-container uk-padding-small">
-            <h3 className="uk-text-muted">Inherit Eth & BTC Wallets from a memorable phrase</h3>
+            <h3 className="uk-text-muted">Inherit Eth, BTC & SOL Wallets from a memorable phrase</h3>
 
             <article className="uk-article uk-text-small">
                 A brain wallet lets you create a secret digital key for your cryptocurrency using a memorable phrase, making it easier to remember but riskier if the phrase is too simple or guessable, although still practical.
@@ -162,36 +185,92 @@ const BrainWallet: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Blockchain Filters */}
+                    <div className="uk-margin uk-card uk-card-default uk-card-body uk-padding-small">
+                        <strong className="uk-margin-small-right">Filter Blockchains:</strong>
+                        <label className="uk-margin-small-right">
+                            <input
+                                className="uk-checkbox uk-margin-small-right"
+                                type="checkbox"
+                                checked={showEth}
+                                onChange={(e) => setShowEth(e.target.checked)}
+                            />
+                            Ethereum
+                        </label>
+                        <label className="uk-margin-small-right">
+                            <input
+                                className="uk-checkbox uk-margin-small-right"
+                                type="checkbox"
+                                checked={showBtc}
+                                onChange={(e) => setShowBtc(e.target.checked)}
+                            />
+                            Bitcoin
+                        </label>
+                        <label>
+                            <input
+                                className="uk-checkbox uk-margin-small-right"
+                                type="checkbox"
+                                checked={showSol}
+                                onChange={(e) => setShowSol(e.target.checked)}
+                            />
+                            Solana
+                        </label>
+                    </div>
+
                     <div className="wallet-grid uk-grid uk-grid-match uk-child-width-1-2@s uk-child-width-1-1" uk-grid="true">
                         {wallets.map((wallet, index) => (
                             <div key={index}>
                                 <div className="uk-card uk-card-default uk-card-body">
-                                    <h4>Ethereum Wallet #{index + 1}</h4>
-                                    <p>
-                                        <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.eth.publicKey && copyToClipboard(wallet.eth.publicKey)}></button>
-                                        Public Key: {wallet.eth.publicKey}
-                                        <button className="uk-icon-button uk-margin-left uk-icon" onClick={() => showQRCodeModal(wallet.eth.publicKey)}>
-                                            <QrCodeIcon />
-                                        </button>
-                                    </p>
-                                    <p>
-                                        <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.eth.privateKey && copyToClipboard(wallet.eth.privateKey)}></button>
-                                        Private Key: {showMnemonic ? wallet.eth.privateKey : '••••••••••••••••••••••••••••••••••'}
-                                    </p>
+                                    {showEth && (
+                                        <>
+                                            <h4>Ethereum Wallet #{wallet.derivationIndex}</h4>
+                                            <p>
+                                                <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.eth.publicKey && copyToClipboard(wallet.eth.publicKey)}></button>
+                                                Public Key: {wallet.eth.publicKey}
+                                                <button className="uk-icon-button uk-margin-left uk-icon" onClick={() => showQRCodeModal(wallet.eth.publicKey)}>
+                                                    <QrCodeIcon />
+                                                </button>
+                                            </p>
+                                            <p>
+                                                <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.eth.privateKey && copyToClipboard(wallet.eth.privateKey)}></button>
+                                                Private Key: {showMnemonic ? wallet.eth.privateKey : '••••••••••••••••••••••••••••••••••'}
+                                            </p>
+                                        </>
+                                    )}
 
+                                    {showBtc && (
+                                        <>
+                                            <h4>Bitcoin SegWit Wallet #{wallet.derivationIndex} (Bech32)</h4>
+                                            <p>
+                                                <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.btcBech32.publicKey && copyToClipboard(wallet.btcBech32.publicKey)}></button>
+                                                Public Key: {wallet.btcBech32.publicKey}
+                                                <button className="uk-icon-button uk-margin-left uk-icon" onClick={() => showQRCodeModal(wallet.btcBech32.publicKey)}>
+                                                    <QrCodeIcon />
+                                                </button>
+                                            </p>
+                                            <p>
+                                                <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.btcBech32.privateKey && copyToClipboard(wallet.btcBech32.privateKey)}></button>
+                                                Private Key: {showMnemonic ? wallet.btcBech32.privateKey : '••••••••••••••••••••••••••••••••••'}
+                                            </p>
+                                        </>
+                                    )}
 
-                                    <h4>Bitcoin SegWit Wallet #{index + 1} (Bech32)</h4>
-                                    <p>
-                                        <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.btcBech32.publicKey && copyToClipboard(wallet.btcBech32.publicKey)}></button>
-                                        Public Key: {wallet.btcBech32.publicKey}
-                                        <button className="uk-icon-button uk-margin-left uk-icon" onClick={() => showQRCodeModal(wallet.btcBech32.publicKey)}>
-                                            <QrCodeIcon />
-                                        </button>
-                                    </p>
-                                    <p>
-                                        <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.btcBech32.privateKey && copyToClipboard(wallet.btcBech32.privateKey)}></button>
-                                        Private Key: {showMnemonic ? wallet.btcBech32.privateKey : '••••••••••••••••••••••••••••••••••'}
-                                    </p>
+                                    {showSol && (
+                                        <>
+                                            <h4>Solana Wallet #{wallet.derivationIndex}</h4>
+                                            <p>
+                                                <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.sol.publicKey && copyToClipboard(wallet.sol.publicKey)}></button>
+                                                Public Key: {wallet.sol.publicKey}
+                                                <button className="uk-icon-button uk-margin-left uk-icon" onClick={() => showQRCodeModal(wallet.sol.publicKey)}>
+                                                    <QrCodeIcon />
+                                                </button>
+                                            </p>
+                                            <p>
+                                                <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.sol.privateKey && copyToClipboard(wallet.sol.privateKey)}></button>
+                                                Private Key: {showMnemonic ? wallet.sol.privateKey : '••••••••••••••••••••••••••••••••••'}
+                                            </p>
+                                        </>
+                                    )}
 
                                   {/*    <h4>Bitcoin Legacy Wallet #{index + 1} (P2PKH)</h4>
                                     <p>
@@ -210,7 +289,18 @@ const BrainWallet: React.FC = () => {
                         ))}
                     </div>
 
-                    <div className="uk-margin-top uk-text-center">
+                    <div className="uk-margin-top uk-flex uk-flex-center uk-flex-middle">
+                        <label className="uk-margin-right uk-flex uk-flex-middle">
+                            <span className="uk-margin-small-right">Wallet Index:</span>
+                            <input
+                                className="uk-input uk-form-width-small"
+                                type="number"
+                                min="1"
+                                value={nextWalletIndex}
+                                onChange={(e) => setNextWalletIndex(parseInt(e.target.value) || 1)}
+                                style={{ width: '80px', textAlign: 'center' }}
+                            />
+                        </label>
                         <button className="uk-button uk-button-primary uk-margin-right" onClick={addWallet}>Add Wallet</button>
                         <button className="uk-button uk-button-danger" onClick={removeLastWallet} disabled={wallets.length === 0}>Remove Wallet</button>
                     </div>
