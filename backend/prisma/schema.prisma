@@ -89,18 +89,42 @@ model ApiKey {
 }
 
 model Article {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  script    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  thumbnail String?
-  published Boolean  @default(false)
-  featured  Boolean  @default(false)
+  id         Int       @id @default(autoincrement())
+  title      String
+  content    String
+  script     String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thumbnail  String?
+  published  Boolean   @default(false)
+  featured   Boolean   @default(false)
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags       Tag[]
 
   @@index([userId])
+  @@index([categoryId])
   @@map("articles")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  articles  Article[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  articles  Article[]
+
+  @@map("tags")
 }

@@ -1,23 +1,53 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import SimpleMDE from 'react-simplemde-editor';
 import 'easymde/dist/easymde.min.css';
-import { useParams, useNavigate } from 'react-router-dom'; // Assuming you're using React Router
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/axios-setup';
 import PageTitle from "../../components/PageTitle";
-import {useMutation, useQuery} from "@tanstack/react-query";
-import UIkit from "uikit"; // Import your Axios instance
+import { useMutation, useQuery } from "@tanstack/react-query";
+import UIkit from "uikit";
 import { useAuth } from '../../context/AuthContext';
 
+interface Category {
+    id: number;
+    name: string;
+}
+
+interface Tag {
+    id: number;
+    name: string;
+}
+
+const fetchCategories = async (): Promise<Category[]> => {
+    const response = await api.get('/blog/categories');
+    return response.data;
+};
+
+const fetchTags = async (): Promise<Tag[]> => {
+    const response = await api.get('/blog/tags');
+    return response.data;
+};
+
 const EditArticle: React.FC = () => {
-    const { id } = useParams<{ id: string }>(); // Get article ID from the URL
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user } = useAuth();
-
 
     // Fetch the article data using useQuery
     const { data: article, isLoading } = useQuery({
         queryKey: ['article', id],
         queryFn: () => fetchArticleById(id as string),
+    });
+
+    // Fetch categories and tags
+    const { data: categories = [] } = useQuery({
+        queryKey: ['categories'],
+        queryFn: fetchCategories,
+    });
+
+    const { data: tags = [] } = useQuery({
+        queryKey: ['tags'],
+        queryFn: fetchTags,
     });
 
     // Mutation for updating the article
@@ -28,14 +58,20 @@ const EditArticle: React.FC = () => {
             navigate(`/view-article/${id}`);
         },
         onError: () => {
-            UIkit.notification('Article updated successfully!', "error");
+            UIkit.notification('Error updating article.', "error");
         }
     });
+
     // Local state for the form inputs
     const [title, setTitle] = useState<string>(article?.title || '');
     const [content, setContent] = useState<string>(article?.content || '');
     const [thumbnail, setThumbnail] = useState<string>(article?.thumbnail || '');
-    const [script, setScript] = useState<string>(article?.script || ''); // ADMIN-only script
+    const [script, setScript] = useState<string>(article?.script || '');
+    const [categoryId, setCategoryId] = useState<number | null>(article?.categoryId || null);
+    const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+    const [newTagInput, setNewTagInput] = useState<string>('');
+    const [newTags, setNewTags] = useState<string[]>([]);
+
     // UseEffect to populate the form when article data is available
     useEffect(() => {
         if (article) {
@@ -43,23 +79,46 @@ const EditArticle: React.FC = () => {
             setContent(article.content);
             setThumbnail(article.thumbnail || '');
             setScript(article.script || '');
+            setCategoryId(article.categoryId || null);
+            setSelectedTagIds(article.tags?.map((t: Tag) => t.id) || []);
         }
     }, [article]);
 
-    // Handle article content change
     const handleContentChange = (value: string) => {
         setContent(value);
     };
 
-    // Handle article update
+    const handleTagToggle = (tagId: number) => {
+        setSelectedTagIds(prev =>
+            prev.includes(tagId)
+                ? prev.filter(id => id !== tagId)
+                : [...prev, tagId]
+        );
+    };
+
+    const handleAddNewTag = () => {
+        const trimmed = newTagInput.trim();
+        if (trimmed && !newTags.includes(trimmed)) {
+            setNewTags(prev => [...prev, trimmed]);
+            setNewTagInput('');
+        }
+    };
+
+    const handleRemoveNewTag = (tagName: string) => {
+        setNewTags(prev => prev.filter(t => t !== tagName));
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         mutation.mutate({
             title,
             content,
             thumbnail,
-            script: user?.role === 'ADMIN' ? script : undefined
-        }); // Trigger the mutation
+            script: user?.role === 'ADMIN' ? script : undefined,
+            categoryId: categoryId || null,
+            tagIds: selectedTagIds,
+            newTags: newTags,
+        });
     };
 
     // Memoize the options for SimpleMDE to avoid losing focus
@@ -120,6 +179,89 @@ const EditArticle: React.FC = () => {
                             />
                         </div>
                     )}
+                </div>
+
+                <div className="uk-margin">
+                    <label className="uk-form-label" htmlFor="category">Category:</label>
+                    <div className="uk-form-controls">
+                        <select
+                            className="uk-select"
+                            id="category"
+                            value={categoryId || ''}
+                            onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
+                        >
+                            <option value="">No category</option>
+                            {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="uk-margin">
+                    <label className="uk-form-label">Tags:</label>
+                    <div className="uk-form-controls">
+                        {tags.length > 0 && (
+                            <div className="uk-margin-small-bottom">
+                                {tags.map((tag) => (
+                                    <label key={tag.id} className="uk-margin-small-right" style={{ display: 'inline-block' }}>
+                                        <input
+                                            className="uk-checkbox"
+                                            type="checkbox"
+                                            checked={selectedTagIds.includes(tag.id)}
+                                            onChange={() => handleTagToggle(tag.id)}
+                                        /> {tag.name}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                        <div className="uk-grid-small uk-flex-middle" uk-grid="">
+                            <div className="uk-width-expand">
+                                <input
+                                    className="uk-input"
+                                    type="text"
+                                    value={newTagInput}
+                                    onChange={(e) => setNewTagInput(e.target.value)}
+                                    placeholder="Add new tag..."
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleAddNewTag();
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div>
+                                <button
+                                    type="button"
+                                    className="uk-button uk-button-default"
+                                    onClick={handleAddNewTag}
+                                >
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                        {newTags.length > 0 && (
+                            <div className="uk-margin-small-top">
+                                <span className="uk-text-meta">New tags: </span>
+                                {newTags.map((tagName) => (
+                                    <span key={tagName} className="uk-label uk-margin-small-right">
+                                        {tagName}
+                                        <a
+                                            href="#"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handleRemoveNewTag(tagName);
+                                            }}
+                                            style={{ marginLeft: '5px', color: 'white' }}
+                                        >
+                                            ×
+                                        </a>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="uk-margin">

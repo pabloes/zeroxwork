@@ -3,30 +3,72 @@ import SimpleMDE from 'react-simplemde-editor';
 import 'easymde/dist/easymde.min.css';
 import { useNavigate } from 'react-router-dom';
 import UIkit from 'uikit';
-import { useMutation } from '@tanstack/react-query'; // Import React Query's useMutation
-import { api } from '../../services/axios-setup'; // Import your Axios instance
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { api } from '../../services/axios-setup';
 import { useAuth } from '../../context/AuthContext';
 
+interface Category {
+    id: number;
+    name: string;
+}
+
+interface Tag {
+    id: number;
+    name: string;
+}
+
 // Service function for creating a new article
-const createArticle = async (newArticle: { title: string; content: string; thumbnail: string; script?: string }) => {
+const createArticle = async (newArticle: {
+    title: string;
+    content: string;
+    thumbnail: string;
+    script?: string;
+    categoryId?: number | null;
+    tagIds?: number[];
+    newTags?: string[];
+}) => {
     const response = await api.post('/blog/articles', newArticle);
+    return response.data;
+};
+
+const fetchCategories = async (): Promise<Category[]> => {
+    const response = await api.get('/blog/categories');
+    return response.data;
+};
+
+const fetchTags = async (): Promise<Tag[]> => {
+    const response = await api.get('/blog/tags');
     return response.data;
 };
 
 const CreateArticle: React.FC = () => {
     const [title, setTitle] = useState<string>('');
     const [content, setContent] = useState<string>('');
-    const [script, setScript] = useState<string>(''); // ADMIN-only script
-    const [thumbnail, setThumbnail] = useState<string>(''); // State for thumbnail URL
+    const [script, setScript] = useState<string>('');
+    const [thumbnail, setThumbnail] = useState<string>('');
+    const [categoryId, setCategoryId] = useState<number | null>(null);
+    const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+    const [newTagInput, setNewTagInput] = useState<string>('');
+    const [newTags, setNewTags] = useState<string[]>([]);
     const navigate = useNavigate();
     const { user } = useAuth();
+
+    // Fetch categories and tags
+    const { data: categories = [] } = useQuery({
+        queryKey: ['categories'],
+        queryFn: fetchCategories,
+    });
+
+    const { data: tags = [] } = useQuery({
+        queryKey: ['tags'],
+        queryFn: fetchTags,
+    });
 
     const mutation = useMutation({
         mutationFn: createArticle,
         onSuccess: (data) => {
-            console.log("data", data);
             UIkit.notification('Article created successfully!', { status: 'success' });
-            navigate(`/view-article/${data.id}`); // Navigate to the created article
+            navigate(`/view-article/${data.id}`);
         },
         onError: (error) => {
             console.log("error", error);
@@ -34,29 +76,42 @@ const CreateArticle: React.FC = () => {
         },
     });
 
-// Instead of destructuring `isLoading`, destructure `status` from mutation
     const { status } = mutation;
 
-/*    const handleThumbnailError = (error:any)=>{
-        console.error(error);
-        debugger;
-        setThumbnail("")
-    }*/
-
-    // Handle article content change
     const handleContentChange = (value: string) => {
         setContent(value);
     };
 
-    // Handle form submission for creating an article
+    const handleTagToggle = (tagId: number) => {
+        setSelectedTagIds(prev =>
+            prev.includes(tagId)
+                ? prev.filter(id => id !== tagId)
+                : [...prev, tagId]
+        );
+    };
+
+    const handleAddNewTag = () => {
+        const trimmed = newTagInput.trim();
+        if (trimmed && !newTags.includes(trimmed)) {
+            setNewTags(prev => [...prev, trimmed]);
+            setNewTagInput('');
+        }
+    };
+
+    const handleRemoveNewTag = (tagName: string) => {
+        setNewTags(prev => prev.filter(t => t !== tagName));
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Trigger the mutation
         mutation.mutate({
             title,
             content,
             thumbnail,
             script: user?.role === 'ADMIN' ? script : undefined,
+            categoryId: categoryId || null,
+            tagIds: selectedTagIds,
+            newTags: newTags,
         });
     };
 
@@ -115,7 +170,90 @@ const CreateArticle: React.FC = () => {
                         </div>
                     )}
                 </div>
-                {JSON.stringify(user)}
+
+                <div className="uk-margin">
+                    <label className="uk-form-label" htmlFor="category">Category:</label>
+                    <div className="uk-form-controls">
+                        <select
+                            className="uk-select"
+                            id="category"
+                            value={categoryId || ''}
+                            onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
+                        >
+                            <option value="">No category</option>
+                            {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="uk-margin">
+                    <label className="uk-form-label">Tags:</label>
+                    <div className="uk-form-controls">
+                        {tags.length > 0 && (
+                            <div className="uk-margin-small-bottom">
+                                {tags.map((tag) => (
+                                    <label key={tag.id} className="uk-margin-small-right" style={{ display: 'inline-block' }}>
+                                        <input
+                                            className="uk-checkbox"
+                                            type="checkbox"
+                                            checked={selectedTagIds.includes(tag.id)}
+                                            onChange={() => handleTagToggle(tag.id)}
+                                        /> {tag.name}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                        <div className="uk-grid-small uk-flex-middle" uk-grid="">
+                            <div className="uk-width-expand">
+                                <input
+                                    className="uk-input"
+                                    type="text"
+                                    value={newTagInput}
+                                    onChange={(e) => setNewTagInput(e.target.value)}
+                                    placeholder="Add new tag..."
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleAddNewTag();
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div>
+                                <button
+                                    type="button"
+                                    className="uk-button uk-button-default"
+                                    onClick={handleAddNewTag}
+                                >
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                        {newTags.length > 0 && (
+                            <div className="uk-margin-small-top">
+                                <span className="uk-text-meta">New tags: </span>
+                                {newTags.map((tagName) => (
+                                    <span key={tagName} className="uk-label uk-margin-small-right">
+                                        {tagName}
+                                        <a
+                                            href="#"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handleRemoveNewTag(tagName);
+                                            }}
+                                            style={{ marginLeft: '5px', color: 'white' }}
+                                        >
+                                            ×
+                                        </a>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 <div className="uk-margin">
                     <label className="uk-form-label" htmlFor="content">Content (Markdown):</label>
                     <div className="uk-form-controls">

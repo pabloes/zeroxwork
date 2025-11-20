@@ -19,10 +19,127 @@ const include = {
                 },
             },
         },
+        category: true,
+        tags: true,
 };
+
+// ==================== CATEGORIES ====================
+
+// Get all categories
+router.get('/categories', async (req, res) => {
+    try {
+        const categories = await prisma.category.findMany({
+            orderBy: { name: 'asc' },
+        });
+        res.status(200).json(categories);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error fetching categories', error: error.message });
+    }
+});
+
+// Create a category (admin only would be ideal, but keeping it simple)
+router.post('/categories', verifyToken, async (req, res) => {
+    const { name } = req.body;
+    try {
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'Category name is required' });
+        }
+        const category = await prisma.category.create({
+            data: { name: name.trim() },
+        });
+        res.status(201).json(category);
+    } catch (error: any) {
+        if (error.code === 'P2002') {
+            return res.status(400).json({ error: 'Category already exists' });
+        }
+        res.status(500).json({ message: 'Error creating category', error: error.message });
+    }
+});
+
+// Update a category
+router.put('/categories/:id', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+    try {
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'Category name is required' });
+        }
+        const category = await prisma.category.update({
+            where: { id: Number(id) },
+            data: { name: name.trim() },
+        });
+        res.status(200).json(category);
+    } catch (error: any) {
+        if (error.code === 'P2002') {
+            return res.status(400).json({ error: 'Category already exists' });
+        }
+        res.status(500).json({ message: 'Error updating category', error: error.message });
+    }
+});
+
+// Delete a category
+router.delete('/categories/:id', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.category.delete({
+            where: { id: Number(id) },
+        });
+        res.status(200).json({ message: 'Category deleted successfully' });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error deleting category', error: error.message });
+    }
+});
+
+// ==================== TAGS ====================
+
+// Get all tags
+router.get('/tags', async (req, res) => {
+    try {
+        const tags = await prisma.tag.findMany({
+            orderBy: { name: 'asc' },
+        });
+        res.status(200).json(tags);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error fetching tags', error: error.message });
+    }
+});
+
+// Create a tag
+router.post('/tags', verifyToken, async (req, res) => {
+    const { name } = req.body;
+    try {
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'Tag name is required' });
+        }
+        const tag = await prisma.tag.create({
+            data: { name: name.trim() },
+        });
+        res.status(201).json(tag);
+    } catch (error: any) {
+        if (error.code === 'P2002') {
+            return res.status(400).json({ error: 'Tag already exists' });
+        }
+        res.status(500).json({ message: 'Error creating tag', error: error.message });
+    }
+});
+
+// Delete a tag
+router.delete('/tags/:id', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.tag.delete({
+            where: { id: Number(id) },
+        });
+        res.status(200).json({ message: 'Tag deleted successfully' });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error deleting tag', error: error.message });
+    }
+});
+
+// ==================== ARTICLES ====================
 // Crear un artículo
 router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => {
-    const { title, content, thumbnail, script } = req.body;
+    const { title, content, thumbnail, script, categoryId, tagIds, newTags } = req.body;
     const userId = (req as any).user.id;
 
     try {
@@ -30,21 +147,53 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
             return res.status(400).json({ error: 'Title and content are required' });
         }
 
+        // Create new tags if provided
+        let createdTagIds: number[] = [];
+        if (newTags && Array.isArray(newTags) && newTags.length > 0) {
+            for (const tagName of newTags) {
+                if (tagName && tagName.trim()) {
+                    try {
+                        const tag = await prisma.tag.create({
+                            data: { name: tagName.trim() },
+                        });
+                        createdTagIds.push(tag.id);
+                    } catch (e: any) {
+                        // Tag already exists, find it
+                        if (e.code === 'P2002') {
+                            const existingTag = await prisma.tag.findUnique({
+                                where: { name: tagName.trim() },
+                            });
+                            if (existingTag) {
+                                createdTagIds.push(existingTag.id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Combine existing tagIds with newly created ones
+        const allTagIds = [...(tagIds || []), ...createdTagIds];
+
         const article = await prisma.article.create({
             data: {
                 userId,
                 title,
                 content,
                 script: script && typeof script === 'string' && script.trim().length ? script : null,
-                thumbnail: thumbnail || null, // Si el thumbnail es opcional
-                published:true
+                thumbnail: thumbnail || null,
+                published: true,
+                categoryId: categoryId ? Number(categoryId) : null,
+                tags: allTagIds.length > 0 ? {
+                    connect: allTagIds.map((id: number) => ({ id })),
+                } : undefined,
             },
             include
         });
         const authorAddress = article.user?.defaultName?.wallet?.address || null;
         res.status(201).json({
             ...article,
-            author: article.user?.defaultName?.name || 'Anonymous', // Send the selected name or 'Anonymous' if no name is set
+            author: article.user?.defaultName?.name || 'Anonymous',
             authorAddress,
         });
     } catch (error:any) {
@@ -55,19 +204,54 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
 // Actualizar un artículo
 router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) => {
     const { id } = req.params;
-    const { title, content, thumbnail, script } = req.body;
+    const { title, content, thumbnail, script, categoryId, tagIds, newTags } = req.body;
     try {
         if (!title || !content) {
             return res.status(400).json({ error: 'Title and content are required' });
         }
+
+        // Create new tags if provided
+        let createdTagIds: number[] = [];
+        if (newTags && Array.isArray(newTags) && newTags.length > 0) {
+            for (const tagName of newTags) {
+                if (tagName && tagName.trim()) {
+                    try {
+                        const tag = await prisma.tag.create({
+                            data: { name: tagName.trim() },
+                        });
+                        createdTagIds.push(tag.id);
+                    } catch (e: any) {
+                        // Tag already exists, find it
+                        if (e.code === 'P2002') {
+                            const existingTag = await prisma.tag.findUnique({
+                                where: { name: tagName.trim() },
+                            });
+                            if (existingTag) {
+                                createdTagIds.push(existingTag.id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Combine existing tagIds with newly created ones
+        const allTagIds = [...(tagIds || []), ...createdTagIds];
+
         const updatedArticle = await prisma.article.update({
             where: { id: Number(id) },
             data: {
                 title,
                 content,
                 script: script && typeof script === 'string' && script.trim().length ? script : null,
-                thumbnail: thumbnail || null, // Si el thumbnail es opcional
+                thumbnail: thumbnail || null,
+                categoryId: categoryId ? Number(categoryId) : null,
+                tags: {
+                    set: [], // Disconnect all existing tags
+                    connect: allTagIds.map((tagId: number) => ({ id: tagId })), // Connect new tags
+                },
             },
+            include
         });
         res.status(200).json(updatedArticle);
     } catch (error:any) {
