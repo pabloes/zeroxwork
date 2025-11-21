@@ -1,0 +1,36 @@
+name: Deploy to CapRover
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install caprover-cli
+        run: |
+          npm install -g caprover
+
+      - name: Deploy to CapRover
+        env:
+          CAPROVER_SERVER: ${{ secrets.CAPROVER_SERVER }}
+          CAPROVER_TOKEN: ${{ secrets.CAPROVER_TOKEN }}
+          CAPROVER_APP: ${{ secrets.CAPROVER_APP }}
+        run: |
+          caprover deploy \
+            --caproverUrl "$CAPROVER_SERVER" \
+            --appName "$CAPROVER_APP" \
+            --appToken "$CAPROVER_TOKEN" \
+            --branch main \
+            --default
