@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from "../db";
+import { ROLE } from "../constants/roles";
 import {verifyToken} from "../middleware/authMiddleware";  // Asegúrate de tener la instancia de Prisma configurada
 import requireAdminIfScript from "../middleware/requireAdminIfScript";
 const router = Router();
@@ -205,9 +206,26 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
 router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) => {
     const { id } = req.params;
     const { title, content, thumbnail, script, categoryId, tagIds, newTags } = req.body;
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+
     try {
         if (!title || !content) {
             return res.status(400).json({ error: 'Title and content are required' });
+        }
+
+        // Verificar que el artículo existe
+        const existingArticle = await prisma.article.findUnique({
+            where: { id: Number(id) },
+        });
+
+        if (!existingArticle) {
+            return res.status(404).json({ error: 'Article not found' });
+        }
+
+        // Verificar permisos: admin puede editar cualquiera, usuario solo los suyos
+        if (userRole !== ROLE.ADMIN && existingArticle.userId !== userId) {
+            return res.status(403).json({ error: 'Not authorized to edit this article' });
         }
 
         // Create new tags if provided
@@ -337,7 +355,24 @@ router.get('/articles/:id', async (req, res) => {
 // Eliminar un artículo
 router.delete('/articles/:id', verifyToken, async (req, res) => {
     const { id } = req.params;
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+
     try {
+        // Verificar que el artículo existe
+        const existingArticle = await prisma.article.findUnique({
+            where: { id: Number(id) },
+        });
+
+        if (!existingArticle) {
+            return res.status(404).json({ error: 'Article not found' });
+        }
+
+        // Verificar permisos: admin puede eliminar cualquiera, usuario solo los suyos
+        if (userRole !== ROLE.ADMIN && existingArticle.userId !== userId) {
+            return res.status(403).json({ error: 'Not authorized to delete this article' });
+        }
+
         await prisma.article.delete({
             where: { id: Number(id) },
         });

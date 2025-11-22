@@ -8,6 +8,7 @@ import {useQuery} from "@tanstack/react-query";
 import {getNameAvatarImage} from "../../services/get-name-avatar-image";
 import DonateButton from "../../components/DonateButton";
 import InlineArticleScriptRunner from "../../components/InlineArticleScriptRunner";
+import {ROLE} from "../../constants/roles";
 
 const ArticlePage: React.FC = () => {
     const {user} = useAuth();
@@ -24,7 +25,7 @@ const ArticlePage: React.FC = () => {
     }
     return (
         <div className="uk-container uk-section">
-            {user && user?.userId === article?.userId && (
+            {user && (user?.role === ROLE.ADMIN || user?.userId === article?.userId) && (
                 <button className="uk-button uk-button-primary" onClick={handleEditClick}>
                     Edit Article
                 </button>

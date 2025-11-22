@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { ROLE } from '../constants/roles';
 
 /**
  * Ensures the current user has ADMIN role.
@@ -12,7 +13,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
       (res.locals as any)?.user?.role ??
       (req as any)?.session?.user?.role;
 
-    if (role === 'ADMIN') {
+    if (role === ROLE.ADMIN) {
       return next();
     }
     return res.status(403).json({ error: 'Admin privileges required' });

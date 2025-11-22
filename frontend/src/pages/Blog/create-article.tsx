@@ -6,6 +6,7 @@ import UIkit from 'uikit';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../../services/axios-setup';
 import { useAuth } from '../../context/AuthContext';
+import { ROLE } from '../../constants/roles';
 
 interface Category {
     id: number;
@@ -108,7 +109,7 @@ const CreateArticle: React.FC = () => {
             title,
             content,
             thumbnail,
-            script: user?.role === 'ADMIN' ? script : undefined,
+            script: user?.role === ROLE.ADMIN ? script : undefined,
             categoryId: categoryId || null,
             tagIds: selectedTagIds,
             newTags: newTags,
@@ -265,7 +266,7 @@ const CreateArticle: React.FC = () => {
                     </div>
                 </div>
 
-                {user?.role === 'ADMIN' && (
+                {user?.role === ROLE.ADMIN && (
                     <div className="uk-margin">
                         <label className="uk-form-label" htmlFor="script">Script (optional, ADMIN only):</label>
                         <div className="uk-form-controls">

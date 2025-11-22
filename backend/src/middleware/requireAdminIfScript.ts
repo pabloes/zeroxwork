@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../db';
+import { ROLE } from '../constants/roles';
 
 /**
  * Allows all requests that don't include a "script" payload.
@@ -28,7 +29,7 @@ export async function requireAdminIfScript(req: Request, res: Response, next: Ne
       select: { role: true }
     });
 
-    if (user.role === 'ADMIN') {
+    if (user.role === ROLE.ADMIN) {
       return next();
     }
 

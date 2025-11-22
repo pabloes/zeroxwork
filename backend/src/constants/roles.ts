@@ -1,0 +1,1 @@
+export { Role as ROLE } from "@prisma/client";
