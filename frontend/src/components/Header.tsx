@@ -1,13 +1,23 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import logo from '../../public/zeroxwork-logo.png';
 import { useAuth } from "../context/AuthContext";
 
 const Header: React.FC = () => {
-    const { isAuthenticated, logout, contextTitle } = useAuth(); // Get logout function from context
+    const { isAuthenticated, logout } = useAuth();
+    const location = useLocation();
 
     const handleLogout = () => {
-        logout(); // Call the logout function
-        window.location.href = '/'; // Redirect to homepage or any other page after logout
+        logout();
+        window.location.href = '/';
+    };
+
+    // Determine active tab based on current path
+    const isActive = (path: string) => {
+        if (path === '/blog') {
+            return location.pathname === '/' || location.pathname.startsWith('/blog') ||
+                   location.pathname.startsWith('/view-article') || location.pathname.startsWith('/articles');
+        }
+        return location.pathname.startsWith(path);
     };
 
     return (
@@ -16,13 +26,20 @@ const Header: React.FC = () => {
                 <div className="uk-navbar-left">
                     {/* Logo with link */}
                     <a href="/" className="uk-navbar-item uk-logo">
-                        <img src={logo} alt="ZEROxWORK Logo" width="120" /> {/* Use imported logo */}
+                        <img src={logo} alt="ZEROxWORK Logo" width="120" />
                     </a>
                 </div>
 
-                {/* Center Title */}
+                {/* Center Navigation Tabs */}
                 <div className="uk-navbar-center">
-                    <h1 className="uk-visible@m">{contextTitle}</h1> {/* Hide title on mobile */}
+                    <ul className="uk-navbar-nav">
+                        <li className={isActive('/blog') ? 'uk-active' : ''}>
+                            <Link to="/">Blog</Link>
+                        </li>
+                        <li className={isActive('/tools') ? 'uk-active' : ''}>
+                            <Link to="/tools">Tools</Link>
+                        </li>
+                    </ul>
                 </div>
 
                 {/* Right Side with Account Links */}
@@ -58,11 +75,6 @@ const Header: React.FC = () => {
                     </ul>
                 </div>
             </nav>
-
-            {/* Page title on mobile view */}
-            <div className="uk-hidden@m uk-text-center uk-margin-small-top">
-                <h2>{contextTitle}</h2>
-            </div>
         </header>
     );
 };

@@ -74,6 +74,18 @@ const options:AdminJSOptions =  {
                 model: getModelByName("WalletNames"),
                 client: prisma,
             },
+        },
+        {
+            resource: {
+                model: getModelByName("Category"),
+                client: prisma,
+            },
+        },
+        {
+            resource: {
+                model: getModelByName("Tag"),
+                client: prisma,
+            },
         }
     ],
     rootPath: '/admin',

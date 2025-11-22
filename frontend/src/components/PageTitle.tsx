@@ -1,17 +1,16 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import {useAuth} from "../context/AuthContext";
 
-const PageTitle = ({ title }:any) => {
+const PageTitle = ({ title }: { title: string }) => {
     const location = useLocation();
-    const {setContextTitle} = useAuth();
 
     useEffect(() => {
-        document.title = `ZEROxWORK | ` + title;
-        setContextTitle(title)
+        document.title = `ZEROxWORK | ${title}`;
     }, [location, title]);
 
-    return null;
+    return (
+        <h1 className="uk-heading-medium uk-margin-bottom">{title}</h1>
+    );
 };
 
 export default PageTitle;
