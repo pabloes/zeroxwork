@@ -68,7 +68,20 @@ const ArticlePage: React.FC = () => {
 
 export default ArticlePage;
 
-async function fetchArticleById (id: string) {
-    const response = await api.get(`/blog/articles/${id}`);
+async function fetchArticleById (idOrSlug: string) {
+    // Check if it's a numeric ID or a slug
+    const isNumeric = /^\d+$/.test(idOrSlug);
+    const endpoint = isNumeric
+        ? `/blog/articles/${idOrSlug}`
+        : `/blog/articles/by-slug/${idOrSlug}`;
+
+    const response = await api.get(endpoint);
+
+    // Handle 301 redirect
+    if (response.data.redirect && response.data.slug) {
+        window.location.href = `/view-article/${response.data.slug}`;
+        return null;
+    }
+
     return response.data;
 }

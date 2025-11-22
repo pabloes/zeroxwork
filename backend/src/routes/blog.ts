@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { prisma } from "../db";
 import { ROLE } from "../constants/roles";
-import {verifyToken} from "../middleware/authMiddleware";  // Asegúrate de tener la instancia de Prisma configurada
+import {verifyToken} from "../middleware/authMiddleware";
 import requireAdminIfScript from "../middleware/requireAdminIfScript";
+import { slugify, computeSourceHash, makeUniqueSlug } from "../utils/slug";
+import { createArticleTranslations, updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
 const router = Router();
 
 const include = {
@@ -140,13 +142,20 @@ router.delete('/tags/:id', verifyToken, async (req, res) => {
 // ==================== ARTICLES ====================
 // Crear un artículo
 router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => {
-    const { title, content, thumbnail, script, categoryId, tagIds, newTags } = req.body;
+    const { title, content, thumbnail, script, categoryId, tagIds, newTags, slug: customSlug, lang = 'es' } = req.body;
     const userId = (req as any).user.id;
 
     try {
         if (!title || !content) {
             return res.status(400).json({ error: 'Title and content are required' });
         }
+
+        // Generate slug
+        const baseSlug = customSlug ? slugify(customSlug) : slugify(title);
+        const articleSlug = await makeUniqueSlug(baseSlug);
+
+        // Compute source hash for cache invalidation
+        const sourceHash = computeSourceHash(title, content);
 
         // Create new tags if provided
         let createdTagIds: number[] = [];
@@ -181,6 +190,9 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
                 userId,
                 title,
                 content,
+                slug: articleSlug,
+                lang: lang.toLowerCase(),
+                sourceHash,
                 script: script && typeof script === 'string' && script.trim().length ? script : null,
                 thumbnail: thumbnail || null,
                 published: true,
@@ -191,6 +203,21 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
             },
             include
         });
+
+        // Create base slug history entry
+        await prisma.articleSlug.create({
+            data: {
+                articleId: article.id,
+                lang: article.lang,
+                slug: article.slug,
+                isCurrent: true,
+            },
+        });
+
+        // Create translations asynchronously (don't wait for response)
+        createArticleTranslations(article.id, title, content, article.lang, sourceHash)
+            .catch(err => console.error('Translation error:', err));
+
         const authorAddress = article.user?.defaultName?.wallet?.address || null;
         res.status(201).json({
             ...article,
@@ -205,7 +232,7 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
 // Actualizar un artículo
 router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) => {
     const { id } = req.params;
-    const { title, content, thumbnail, script, categoryId, tagIds, newTags } = req.body;
+    const { title, content, thumbnail, script, categoryId, tagIds, newTags, slug: customSlug, lang } = req.body;
     const userId = (req as any).user.id;
     const userRole = (req as any).user.role;
 
@@ -226,6 +253,18 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
         // Verificar permisos: admin puede editar cualquiera, usuario solo los suyos
         if (userRole !== ROLE.ADMIN && existingArticle.userId !== userId) {
             return res.status(403).json({ error: 'Not authorized to edit this article' });
+        }
+
+        // Compute new source hash
+        const newHash = computeSourceHash(title, content);
+        const contentChanged = newHash !== existingArticle.sourceHash;
+
+        // Handle slug change if provided
+        let newSlug = existingArticle.slug;
+        if (customSlug && slugify(customSlug) !== existingArticle.slug) {
+            newSlug = await makeUniqueSlug(slugify(customSlug));
+            // Update base slug history
+            await updateBaseSlugHistory(existingArticle.id, existingArticle.lang, newSlug);
         }
 
         // Create new tags if provided
@@ -261,6 +300,9 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
             data: {
                 title,
                 content,
+                slug: newSlug,
+                lang: lang ? lang.toLowerCase() : existingArticle.lang,
+                sourceHash: newHash,
                 script: script && typeof script === 'string' && script.trim().length ? script : null,
                 thumbnail: thumbnail || null,
                 categoryId: categoryId ? Number(categoryId) : null,
@@ -271,25 +313,108 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
             },
             include
         });
+
+        // Update translations if content changed
+        if (contentChanged) {
+            updateArticleTranslations(updatedArticle.id, title, content, updatedArticle.lang, newHash)
+                .catch(err => console.error('Translation update error:', err));
+        }
+
         res.status(200).json(updatedArticle);
     } catch (error:any) {
         res.status(500).json({ message: 'Error updating article', error: error.message });
     }
 });
 
-// Obtener todos los artículos
-// Obtener todos los artículos
+// Obtener todos los artículos (con filtro opcional por idioma)
 router.get('/articles', async (req, res) => {
     try {
+        const { lang } = req.query;
+
+        if (lang && typeof lang === 'string') {
+            // Return articles in requested language (base or translations)
+            const normalizedLang = lang.toLowerCase();
+
+            // Get base articles in this language
+            const baseArticles = await prisma.article.findMany({
+                where: {
+                    published: true,
+                    lang: normalizedLang,
+                },
+                include,
+                orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+            });
+
+            // Get translations in this language
+            const translations = await prisma.articleTranslation.findMany({
+                where: { targetLang: normalizedLang },
+                include: {
+                    article: {
+                        include,
+                    },
+                },
+            });
+
+            // Format base articles
+            const formattedBase = baseArticles.map((article) => {
+                const authorAddress = article.user?.defaultName?.wallet?.address || null;
+                return {
+                    id: article.id,
+                    title: article.title,
+                    content: article.content,
+                    slug: article.slug,
+                    lang: article.lang,
+                    thumbnail: article.thumbnail,
+                    createdAt: article.createdAt,
+                    updatedAt: article.updatedAt,
+                    author: article.user?.defaultName?.name || 'Anonymous',
+                    authorAddress,
+                    category: article.category,
+                    tags: article.tags,
+                };
+            });
+
+            // Format translations (exclude if base article is already in this lang)
+            const baseArticleIds = new Set(baseArticles.map(a => a.id));
+            const formattedTranslations = translations
+                .filter(t => !baseArticleIds.has(t.articleId))
+                .map((t) => {
+                    const article = t.article;
+                    const authorAddress = article.user?.defaultName?.wallet?.address || null;
+                    return {
+                        id: article.id,
+                        title: t.title,
+                        content: t.content,
+                        slug: t.slug,
+                        lang: t.targetLang,
+                        thumbnail: article.thumbnail,
+                        createdAt: article.createdAt,
+                        updatedAt: t.cachedAt,
+                        author: article.user?.defaultName?.name || 'Anonymous',
+                        authorAddress,
+                        category: article.category,
+                        tags: article.tags,
+                        isTranslation: true,
+                    };
+                });
+
+            const allArticles = [...formattedBase, ...formattedTranslations]
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+            return res.status(200).json(allArticles);
+        }
+
+        // Default: return all base articles
         const articles = await prisma.article.findMany({
             where: { published: true },
-            include
+            include,
+            orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
         });
         const formattedArticles = articles.map((article) => {
             const authorAddress = article.user?.defaultName?.wallet?.address || null;
             return {
                 ...article,
-                author: article.user?.defaultName?.name || 'Anonymous', // Send the author's name or 'Anonymous'
+                author: article.user?.defaultName?.name || 'Anonymous',
                 authorAddress
             }
         });
@@ -297,6 +422,121 @@ router.get('/articles', async (req, res) => {
         res.status(200).json(formattedArticles);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching articles', error: error.message });
+    }
+});
+
+// Obtener artículo por slug (con soporte para redirects 301)
+router.get('/articles/by-slug/:slug', async (req, res) => {
+    const { slug } = req.params;
+
+    try {
+        // Find slug in history
+        const slugRecord = await prisma.articleSlug.findUnique({
+            where: { slug },
+        });
+
+        if (!slugRecord) {
+            return res.status(404).json({ message: 'Article not found' });
+        }
+
+        // If slug is not current, redirect to current slug
+        if (!slugRecord.isCurrent) {
+            const currentSlug = await prisma.articleSlug.findFirst({
+                where: {
+                    articleId: slugRecord.articleId,
+                    lang: slugRecord.lang,
+                    isCurrent: true,
+                },
+            });
+
+            if (currentSlug) {
+                return res.status(301).json({
+                    redirect: true,
+                    slug: currentSlug.slug,
+                });
+            }
+        }
+
+        // Load the base article
+        const article = await prisma.article.findUnique({
+            where: { id: slugRecord.articleId },
+            include,
+        });
+
+        if (!article) {
+            return res.status(404).json({ message: 'Article not found' });
+        }
+
+        // If requesting base language, return base article
+        if (slugRecord.lang === article.lang) {
+            const authorAddress = article.user?.defaultName?.wallet?.address || null;
+
+            // Get all current slugs for hreflang
+            const allSlugs = await prisma.articleSlug.findMany({
+                where: { articleId: article.id, isCurrent: true },
+            });
+
+            return res.status(200).json({
+                ...article,
+                author: article.user?.defaultName?.name || 'Anonymous',
+                authorAddress,
+                hreflang: allSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
+            });
+        }
+
+        // Find translation for this language
+        const translation = await prisma.articleTranslation.findUnique({
+            where: {
+                articleId_targetLang: {
+                    articleId: article.id,
+                    targetLang: slugRecord.lang,
+                },
+            },
+        });
+
+        // If translation exists and is up to date, return it
+        if (translation && translation.sourceHash === article.sourceHash) {
+            const authorAddress = article.user?.defaultName?.wallet?.address || null;
+
+            // Get all current slugs for hreflang
+            const allSlugs = await prisma.articleSlug.findMany({
+                where: { articleId: article.id, isCurrent: true },
+            });
+
+            return res.status(200).json({
+                id: article.id,
+                title: translation.title,
+                content: translation.content,
+                slug: translation.slug,
+                lang: translation.targetLang,
+                script: article.script,
+                thumbnail: article.thumbnail,
+                createdAt: article.createdAt,
+                updatedAt: translation.cachedAt,
+                author: article.user?.defaultName?.name || 'Anonymous',
+                authorAddress,
+                category: article.category,
+                tags: article.tags,
+                isTranslation: true,
+                hreflang: allSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
+            });
+        }
+
+        // Fallback to base article
+        const authorAddress = article.user?.defaultName?.wallet?.address || null;
+        const allSlugs = await prisma.articleSlug.findMany({
+            where: { articleId: article.id, isCurrent: true },
+        });
+
+        return res.status(200).json({
+            ...article,
+            author: article.user?.defaultName?.name || 'Anonymous',
+            authorAddress,
+            hreflang: allSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
+            fallback: true,
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching article', error: error.message });
     }
 });
 

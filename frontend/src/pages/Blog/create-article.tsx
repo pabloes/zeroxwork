@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import SimpleMDE from 'react-simplemde-editor';
 import 'easymde/dist/easymde.min.css';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,14 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../../services/axios-setup';
 import { useAuth } from '../../context/AuthContext';
 import { ROLE } from '../../constants/roles';
+import { slugify } from '../../utils/slug';
+
+const SUPPORTED_LANGS = [
+    { code: 'es', name: 'Español' },
+    { code: 'en', name: 'English' },
+    { code: 'pt-br', name: 'Português (Brasil)' },
+    { code: 'zh', name: '中文' },
+];
 
 interface Category {
     id: number;
@@ -23,6 +31,8 @@ const createArticle = async (newArticle: {
     title: string;
     content: string;
     thumbnail: string;
+    slug?: string;
+    lang?: string;
     script?: string;
     categoryId?: number | null;
     tagIds?: number[];
@@ -47,12 +57,30 @@ const CreateArticle: React.FC = () => {
     const [content, setContent] = useState<string>('');
     const [script, setScript] = useState<string>('');
     const [thumbnail, setThumbnail] = useState<string>('');
+    const [slug, setSlug] = useState<string>('');
+    const [lang, setLang] = useState<string>('es');
+    const [autoSlug, setAutoSlug] = useState<boolean>(true);
     const [categoryId, setCategoryId] = useState<number | null>(null);
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [newTagInput, setNewTagInput] = useState<string>('');
     const [newTags, setNewTags] = useState<string[]>([]);
     const navigate = useNavigate();
     const { user } = useAuth();
+
+    // Auto-generate slug from title when autoSlug is enabled
+    useEffect(() => {
+        if (autoSlug) {
+            setSlug(slugify(title));
+        }
+    }, [title, autoSlug]);
+
+    // Handle manual slug change
+    const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSlug(e.target.value);
+        if (autoSlug) {
+            setAutoSlug(false);
+        }
+    };
 
     // Fetch categories and tags
     const { data: categories = [] } = useQuery({
@@ -109,6 +137,8 @@ const CreateArticle: React.FC = () => {
             title,
             content,
             thumbnail,
+            slug: slug || undefined,
+            lang,
             script: user?.role === ROLE.ADMIN ? script : undefined,
             categoryId: categoryId || null,
             tagIds: selectedTagIds,
@@ -141,6 +171,48 @@ const CreateArticle: React.FC = () => {
                             required
                             placeholder="Enter article title"
                         />
+                    </div>
+                </div>
+
+                <div className="uk-margin">
+                    <label className="uk-form-label" htmlFor="slug">Slug:</label>
+                    <div className="uk-form-controls uk-grid-small uk-flex-middle" uk-grid="">
+                        <div className="uk-width-expand">
+                            <input
+                                className="uk-input"
+                                id="slug"
+                                type="text"
+                                value={slug}
+                                onChange={handleSlugChange}
+                                placeholder="article-url-slug"
+                            />
+                        </div>
+                        <div>
+                            <label>
+                                <input
+                                    className="uk-checkbox"
+                                    type="checkbox"
+                                    checked={autoSlug}
+                                    onChange={(e) => setAutoSlug(e.target.checked)}
+                                /> auto-slug
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="uk-margin">
+                    <label className="uk-form-label" htmlFor="lang">Language:</label>
+                    <div className="uk-form-controls">
+                        <select
+                            className="uk-select"
+                            id="lang"
+                            value={lang}
+                            onChange={(e) => setLang(e.target.value)}
+                        >
+                            {SUPPORTED_LANGS.map((l) => (
+                                <option key={l.code} value={l.code}>{l.name}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 

@@ -89,24 +89,62 @@ model ApiKey {
 }
 
 model Article {
-  id         Int       @id @default(autoincrement())
-  title      String
-  content    String
-  script     String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  userId     Int
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  thumbnail  String?
-  published  Boolean   @default(false)
-  featured   Boolean   @default(false)
-  categoryId Int?
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  tags       Tag[]
+  id           Int                  @id @default(autoincrement())
+  title        String
+  content      String
+  script       String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  userId       Int
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thumbnail    String?
+  published    Boolean              @default(false)
+  featured     Boolean              @default(false)
+  categoryId   Int?
+  category     Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags         Tag[]
+  slug         String               @unique
+  lang         String               @default("es")
+  sourceHash   String?
+  translations ArticleTranslation[]
+  slugHistory  ArticleSlug[]
 
   @@index([userId])
   @@index([categoryId])
+  @@index([slug])
   @@map("articles")
+}
+
+model ArticleTranslation {
+  id         Int      @id @default(autoincrement())
+  articleId  Int
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  targetLang String
+  slug       String   @unique
+  title      String
+  content    String
+  sourceHash String?
+  provider   String?
+  cachedAt   DateTime @default(now())
+
+  @@unique([articleId, targetLang])
+  @@index([slug])
+  @@index([articleId])
+  @@map("article_translations")
+}
+
+model ArticleSlug {
+  id        Int      @id @default(autoincrement())
+  articleId Int
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  lang      String
+  slug      String   @unique
+  isCurrent Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([articleId])
+  @@index([lang])
+  @@map("article_slugs")
 }
 
 model Category {
