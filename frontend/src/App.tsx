@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Route, Routes,Navigate } from 'react-router-do
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import {AuthProvider, useAuth} from "./context/AuthContext";
-import PageTitle from "./components/PageTitle";
 import {pageRoutes} from "./services/routes";
 
 const App: React.FC = () => {
@@ -13,14 +12,13 @@ const App: React.FC = () => {
                 <Header />
                 <div className="main-content">
                     <Routes>
-                        {pageRoutes.map(({RouteElement, path,title, props,auth}, index)=>( <Route  key={index} path={path} element={<>
+                        {pageRoutes.map(({RouteElement, path, props, auth}, index)=>( <Route  key={index} path={path} element={<>
                             {auth ? <PrivateRoute>
                                     <RouteElement {...props} />
                                 </PrivateRoute>
                                 : <>
                                     <RouteElement {...props} />
                                 </>}
-                            <PageTitle title={title} />
                         </>
                         } />))}
                     </Routes>
