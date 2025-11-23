@@ -56,6 +56,18 @@ const options:AdminJSOptions =  {
                 model: getModelByName("Article"),
                 client: prisma,
             },
+            options: {
+                properties: {
+                    translations: {
+                        isVisible: { show: true, edit: false, list: false, filter: false },
+                        reference: 'ArticleTranslation',
+                    },
+                    slugHistory: {
+                        isVisible: { show: true, edit: false, list: false, filter: false },
+                        reference: 'ArticleSlug',
+                    },
+                },
+            },
         },
         {
             resource: {

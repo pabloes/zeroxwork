@@ -12,7 +12,6 @@ export async function updateUserExtraSpace(user:{wallets:{walletNames:[]}[]}){
         where: { id: user.id },
         data: { extraQuota:pointsPerNames*1024*1024*5 },
     })
-    console.log("updateUserExtraSpace",updateResult);
     return updateResult;
 }
 export async function updateWalletNames(walletAddress: string) {

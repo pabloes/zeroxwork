@@ -19,7 +19,10 @@ import { ROLE } from './constants/roles';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
-
+const _consoleLog = console.log.bind(console);
+console.log = (...args: any[]) => {
+    _consoleLog("LOG_",...args);
+}
 const run = async () => {
     await initializeDb();
 
