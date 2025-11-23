@@ -210,7 +210,6 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
                 articleId: article.id,
                 lang: article.lang,
                 slug: article.slug,
-                isCurrent: true,
             },
         });
 
@@ -439,22 +438,21 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
             return res.status(404).json({ message: 'Article not found' });
         }
 
-        // If slug is not current, redirect to current slug
-        if (!slugRecord.isCurrent) {
-            const currentSlug = await prisma.articleSlug.findFirst({
-                where: {
-                    articleId: slugRecord.articleId,
-                    lang: slugRecord.lang,
-                    isCurrent: true,
-                },
-            });
+        // Check if this slug is the most recent for this article+lang
+        const currentSlug = await prisma.articleSlug.findFirst({
+            where: {
+                articleId: slugRecord.articleId,
+                lang: slugRecord.lang,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
 
-            if (currentSlug) {
-                return res.status(301).json({
-                    redirect: true,
-                    slug: currentSlug.slug,
-                });
-            }
+        // If slug is not current, redirect to current slug
+        if (currentSlug && currentSlug.id !== slugRecord.id) {
+            return res.status(301).json({
+                redirect: true,
+                slug: currentSlug.slug,
+            });
         }
 
         // Load the base article
@@ -471,16 +469,23 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
         if (slugRecord.lang === article.lang) {
             const authorAddress = article.user?.defaultName?.wallet?.address || null;
 
-            // Get all current slugs for hreflang
-            const allSlugs = await prisma.articleSlug.findMany({
-                where: { articleId: article.id, isCurrent: true },
+            // Get all current slugs for hreflang (most recent per lang)
+            const allSlugsRaw = await prisma.articleSlug.findMany({
+                where: { articleId: article.id },
+                orderBy: { createdAt: 'desc' },
             });
+            const currentSlugs = Object.values(
+                allSlugsRaw.reduce((acc, s) => {
+                    if (!acc[s.lang]) acc[s.lang] = s;
+                    return acc;
+                }, {} as Record<string, typeof allSlugsRaw[0]>)
+            );
 
             return res.status(200).json({
                 ...article,
                 author: article.user?.defaultName?.name || 'Anonymous',
                 authorAddress,
-                hreflang: allSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
+                hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
             });
         }
 

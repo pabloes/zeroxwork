@@ -139,11 +139,11 @@ model ArticleSlug {
   article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   lang      String
   slug      String   @unique
-  isCurrent Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@index([articleId])
   @@index([lang])
+  @@index([createdAt])
   @@map("article_slugs")
 }
 
