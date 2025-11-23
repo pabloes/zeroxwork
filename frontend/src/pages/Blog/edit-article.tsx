@@ -61,10 +61,10 @@ const EditArticle: React.FC = () => {
 
     // Mutation for updating the article
     const mutation = useMutation({
-        mutationFn: (updatedArticle: any) => updateArticleById(id as string, updatedArticle),
+        mutationFn: (updatedArticle: any) => updateArticleById(String(article?.id), updatedArticle),
         onSuccess: () => {
             UIkit.notification('Article updated successfully!', "success");
-            navigate(`/view-article/${id}`);
+            navigate(`/view-article/${article?.slug || article?.id}`);
         },
         onError: () => {
             UIkit.notification('Error updating article.', "error");
