@@ -382,8 +382,14 @@ const EditArticle: React.FC = () => {
 export default EditArticle;
 
 
-async function fetchArticleById (id: string) {
-    const response = await api.get(`/blog/articles/${id}`);
+async function fetchArticleById (idOrSlug: string) {
+    // Check if it's a numeric ID or a slug
+    const isNumeric = /^\d+$/.test(idOrSlug);
+    const endpoint = isNumeric
+        ? `/blog/articles/${idOrSlug}`
+        : `/blog/articles/by-slug/${idOrSlug}`;
+
+    const response = await api.get(endpoint);
     return response.data;
 }
 
