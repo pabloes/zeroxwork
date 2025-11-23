@@ -377,7 +377,7 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
 // Obtener todos los artículos (con filtro opcional por idioma y categoría)
 router.get('/articles', async (req, res) => {
     try {
-        const { lang, category } = req.query;
+        const { lang, category, limit, offset } = req.query;
 
         // Build category filter
         const categoryFilter = category && typeof category === 'string'
@@ -387,87 +387,107 @@ router.get('/articles', async (req, res) => {
         if (lang && typeof lang === 'string') {
             // Return articles in requested language (base or translations)
             const normalizedLang = lang.toLowerCase();
+            const limitNum = limit ? parseInt(limit as string, 10) : 100;
+            const offsetNum = offset ? parseInt(offset as string, 10) : 0;
 
-            // Get base articles in this language
-            const baseArticles = await prisma.article.findMany({
-                where: {
-                    published: true,
-                    lang: normalizedLang,
-                    ...categoryFilter,
-                },
-                include,
-                orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+            // Build category condition for SQL
+            const categoryCondition = category && typeof category === 'string'
+                ? `AND LOWER(c.name) = LOWER($2)`
+                : `AND TRUE`;
+
+            const params = category && typeof category === 'string'
+                ? [normalizedLang, category, limitNum, offsetNum]
+                : [normalizedLang, limitNum, offsetNum];
+
+            const limitParam = category ? '$3' : '$2';
+            const offsetParam = category ? '$4' : '$3';
+
+            // Use raw SQL with UNION to get both base articles and translations, properly sorted
+            const rawArticles = await prisma.$queryRawUnsafe<any[]>(`
+                SELECT
+                    a.id,
+                    a.title,
+                    a.content,
+                    a.slug,
+                    a.lang,
+                    a.thumbnail,
+                    a."createdAt",
+                    a."updatedAt",
+                    a.featured,
+                    a."userId",
+                    c.id as "categoryId",
+                    c.name as "categoryName",
+                    wn.name as author,
+                    w.address as "authorAddress",
+                    FALSE as "isTranslation"
+                FROM articles a
+                LEFT JOIN categories c ON a."categoryId" = c.id
+                LEFT JOIN users u ON a."userId" = u.id
+                LEFT JOIN "WalletDecentralandNames" wn ON u."defaultNameId" = wn.id
+                LEFT JOIN "Wallet" w ON wn."walletId" = w.id
+                WHERE a.published = TRUE
+                AND a.lang = $1
+                ${categoryCondition}
+
+                UNION ALL
+
+                SELECT
+                    a.id,
+                    t.title,
+                    t.content,
+                    t.slug,
+                    t."targetLang" as lang,
+                    a.thumbnail,
+                    a."createdAt",
+                    t."cachedAt" as "updatedAt",
+                    a.featured,
+                    a."userId",
+                    c.id as "categoryId",
+                    c.name as "categoryName",
+                    wn.name as author,
+                    w.address as "authorAddress",
+                    TRUE as "isTranslation"
+                FROM article_translations t
+                JOIN articles a ON t."articleId" = a.id
+                LEFT JOIN categories c ON a."categoryId" = c.id
+                LEFT JOIN users u ON a."userId" = u.id
+                LEFT JOIN "WalletDecentralandNames" wn ON u."defaultNameId" = wn.id
+                LEFT JOIN "Wallet" w ON wn."walletId" = w.id
+                WHERE t."targetLang" = $1
+                AND a.lang != $1
+                ${categoryCondition}
+
+                ORDER BY featured DESC, "createdAt" DESC
+                LIMIT ${limitParam} OFFSET ${offsetParam}
+            `, ...params);
+
+            // Get tags for each article
+            const articleIds = [...new Set(rawArticles.map(a => a.id))];
+            const articleTags = await prisma.article.findMany({
+                where: { id: { in: articleIds } },
+                select: { id: true, tags: true },
             });
+            const tagsMap = new Map(articleTags.map(a => [a.id, a.tags]));
 
-            // Get translations in this language
-            const translations = await prisma.articleTranslation.findMany({
-                where: {
-                    targetLang: normalizedLang,
-                    article: categoryFilter,
-                },
-                include: {
-                    article: {
-                        include,
-                    },
-                },
-            });
+            // Format the results
+            const formattedArticles = rawArticles.map(article => ({
+                id: article.id,
+                title: article.title,
+                content: article.content,
+                slug: article.slug,
+                lang: article.lang,
+                thumbnail: article.thumbnail,
+                createdAt: article.createdAt,
+                updatedAt: article.updatedAt,
+                featured: article.featured,
+                author: article.author || 'Anonymous',
+                authorAddress: article.authorAddress,
+                category: article.categoryId ? { id: article.categoryId, name: article.categoryName } : null,
+                tags: tagsMap.get(article.id) || [],
+                isTranslation: article.isTranslation,
+            }));
 
-            // Format base articles
-            const formattedBase = baseArticles.map((article) => {
-                const authorAddress = article.user?.defaultName?.wallet?.address || null;
-                return {
-                    id: article.id,
-                    title: article.title,
-                    content: article.content,
-                    slug: article.slug,
-                    lang: article.lang,
-                    thumbnail: article.thumbnail,
-                    createdAt: article.createdAt,
-                    updatedAt: article.updatedAt,
-                    author: article.user?.defaultName?.name || 'Anonymous',
-                    authorAddress,
-                    category: article.category,
-                    tags: article.tags,
-                    featured: article.featured,
-                };
-            });
-
-            // Format translations (exclude if base article is already in this lang)
-            const baseArticleIds = new Set(baseArticles.map(a => a.id));
-            const formattedTranslations = translations
-                .filter(t => !baseArticleIds.has(t.articleId))
-                .map((t) => {
-                    const article = t.article;
-                    const authorAddress = article.user?.defaultName?.wallet?.address || null;
-                    return {
-                        id: article.id,
-                        title: t.title,
-                        content: t.content,
-                        slug: t.slug,
-                        lang: t.targetLang,
-                        thumbnail: article.thumbnail,
-                        createdAt: article.createdAt,
-                        updatedAt: t.cachedAt,
-                        author: article.user?.defaultName?.name || 'Anonymous',
-                        authorAddress,
-                        category: article.category,
-                        tags: article.tags,
-                        featured: article.featured,
-                        isTranslation: true,
-                    };
-                });
-
-            const allArticles = [...formattedBase, ...formattedTranslations]
-                .sort((a, b) => {
-                    // First sort by featured (featured articles first)
-                    if (a.featured !== b.featured) {
-                        return a.featured ? -1 : 1;
-                    }
-                    // Then by createdAt (newest first)
-                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                });
-
-            return res.status(200).json(allArticles);
+            return res.status(200).json(formattedArticles);
         }
 
         // Default: return all base articles
