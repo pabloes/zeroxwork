@@ -57,7 +57,60 @@ const options:AdminJSOptions =  {
                 client: prisma,
             },
             options: {
+                listProperties: ['id', 'lang', 'category', 'title', 'content', 'createdAt', 'updatedAt', 'user', 'thumbnail', 'published', 'featured', 'slug'],
                 properties: {
+                    id: {
+                        isVisible: { show: true, edit: false, list: true, filter: true },
+                    },
+                    lang: {
+                        isVisible: { show: true, edit: true, list: true, filter: true },
+                    },
+                    category: {
+                        isVisible: { show: true, edit: true, list: true, filter: true },
+                    },
+                    title: {
+                        isVisible: { show: true, edit: true, list: true, filter: true },
+                    },
+                    content: {
+                        isVisible: { show: true, edit: true, list: true, filter: false },
+                        type: 'textarea',
+                        props: {
+                            rows: 10,
+                        },
+                        components: {
+                            list: Components.TruncatedText,
+                        },
+                    },
+                    createdAt: {
+                        isVisible: { show: true, edit: false, list: true, filter: true },
+                    },
+                    updatedAt: {
+                        isVisible: { show: true, edit: false, list: true, filter: true },
+                    },
+                    user: {
+                        isVisible: { show: true, edit: false, list: true, filter: true },
+                    },
+                    thumbnail: {
+                        isVisible: { show: true, edit: true, list: true, filter: false },
+                        components: {
+                            list: Components.ThumbnailList,
+                        },
+                    },
+                    published: {
+                        isVisible: { show: true, edit: true, list: true, filter: true },
+                    },
+                    featured: {
+                        isVisible: { show: true, edit: true, list: true, filter: true },
+                    },
+                    slug: {
+                        isVisible: { show: true, edit: true, list: true, filter: true },
+                    },
+                    sourceHash: {
+                        isVisible: { show: true, edit: false, list: false, filter: false },
+                    },
+                    script: {
+                        isVisible: { show: true, edit: true, list: false, filter: false },
+                    },
                     translations: {
                         isVisible: { show: true, edit: false, list: false, filter: false },
                         reference: 'ArticleTranslation',
