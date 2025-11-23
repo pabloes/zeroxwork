@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import {prisma} from "../db";
 
-export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers['authorization']?.split(" ")[1];
     if (!token) {
         return res.status(401).json({ message: 'Access Denied: No token provided' });
@@ -10,14 +10,22 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
 
     try {
         const verified = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key') as any;
-        req.user = {
-            id: verified.userId,
-            email: verified.email,
-            role: verified.role
-        };
+
         if((verified.exp *1000) < Date.now()){
             throw new jwt.TokenExpiredError("Session expired", verified.iat);
         }
+
+        // Fetch current user data from database to get up-to-date role
+        const user = await prisma.user.findUnique({
+            where: { id: verified.userId },
+            select: { id: true, email: true, role: true }
+        });
+
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+
+        req.user = user;
         next();
     } catch (error) {
         res.status(401).json(error);
