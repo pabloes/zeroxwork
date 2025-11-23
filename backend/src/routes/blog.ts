@@ -503,10 +503,17 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
         if (translation && translation.sourceHash === article.sourceHash) {
             const authorAddress = article.user?.defaultName?.wallet?.address || null;
 
-            // Get all current slugs for hreflang
-            const allSlugs = await prisma.articleSlug.findMany({
-                where: { articleId: article.id, isCurrent: true },
+            // Get all current slugs for hreflang (most recent per lang)
+            const allSlugsRaw = await prisma.articleSlug.findMany({
+                where: { articleId: article.id },
+                orderBy: { createdAt: 'desc' },
             });
+            const currentSlugs = Object.values(
+                allSlugsRaw.reduce((acc, s) => {
+                    if (!acc[s.lang]) acc[s.lang] = s;
+                    return acc;
+                }, {} as Record<string, typeof allSlugsRaw[0]>)
+            );
 
             return res.status(200).json({
                 id: article.id,
@@ -525,21 +532,28 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
                 isTranslation: true,
                 originalLang: article.lang,
                 originalSlug: article.slug,
-                hreflang: allSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
+                hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
             });
         }
 
         // Fallback to base article
         const authorAddress = article.user?.defaultName?.wallet?.address || null;
-        const allSlugs = await prisma.articleSlug.findMany({
-            where: { articleId: article.id, isCurrent: true },
+        const allSlugsRaw = await prisma.articleSlug.findMany({
+            where: { articleId: article.id },
+            orderBy: { createdAt: 'desc' },
         });
+        const currentSlugs = Object.values(
+            allSlugsRaw.reduce((acc, s) => {
+                if (!acc[s.lang]) acc[s.lang] = s;
+                return acc;
+            }, {} as Record<string, typeof allSlugsRaw[0]>)
+        );
 
         return res.status(200).json({
             ...article,
             author: article.user?.defaultName?.name || 'Anonymous',
             authorAddress,
-            hreflang: allSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
+            hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
             fallback: true,
         });
     } catch (error) {

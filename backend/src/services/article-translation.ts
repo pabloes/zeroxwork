@@ -42,7 +42,6 @@ export async function createArticleTranslations(
                     articleId,
                     lang: targetLang.toLowerCase(),
                     slug: translatedSlug,
-                    isCurrent: true,
                 },
             });
 
@@ -90,16 +89,6 @@ export async function updateArticleTranslations(
             const translatedSlug = await makeUniqueSlug(baseSlug);
 
             if (existingTranslation) {
-                // Mark old slug as not current
-                await prisma.articleSlug.updateMany({
-                    where: {
-                        articleId,
-                        lang: targetLang.toLowerCase(),
-                        isCurrent: true,
-                    },
-                    data: { isCurrent: false },
-                });
-
                 // Update translation
                 await prisma.articleTranslation.update({
                     where: {
@@ -131,13 +120,12 @@ export async function updateArticleTranslations(
                 });
             }
 
-            // Create new slug history entry
+            // Create new slug history entry (most recent by createdAt is current)
             await prisma.articleSlug.create({
                 data: {
                     articleId,
                     lang: targetLang.toLowerCase(),
                     slug: translatedSlug,
-                    isCurrent: true,
                 },
             });
 
@@ -156,23 +144,12 @@ export async function updateBaseSlugHistory(
     lang: string,
     newSlug: string
 ): Promise<void> {
-    // Mark old slugs as not current
-    await prisma.articleSlug.updateMany({
-        where: {
-            articleId,
-            lang,
-            isCurrent: true,
-        },
-        data: { isCurrent: false },
-    });
-
-    // Create new slug entry
+    // Create new slug entry (most recent by createdAt is current)
     await prisma.articleSlug.create({
         data: {
             articleId,
             lang,
             slug: newSlug,
-            isCurrent: true,
         },
     });
 }
