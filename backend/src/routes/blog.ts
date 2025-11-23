@@ -142,12 +142,20 @@ router.delete('/tags/:id', verifyToken, async (req, res) => {
 // ==================== ARTICLES ====================
 // Crear un artículo
 router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => {
-    const { title, content, thumbnail, script, categoryId, tagIds, newTags, slug: customSlug, lang = 'es' } = req.body;
+    const { title, content, thumbnail, script, categoryId, tagIds, newTags, slug: customSlug, lang = 'es', type = 'post', redirectUrl } = req.body;
     const userId = (req as any).user.id;
 
     try {
-        if (!title || !content) {
-            return res.status(400).json({ error: 'Title and content are required' });
+        if (!title) {
+            return res.status(400).json({ error: 'Title is required' });
+        }
+
+        if (type === 'post' && !content) {
+            return res.status(400).json({ error: 'Content is required for post type articles' });
+        }
+
+        if (type === 'link' && !redirectUrl) {
+            return res.status(400).json({ error: 'Redirect URL is required for link type articles' });
         }
 
         // Generate slug
@@ -189,7 +197,7 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
             data: {
                 userId,
                 title,
-                content,
+                content: content || '',
                 slug: articleSlug,
                 lang: lang.toLowerCase(),
                 sourceHash,
@@ -200,6 +208,8 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
                 tags: allTagIds.length > 0 ? {
                     connect: allTagIds.map((id: number) => ({ id })),
                 } : undefined,
+                type: type || 'post',
+                redirectUrl: type === 'link' ? redirectUrl : null,
             },
             include
         });
@@ -231,13 +241,21 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
 // Actualizar un artículo
 router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) => {
     const { id } = req.params;
-    const { title, content, thumbnail, script, categoryId, tagIds, newTags, slug: customSlug, lang } = req.body;
+    const { title, content, thumbnail, script, categoryId, tagIds, newTags, slug: customSlug, lang, type = 'post', redirectUrl } = req.body;
     const userId = (req as any).user.id;
     const userRole = (req as any).user.role;
 
     try {
-        if (!title || !content) {
-            return res.status(400).json({ error: 'Title and content are required' });
+        if (!title) {
+            return res.status(400).json({ error: 'Title is required' });
+        }
+
+        if (type === 'post' && !content) {
+            return res.status(400).json({ error: 'Content is required for post type articles' });
+        }
+
+        if (type === 'link' && !redirectUrl) {
+            return res.status(400).json({ error: 'Redirect URL is required for link type articles' });
         }
 
         // Verificar que el artículo existe
@@ -326,7 +344,7 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
             where: { id: Number(id) },
             data: {
                 title,
-                content,
+                content: content || '',
                 slug: newSlug,
                 lang: lang ? lang.toLowerCase() : existingArticle.lang,
                 sourceHash: newHash,
@@ -337,6 +355,8 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
                     set: [], // Disconnect all existing tags
                     connect: allTagIds.map((tagId: number) => ({ id: tagId })), // Connect new tags
                 },
+                type: type || 'post',
+                redirectUrl: type === 'link' ? redirectUrl : null,
             },
             include
         });

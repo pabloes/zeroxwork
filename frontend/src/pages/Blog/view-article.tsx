@@ -129,5 +129,11 @@ async function fetchArticleById (idOrSlug: string) {
         return null;
     }
 
+    // Handle link-type articles - redirect to external URL
+    if (response.data.type === 'link' && response.data.redirectUrl) {
+        window.location.href = response.data.redirectUrl;
+        return null;
+    }
+
     return response.data;
 }

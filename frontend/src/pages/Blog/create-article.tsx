@@ -37,6 +37,8 @@ const createArticle = async (newArticle: {
     categoryId?: number | null;
     tagIds?: number[];
     newTags?: string[];
+    type?: string;
+    redirectUrl?: string;
 }) => {
     const response = await api.post('/blog/articles', newArticle);
     return response.data;
@@ -64,6 +66,8 @@ const CreateArticle: React.FC = () => {
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [newTagInput, setNewTagInput] = useState<string>('');
     const [newTags, setNewTags] = useState<string[]>([]);
+    const [articleType, setArticleType] = useState<'post' | 'link'>('post');
+    const [redirectUrl, setRedirectUrl] = useState<string>('');
     const navigate = useNavigate();
     const { user } = useAuth();
 
@@ -135,14 +139,16 @@ const CreateArticle: React.FC = () => {
         e.preventDefault();
         mutation.mutate({
             title,
-            content,
+            content: articleType === 'post' ? content : '',
             thumbnail,
             slug: slug || undefined,
             lang,
-            script: user?.role === ROLE.ADMIN ? script : undefined,
+            script: articleType === 'post' && user?.role === ROLE.ADMIN ? script : undefined,
             categoryId: categoryId || null,
             tagIds: selectedTagIds,
             newTags: newTags,
+            type: articleType,
+            redirectUrl: articleType === 'link' ? redirectUrl : undefined,
         });
     };
 
@@ -262,6 +268,49 @@ const CreateArticle: React.FC = () => {
                 </div>
 
                 <div className="uk-margin">
+                    <label className="uk-form-label">Article Type:</label>
+                    <div className="uk-form-controls">
+                        <label className="uk-margin-small-right">
+                            <input
+                                className="uk-radio"
+                                type="radio"
+                                name="articleType"
+                                value="post"
+                                checked={articleType === 'post'}
+                                onChange={() => setArticleType('post')}
+                            /> Post
+                        </label>
+                        <label>
+                            <input
+                                className="uk-radio"
+                                type="radio"
+                                name="articleType"
+                                value="link"
+                                checked={articleType === 'link'}
+                                onChange={() => setArticleType('link')}
+                            /> Link
+                        </label>
+                    </div>
+                </div>
+
+                {articleType === 'link' && (
+                    <div className="uk-margin">
+                        <label className="uk-form-label" htmlFor="redirectUrl">Redirect URL:</label>
+                        <div className="uk-form-controls">
+                            <input
+                                className="uk-input"
+                                id="redirectUrl"
+                                type="url"
+                                value={redirectUrl}
+                                onChange={(e) => setRedirectUrl(e.target.value)}
+                                required
+                                placeholder="https://example.com"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <div className="uk-margin">
                     <label className="uk-form-label">Tags:</label>
                     <div className="uk-form-controls">
                         {tags.length > 0 && (
@@ -327,36 +376,40 @@ const CreateArticle: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="uk-margin">
-                    <label className="uk-form-label" htmlFor="content">Content (Markdown):</label>
-                    <div className="uk-form-controls">
-                        <SimpleMDE
-                            value={content}
-                            onChange={handleContentChange}
-                            options={editorOptions}
-                        />
-                    </div>
-                </div>
-
-                {user?.role === ROLE.ADMIN && (
-                    <div className="uk-margin">
-                        <label className="uk-form-label" htmlFor="script">Script (optional, ADMIN only):</label>
-                        <div className="uk-form-controls">
-                            <textarea
-                                className="uk-textarea"
-                                id="script"
-                                rows={10}
-                                value={script}
-                                onChange={(e) => setScript(e.target.value)}
-                                placeholder={`// Example:\n// import getHtmlCode from 'https://cdn.jsdelivr.net/npm/my-lib@1.0.0/dist/index.esm.js';\n// getArticleElement().append(getHtmlCode());\n// or dynamic:\n// const { default: fn } = await import('lodash-es');\n// getArticleElement().append(fn())`}
-                            />
+                {articleType === 'post' && (
+                    <>
+                        <div className="uk-margin">
+                            <label className="uk-form-label" htmlFor="content">Content (Markdown):</label>
+                            <div className="uk-form-controls">
+                                <SimpleMDE
+                                    value={content}
+                                    onChange={handleContentChange}
+                                    options={editorOptions}
+                                />
+                            </div>
                         </div>
-                        <p className="uk-text-meta">
-                            The script runs in-page (not sandboxed). Use getArticleElement() to manipulate the rendered Markdown.
-                            Static and dynamic imports are supported. Bare specifiers (e.g., 'lodash-es') auto-resolve via jsdelivr CDN; full URLs also work.
-                            Your code can access browser APIs (e.g., localStorage) and the current page context.
-                        </p>
-                    </div>
+
+                        {user?.role === ROLE.ADMIN && (
+                            <div className="uk-margin">
+                                <label className="uk-form-label" htmlFor="script">Script (optional, ADMIN only):</label>
+                                <div className="uk-form-controls">
+                                    <textarea
+                                        className="uk-textarea"
+                                        id="script"
+                                        rows={10}
+                                        value={script}
+                                        onChange={(e) => setScript(e.target.value)}
+                                        placeholder={`// Example:\n// import getHtmlCode from 'https://cdn.jsdelivr.net/npm/my-lib@1.0.0/dist/index.esm.js';\n// getArticleElement().append(getHtmlCode());\n// or dynamic:\n// const { default: fn } = await import('lodash-es');\n// getArticleElement().append(fn())`}
+                                    />
+                                </div>
+                                <p className="uk-text-meta">
+                                    The script runs in-page (not sandboxed). Use getArticleElement() to manipulate the rendered Markdown.
+                                    Static and dynamic imports are supported. Bare specifiers (e.g., 'lodash-es') auto-resolve via jsdelivr CDN; full URLs also work.
+                                    Your code can access browser APIs (e.g., localStorage) and the current page context.
+                                </p>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 <div className="uk-margin">
