@@ -86,8 +86,8 @@ const HomeDashboard: React.FC = () => {
 
                                     <div className="uk-overlay uk-overlay-primary uk-position-bottom uk-light">
                                         <h3 className="uk-card-title">{article.title}</h3>
-                                        {article.authorAddress && <div className="uk-text-meta">
-                                        <img
+                                        <div className="uk-text-meta">
+                                            {article.authorAddress && <img
                                             src={getNameAvatarImage({
                                                 name: article!.author as string,
                                                 address: article!.authorAddress as string
@@ -95,8 +95,8 @@ const HomeDashboard: React.FC = () => {
                                             alt="Author Avatar"
                                             className="uk-border-circle"
                                             style={{ width: '32px', height: '32px', marginRight: '10px', float: "none" }}
-                                        />{article.author}  |  {new Date(article.createdAt).toLocaleDateString()}
-                                        </div> || null}
+                                        />}{article.author}  |  {new Date(article.createdAt).toLocaleDateString()}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

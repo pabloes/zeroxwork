@@ -428,6 +428,7 @@ router.get('/articles', async (req, res) => {
                     authorAddress,
                     category: article.category,
                     tags: article.tags,
+                    featured: article.featured,
                 };
             });
 
@@ -451,12 +452,20 @@ router.get('/articles', async (req, res) => {
                         authorAddress,
                         category: article.category,
                         tags: article.tags,
+                        featured: article.featured,
                         isTranslation: true,
                     };
                 });
 
             const allArticles = [...formattedBase, ...formattedTranslations]
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                .sort((a, b) => {
+                    // First sort by featured (featured articles first)
+                    if (a.featured !== b.featured) {
+                        return a.featured ? -1 : 1;
+                    }
+                    // Then by createdAt (newest first)
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                });
 
             return res.status(200).json(allArticles);
         }
