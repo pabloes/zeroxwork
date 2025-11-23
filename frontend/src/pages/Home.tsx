@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/axios-setup';
 import { useQuery } from "@tanstack/react-query";
@@ -6,13 +6,6 @@ import { getNameAvatarImage } from "../services/get-name-avatar-image";
 
 const SUPPORTED_LANGS = ['es', 'en', 'pt-br', 'zh'] as const;
 type SupportedLang = typeof SUPPORTED_LANGS[number];
-
-const LANG_NAMES: Record<SupportedLang, string> = {
-    'es': 'Español',
-    'en': 'English',
-    'pt-br': 'Português',
-    'zh': '中文',
-};
 
 function normalizeLang(l: string): string {
     return l.toLowerCase().replace('_', '-');
@@ -57,25 +50,19 @@ const HomeDashboard: React.FC = () => {
         queryFn: () => fetchArticles(lang),
     });
 
-    const handleLangChange = (newLang: SupportedLang) => {
-        localStorage.setItem('blogLang', newLang);
-        setLang(newLang);
-    };
+    // Listen for language changes from Header
+    useEffect(() => {
+        const handleLangChange = (e: CustomEvent<SupportedLang>) => {
+            setLang(e.detail);
+        };
+        window.addEventListener('langChange', handleLangChange as EventListener);
+        return () => {
+            window.removeEventListener('langChange', handleLangChange as EventListener);
+        };
+    }, []);
 
     return (
         <div className="uk-container uk-margin-large-top">
-            {/* Language selector */}
-            <div className="uk-margin-bottom uk-text-right">
-                <select
-                    className="uk-select uk-form-small uk-form-width-small"
-                    value={lang}
-                    onChange={(e) => handleLangChange(e.target.value as SupportedLang)}
-                >
-                    {SUPPORTED_LANGS.map((l) => (
-                        <option key={l} value={l}>{LANG_NAMES[l]}</option>
-                    ))}
-                </select>
-            </div>
 
             <div className="uk-grid uk-flex-center" uk-grid="true">
                 {articles.map((article: Article) => (

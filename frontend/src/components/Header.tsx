@@ -1,10 +1,37 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import logo from '../../public/zeroxwork-logo.png';
 import { useAuth } from "../context/AuthContext";
 
+const SUPPORTED_LANGS = ['es', 'en', 'pt-br', 'zh'] as const;
+type SupportedLang = typeof SUPPORTED_LANGS[number];
+
+const LANG_NAMES: Record<SupportedLang, string> = {
+    'es': 'ES',
+    'en': 'EN',
+    'pt-br': 'PT',
+    'zh': 'ZH',
+};
+
+function getEffectiveLang(): SupportedLang {
+    const saved = localStorage.getItem('blogLang');
+    if (saved && SUPPORTED_LANGS.includes(saved as SupportedLang)) {
+        return saved as SupportedLang;
+    }
+    return 'en';
+}
+
 const Header: React.FC = () => {
     const { isAuthenticated, logout } = useAuth();
     const location = useLocation();
+    const [lang, setLang] = useState<SupportedLang>(getEffectiveLang());
+
+    const handleLangChange = (newLang: SupportedLang) => {
+        localStorage.setItem('blogLang', newLang);
+        setLang(newLang);
+        // Dispatch event for other components to react
+        window.dispatchEvent(new CustomEvent('langChange', { detail: newLang }));
+    };
 
     const handleLogout = () => {
         logout();
@@ -42,8 +69,20 @@ const Header: React.FC = () => {
                     </ul>
                 </div>
 
-                {/* Right Side with Account Links */}
+                {/* Right Side with Language Selector and Account Links */}
                 <div className="uk-navbar-right">
+                    <div className="uk-navbar-item">
+                        <select
+                            className="uk-select uk-form-small"
+                            value={lang}
+                            onChange={(e) => handleLangChange(e.target.value as SupportedLang)}
+                            style={{ width: '70px' }}
+                        >
+                            {SUPPORTED_LANGS.map((l) => (
+                                <option key={l} value={l}>{LANG_NAMES[l]}</option>
+                            ))}
+                        </select>
+                    </div>
                     <ul className="uk-navbar-nav">
                         {isAuthenticated ? (
                             <>
