@@ -1,6 +1,3 @@
-_PRIORITY CRITICAL_
-- Support to select a basename as identity
-- Test wallet without names
-- When a wallet has no names: show the link where the user can purchase these.
-
-_PRIORITY MAJOR_
++ slug urls
++ move title to content and add categories in top: blog | tools | portfolios
++ add a forum
