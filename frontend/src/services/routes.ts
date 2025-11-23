@@ -1,4 +1,5 @@
 import Home from "../pages/Home";
+import Tools from "../pages/Tools";
 import Register from "../pages/Register";
 import ImageUploadPage from "../pages/ImageUploadPage";
 import Login from "../pages/Login";
@@ -17,6 +18,7 @@ import MyArticles from "../pages/Blog/my-articles";
 
 export const pageRoutes = [
     {RouteElement:Home, title:`Welcome`, path:`/`, props:{}},
+    {RouteElement:Tools, title:`Tools`, path:`/tools`, props:{}},
     {RouteElement:Register, title:`Register new account`, path:`/register`, props:{}},
     {RouteElement:ImageUploadPage, title:`Image upload`, path:`/image-upload`, props:{}, auth:true},
     {RouteElement:Login, title:`Login account`, path:`/login`, props:{}},
