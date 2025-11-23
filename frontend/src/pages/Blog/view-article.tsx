@@ -1,6 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import {api} from "../../services/axios-setup";
-import {useParams} from 'react-router-dom';
+import {useParams, Link} from 'react-router-dom';
 import PageTitle from "../../components/PageTitle";
 import {useAuth} from "../../context/AuthContext";
 import {useNavigate} from 'react-router-dom';
@@ -9,6 +9,17 @@ import {getNameAvatarImage} from "../../services/get-name-avatar-image";
 import DonateButton from "../../components/DonateButton";
 import InlineArticleScriptRunner from "../../components/InlineArticleScriptRunner";
 import {ROLE} from "../../constants/roles";
+
+const LANG_NAMES: Record<string, string> = {
+    'es': 'Español',
+    'en': 'English',
+    'pt-br': 'Português',
+    'zh': '中文',
+};
+
+function getUserLang(): string {
+    return localStorage.getItem('blogLang') || 'en';
+}
 
 const ArticlePage: React.FC = () => {
     const {user} = useAuth();
@@ -23,6 +34,21 @@ const ArticlePage: React.FC = () => {
     const handleEditClick = ()=> {
         navigate(`/edit-article/${id}`)
     }
+
+    // Get user's preferred language and check for translations
+    const userLang = getUserLang();
+    const articleLang = article?.lang;
+    const hreflang = article?.hreflang || [];
+
+    // Find if there's a translation in user's language
+    const userLangTranslation = hreflang.find((h: {lang: string, slug: string}) => h.lang === userLang);
+    const showTranslationAvailable = article && articleLang !== userLang && userLangTranslation;
+
+    // Check if this is a translation
+    const isTranslation = article?.isTranslation;
+    const originalLang = article?.originalLang;
+    const originalSlug = article?.originalSlug;
+
     return (
         <div className="uk-container uk-section">
             {user && (user?.role === ROLE.ADMIN || user?.userId === article?.userId) && (
@@ -30,6 +56,26 @@ const ArticlePage: React.FC = () => {
                     Edit Article
                 </button>
             )}
+
+            {/* Translation notices */}
+            {showTranslationAvailable && (
+                <div className="uk-alert uk-alert-primary uk-margin-small-bottom" uk-alert="">
+                    This article has a translation in your language ({LANG_NAMES[userLang] || userLang}).{' '}
+                    <Link to={`/view-article/${userLangTranslation.slug}`}>
+                        Read in {LANG_NAMES[userLang] || userLang}
+                    </Link>
+                </div>
+            )}
+
+            {isTranslation && originalLang && originalSlug && (
+                <div className="uk-alert uk-alert-warning uk-margin-small-bottom" uk-alert="">
+                    This article is a translation. Original in {LANG_NAMES[originalLang] || originalLang}:{' '}
+                    <Link to={`/view-article/${originalSlug}`}>
+                        View original
+                    </Link>
+                </div>
+            )}
+
             {article ? (
                 <div className="uk-card uk-card-default uk-card-body markdown-body">
                     <p className="uk-text-meta">

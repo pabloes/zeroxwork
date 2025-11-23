@@ -518,6 +518,8 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
                 category: article.category,
                 tags: article.tags,
                 isTranslation: true,
+                originalLang: article.lang,
+                originalSlug: article.slug,
                 hreflang: allSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
             });
         }
