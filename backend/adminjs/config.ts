@@ -59,6 +59,18 @@ const options:AdminJSOptions =  {
         },
         {
             resource: {
+                model: getModelByName("ArticleTranslation"),
+                client: prisma,
+            },
+        },
+        {
+            resource: {
+                model: getModelByName("ArticleSlug"),
+                client: prisma,
+            },
+        },
+        {
+            resource: {
                 model: getModelByName("FileUpload"),
                 client: prisma,
             },

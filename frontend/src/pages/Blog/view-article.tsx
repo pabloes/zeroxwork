@@ -67,7 +67,7 @@ const ArticlePage: React.FC = () => {
                 </div>
             )}
 
-            {isTranslation && originalLang && originalSlug && (
+            {isTranslation && originalLang && originalSlug && originalLang !== userLang && (
                 <div className="uk-alert uk-alert-warning uk-margin-small-bottom" uk-alert="">
                     This article is a translation. Original in {LANG_NAMES[originalLang] || originalLang}:{' '}
                     <Link to={`/view-article/${originalSlug}`}>
