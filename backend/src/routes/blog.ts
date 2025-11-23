@@ -354,10 +354,15 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
     }
 });
 
-// Obtener todos los artículos (con filtro opcional por idioma)
+// Obtener todos los artículos (con filtro opcional por idioma y categoría)
 router.get('/articles', async (req, res) => {
     try {
-        const { lang } = req.query;
+        const { lang, category } = req.query;
+
+        // Build category filter
+        const categoryFilter = category && typeof category === 'string'
+            ? { category: { name: { equals: category, mode: 'insensitive' as const } } }
+            : {};
 
         if (lang && typeof lang === 'string') {
             // Return articles in requested language (base or translations)
@@ -368,6 +373,7 @@ router.get('/articles', async (req, res) => {
                 where: {
                     published: true,
                     lang: normalizedLang,
+                    ...categoryFilter,
                 },
                 include,
                 orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
@@ -375,7 +381,10 @@ router.get('/articles', async (req, res) => {
 
             // Get translations in this language
             const translations = await prisma.articleTranslation.findMany({
-                where: { targetLang: normalizedLang },
+                where: {
+                    targetLang: normalizedLang,
+                    article: categoryFilter,
+                },
                 include: {
                     article: {
                         include,
@@ -434,7 +443,10 @@ router.get('/articles', async (req, res) => {
 
         // Default: return all base articles
         const articles = await prisma.article.findMany({
-            where: { published: true },
+            where: {
+                published: true,
+                ...categoryFilter,
+            },
             include,
             orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
         });

@@ -74,6 +74,41 @@ const options:AdminJSOptions =  {
                 model: getModelByName("ArticleTranslation"),
                 client: prisma,
             },
+            options: {
+                properties: {
+                    // Editable fields
+                    title: {
+                        isVisible: { show: true, edit: true, list: true, filter: true },
+                    },
+                    content: {
+                        isVisible: { show: true, edit: true, list: false, filter: false },
+                        type: 'textarea',
+                    },
+                    slug: {
+                        isVisible: { show: true, edit: true, list: true, filter: true },
+                    },
+                    // Read-only fields
+                    articleId: {
+                        isVisible: { show: true, edit: false, list: true, filter: true },
+                    },
+                    targetLang: {
+                        isVisible: { show: true, edit: false, list: true, filter: true },
+                    },
+                    sourceHash: {
+                        isVisible: { show: true, edit: false, list: false, filter: false },
+                    },
+                    provider: {
+                        isVisible: { show: true, edit: false, list: false, filter: false },
+                    },
+                    cachedAt: {
+                        isVisible: { show: true, edit: false, list: false, filter: false },
+                    },
+                    // Hide article relation in edit to avoid confusion
+                    article: {
+                        isVisible: { show: true, edit: false, list: false, filter: false },
+                    },
+                },
+            },
         },
         {
             resource: {

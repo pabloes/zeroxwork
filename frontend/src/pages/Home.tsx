@@ -108,7 +108,7 @@ const HomeDashboard: React.FC = () => {
     );
 
     async function fetchArticles(lang: string) {
-        const response = await api.get(`/blog/articles?lang=${lang}`);
+        const response = await api.get(`/blog/articles?lang=${lang}&category=blog`);
         return response.data;
     }
 };
