@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "articles" ADD COLUMN IF NOT EXISTS "type" TEXT NOT NULL DEFAULT 'post';
+ALTER TABLE "articles" ADD COLUMN IF NOT EXISTS "redirectUrl" TEXT;
