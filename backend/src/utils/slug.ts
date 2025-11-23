@@ -1,11 +1,22 @@
 import crypto from 'crypto';
 import { prisma } from '../db';
+import { pinyin } from 'pinyin-pro';
 
 /**
  * Convert text to URL-friendly slug
+ * Supports Chinese characters by converting to pinyin
  */
 export function slugify(text: string): string {
-    return text
+    // Check if text contains Chinese characters
+    const hasChinese = /[\u4e00-\u9fa5]/.test(text);
+
+    let processed = text;
+    if (hasChinese) {
+        // Convert Chinese to pinyin (space-separated, no tones)
+        processed = pinyin(text, { toneType: 'none', type: 'array' }).join(' ');
+    }
+
+    return processed
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '') // Remove accents
