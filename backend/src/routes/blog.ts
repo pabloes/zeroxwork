@@ -266,6 +266,34 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
             await updateBaseSlugHistory(existingArticle.id, existingArticle.lang, newSlug);
         }
 
+        // Handle language change - update all base slugs to new language
+        const newLang = lang ? lang.toLowerCase() : existingArticle.lang;
+        if (newLang !== existingArticle.lang) {
+            // Update all slugs from old language to new language
+            await prisma.articleSlug.updateMany({
+                where: {
+                    articleId: existingArticle.id,
+                    lang: existingArticle.lang,
+                },
+                data: {
+                    lang: newLang,
+                },
+            });
+
+            // Delete old translations (they're for the wrong source language now)
+            await prisma.articleTranslation.deleteMany({
+                where: { articleId: existingArticle.id },
+            });
+
+            // Delete translation slugs (will be recreated)
+            await prisma.articleSlug.deleteMany({
+                where: {
+                    articleId: existingArticle.id,
+                    lang: { not: newLang },
+                },
+            });
+        }
+
         // Create new tags if provided
         let createdTagIds: number[] = [];
         if (newTags && Array.isArray(newTags) && newTags.length > 0) {
@@ -313,8 +341,9 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
             include
         });
 
-        // Update translations if content changed
-        if (contentChanged) {
+        // Update translations if content or language changed
+        const langChanged = newLang !== existingArticle.lang;
+        if (contentChanged || langChanged) {
             updateArticleTranslations(updatedArticle.id, title, content, updatedArticle.lang, newHash)
                 .catch(err => console.error('Translation update error:', err));
         }
