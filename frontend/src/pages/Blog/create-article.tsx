@@ -58,7 +58,7 @@ const CreateArticle: React.FC = () => {
     const [script, setScript] = useState<string>('');
     const [thumbnail, setThumbnail] = useState<string>('');
     const [slug, setSlug] = useState<string>('');
-    const [lang, setLang] = useState<string>('es');
+    const [lang, setLang] = useState<string>(() => localStorage.getItem('blogLang') || 'en');
     const [autoSlug, setAutoSlug] = useState<boolean>(true);
     const [categoryId, setCategoryId] = useState<number | null>(null);
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
