@@ -224,7 +224,7 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
         });
 
         // Create translations asynchronously (don't wait for response)
-        createArticleTranslations(article.id, title, content, article.lang, sourceHash)
+        createArticleTranslations(article.id, title, content, article.lang, sourceHash, article.redirectUrl)
             .catch(err => console.error('Translation error:', err));
 
         const authorAddress = article.user?.defaultName?.wallet?.address || null;
@@ -364,7 +364,7 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
         // Update translations if content or language changed
         const langChanged = newLang !== existingArticle.lang;
         if (contentChanged || langChanged) {
-            updateArticleTranslations(updatedArticle.id, title, content, updatedArticle.lang, newHash)
+            updateArticleTranslations(updatedArticle.id, title, content, updatedArticle.lang, newHash, updatedArticle.redirectUrl)
                 .catch(err => console.error('Translation update error:', err));
         }
 
@@ -619,6 +619,8 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
                 authorAddress,
                 category: article.category,
                 tags: article.tags,
+                type: article.type,
+                redirectUrl: translation.redirectUrl || article.redirectUrl,
                 isTranslation: true,
                 originalLang: article.lang,
                 originalSlug: article.slug,

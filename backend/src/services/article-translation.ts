@@ -10,7 +10,8 @@ export async function createArticleTranslations(
     title: string,
     content: string,
     sourceLang: string,
-    sourceHash: string
+    sourceHash: string,
+    redirectUrl?: string | null
 ): Promise<void> {
     const targetLangs = getTargetLangs(sourceLang);
 
@@ -33,6 +34,7 @@ export async function createArticleTranslations(
                     content: translated.content,
                     sourceHash,
                     provider: 'deepl',
+                    redirectUrl: redirectUrl || null,
                 },
             });
 
@@ -61,7 +63,8 @@ export async function updateArticleTranslations(
     title: string,
     content: string,
     sourceLang: string,
-    newHash: string
+    newHash: string,
+    redirectUrl?: string | null
 ): Promise<void> {
     const targetLangs = getTargetLangs(sourceLang);
 
@@ -103,6 +106,7 @@ export async function updateArticleTranslations(
                         content: translated.content,
                         sourceHash: newHash,
                         cachedAt: new Date(),
+                        redirectUrl: redirectUrl || null,
                     },
                 });
             } else {
@@ -116,6 +120,7 @@ export async function updateArticleTranslations(
                         content: translated.content,
                         sourceHash: newHash,
                         provider: 'deepl',
+                        redirectUrl: redirectUrl || null,
                     },
                 });
             }
