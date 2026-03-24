@@ -52,8 +52,14 @@ const clamOptions = {
     }
 } as NodeClam.Options;
 console.log("clamOptions",clamOptions);
-const clamscan = await (new NodeClam().init( clamOptions));
-console.log("clamscan connection is OK");
+
+let clamscan: NodeClam | null = null;
+try {
+    clamscan = await (new NodeClam().init(clamOptions));
+    console.log("clamscan connection is OK");
+} catch (err) {
+    console.warn("ClamAV not available, uploads will skip virus scanning:", err.message);
+}
 const router = Router();
 const uploadLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute window
@@ -75,13 +81,17 @@ const uploadHttpHandler =  async (req: Request, res: Response) => {
 
     try {
         const userId = parseInt(req.user.id); // Asumiendo que `req.user` tiene la información del usuario autenticado
-        const fileStream = new Readable();
-        fileStream.push(req.file.buffer);
-        fileStream.push(null);  // Signifies end of stream
-        const {isInfected, file, viruses} = await clamscan.scanStream(fileStream);
-        if (isInfected) {
-            console.log('File is infected:', viruses);
-            return res.status(400).json({ message: 'File is infected', viruses });
+        if (clamscan) {
+            const fileStream = new Readable();
+            fileStream.push(req.file.buffer);
+            fileStream.push(null);  // Signifies end of stream
+            const {isInfected, file, viruses} = await clamscan.scanStream(fileStream);
+            if (isInfected) {
+                console.log('File is infected:', viruses);
+                return res.status(400).json({ message: 'File is infected', viruses });
+            }
+        } else {
+            console.warn("ClamAV not available, skipping virus scan for this upload");
         }
         const [result] = await client.safeSearchDetection(req.file.buffer);
         console.log("detected")
