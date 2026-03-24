@@ -30,10 +30,8 @@ const BrainWallet: React.FC = () => {
     const [showPhrase, setShowPhrase] = useState<boolean>(false); // Toggle phrase visibility (password input behavior)
     const [qrCodeData, setQrCodeData] = useState<string | null>(null); // For storing the public key for QR code
 
-    // Blockchain filters
-    const [showEth, setShowEth] = useState<boolean>(true);
-    const [showBtc, setShowBtc] = useState<boolean>(true);
-    const [showSol, setShowSol] = useState<boolean>(true);
+    // Blockchain filter: 'eth' | 'btc' | 'sol'
+    const [selectedChain, setSelectedChain] = useState<string>('eth');
 
     // Next wallet index to add (display value, starts at 1)
     const [nextWalletIndex, setNextWalletIndex] = useState<number>(3);
@@ -185,43 +183,35 @@ const BrainWallet: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Blockchain Filters */}
-                    <div className="uk-margin uk-card uk-card-default uk-card-body uk-padding-small">
-                        <strong className="uk-margin-small-right">Filter Blockchains:</strong>
-                        <label className="uk-margin-small-right">
-                            <input
-                                className="uk-checkbox uk-margin-small-right"
-                                type="checkbox"
-                                checked={showEth}
-                                onChange={(e) => setShowEth(e.target.checked)}
-                            />
-                            Ethereum
-                        </label>
-                        <label className="uk-margin-small-right">
-                            <input
-                                className="uk-checkbox uk-margin-small-right"
-                                type="checkbox"
-                                checked={showBtc}
-                                onChange={(e) => setShowBtc(e.target.checked)}
-                            />
-                            Bitcoin
-                        </label>
-                        <label>
-                            <input
-                                className="uk-checkbox uk-margin-small-right"
-                                type="checkbox"
-                                checked={showSol}
-                                onChange={(e) => setShowSol(e.target.checked)}
-                            />
-                            Solana
-                        </label>
+                    {/* Blockchain Filter */}
+                    <div className="uk-margin uk-flex uk-flex-center">
+                        <div className="uk-button-group">
+                            <button
+                                className={`uk-button ${selectedChain === 'eth' ? 'uk-button-primary' : 'uk-button-default'}`}
+                                onClick={() => setSelectedChain('eth')}
+                            >
+                                Ethereum
+                            </button>
+                            <button
+                                className={`uk-button ${selectedChain === 'btc' ? 'uk-button-primary' : 'uk-button-default'}`}
+                                onClick={() => setSelectedChain('btc')}
+                            >
+                                Bitcoin
+                            </button>
+                            <button
+                                className={`uk-button ${selectedChain === 'sol' ? 'uk-button-primary' : 'uk-button-default'}`}
+                                onClick={() => setSelectedChain('sol')}
+                            >
+                                Solana
+                            </button>
+                        </div>
                     </div>
 
                     <div className="wallet-grid uk-grid uk-grid-match uk-child-width-1-2@s uk-child-width-1-1" uk-grid="true">
                         {wallets.map((wallet, index) => (
                             <div key={index}>
                                 <div className="uk-card uk-card-default uk-card-body">
-                                    {showEth && (
+                                    {selectedChain === 'eth' && (
                                         <>
                                             <h4>Ethereum Wallet #{wallet.derivationIndex}</h4>
                                             <p>
@@ -238,7 +228,7 @@ const BrainWallet: React.FC = () => {
                                         </>
                                     )}
 
-                                    {showBtc && (
+                                    {selectedChain === 'btc' && (
                                         <>
                                             <h4>Bitcoin SegWit Wallet #{wallet.derivationIndex} (Bech32)</h4>
                                             <p>
@@ -255,7 +245,7 @@ const BrainWallet: React.FC = () => {
                                         </>
                                     )}
 
-                                    {showSol && (
+                                    {selectedChain === 'sol' && (
                                         <>
                                             <h4>Solana Wallet #{wallet.derivationIndex}</h4>
                                             <p>
@@ -271,19 +261,6 @@ const BrainWallet: React.FC = () => {
                                             </p>
                                         </>
                                     )}
-
-                                  {/*    <h4>Bitcoin Legacy Wallet #{index + 1} (P2PKH)</h4>
-                                    <p>
-                                        <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.btcLegacy.publicKey && copyToClipboard(wallet.btcLegacy.publicKey)}></button>
-                                        Public Key: {wallet.btcLegacy.publicKey}
-                                        <button className="uk-icon-button uk-margin-left uk-icon" onClick={() => showQRCodeModal(wallet.btcLegacy.publicKey)}>
-                                            <QrCodeIcon />
-                                        </button>
-                                    </p>
-                                    <p>
-                                        <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.btcLegacy.privateKey && copyToClipboard(wallet.btcLegacy.privateKey)}></button>
-                                        Private Key: {showMnemonic ? wallet.btcLegacy.privateKey : '••••••••••••••••••••••••••••••••••'}
-                                    </p>*/}
                                 </div>
                             </div>
                         ))}
