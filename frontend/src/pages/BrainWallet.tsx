@@ -12,6 +12,7 @@ import { QRCodeSVG } from 'qrcode.react'; // Correct import for QR Code
 import UIkit from 'uikit';
 import { Keypair } from '@solana/web3.js';
 import { derivePath } from 'ed25519-hd-key';
+import bs58check from 'bs58check';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -107,12 +108,23 @@ const BrainWallet: React.FC = () => {
         const solanaPublicKey = solanaKeypair.publicKey.toBase58();
         const solanaPrivateKey = Buffer.from(solanaKeypair.secretKey).toString('hex');
 
+        // Derive Tron keys from the seed (m/44'/195'/0'/0/index)
+        const rootTrx = bip32.fromSeed(seed);
+        const trxChild = rootTrx.derivePath(`m/44'/195'/0'/0/${index}`);
+        const trxPrivateKey = (trxChild.privateKey as Buffer).toString("hex");
+        // Tron address: take ETH-style address bytes, prepend 0x41, base58check encode
+        const trxAccount = privateKeyToAccount(`0x${trxPrivateKey}`);
+        const trxAddressBytes = Buffer.from(trxAccount.address.slice(2), 'hex'); // 20 bytes
+        const trxWithPrefix = Buffer.concat([Buffer.from([0x41]), trxAddressBytes]);
+        const trxAddress = bs58check.encode(trxWithPrefix);
+
         return {
             derivationIndex: index + 1, // Store display index (1-based)
             eth: { privateKey: ethPrivateKey, publicKey: ethAccount.address },
             btcLegacy: { privateKey: btcChildLegacy.toWIF(), publicKey: btcAddressLegacy },
             btcBech32: { privateKey: btcChildBech32.toWIF(), publicKey: btcAddressBech32 },
-            sol: { privateKey: solanaPrivateKey, publicKey: solanaPublicKey }
+            sol: { privateKey: solanaPrivateKey, publicKey: solanaPublicKey },
+            trx: { privateKey: trxPrivateKey, publicKey: trxAddress }
         };
     }
 
@@ -139,7 +151,7 @@ const BrainWallet: React.FC = () => {
 
     return (
         <div className="uk-container uk-padding-small">
-            <h3 className="uk-text-muted">Inherit Eth, BTC & SOL Wallets from a memorable phrase</h3>
+            <h3 className="uk-text-muted">Inherit Eth, BTC, SOL & TRX Wallets from a memorable phrase</h3>
 
             <article className="uk-article uk-text-small">
                 A brain wallet lets you create a secret digital key for your cryptocurrency using a memorable phrase, making it easier to remember but riskier if the phrase is too simple or guessable, although still practical.
@@ -204,6 +216,12 @@ const BrainWallet: React.FC = () => {
                             >
                                 Solana
                             </button>
+                            <button
+                                className={`uk-button ${selectedChain === 'trx' ? 'uk-button-primary' : 'uk-button-default'}`}
+                                onClick={() => setSelectedChain('trx')}
+                            >
+                                Tron
+                            </button>
                         </div>
                     </div>
 
@@ -258,6 +276,23 @@ const BrainWallet: React.FC = () => {
                                             <p>
                                                 <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.sol.privateKey && copyToClipboard(wallet.sol.privateKey)}></button>
                                                 Private Key: {showMnemonic ? wallet.sol.privateKey : '••••••••••••••••••••••••••••••••••'}
+                                            </p>
+                                        </>
+                                    )}
+
+                                    {selectedChain === 'trx' && (
+                                        <>
+                                            <h4>Tron Wallet #{wallet.derivationIndex}</h4>
+                                            <p>
+                                                <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.trx.publicKey && copyToClipboard(wallet.trx.publicKey)}></button>
+                                                Public Key: {wallet.trx.publicKey}
+                                                <button className="uk-icon-button uk-margin-left uk-icon" onClick={() => showQRCodeModal(wallet.trx.publicKey)}>
+                                                    <QrCodeIcon />
+                                                </button>
+                                            </p>
+                                            <p>
+                                                <button className="uk-icon-button uk-border-circle" uk-icon="icon: copy" onClick={() => wallet.trx.privateKey && copyToClipboard(wallet.trx.privateKey)}></button>
+                                                Private Key: {showMnemonic ? wallet.trx.privateKey : '••••••••••••••••••••••••••••••••••'}
                                             </p>
                                         </>
                                     )}
