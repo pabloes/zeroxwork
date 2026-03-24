@@ -1,3 +1,4 @@
+import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import {api} from "../../services/axios-setup";
 import {useParams, Link} from 'react-router-dom';
@@ -7,7 +8,6 @@ import {useNavigate} from 'react-router-dom';
 import {useQuery} from "@tanstack/react-query";
 import {getNameAvatarImage} from "../../services/get-name-avatar-image";
 import DonateButton from "../../components/DonateButton";
-import InlineArticleScriptRunner from "../../components/InlineArticleScriptRunner";
 import {ROLE} from "../../constants/roles";
 
 const LANG_NAMES: Record<string, string> = {
@@ -90,14 +90,38 @@ const ArticlePage: React.FC = () => {
                     </p>
                     <PageTitle title={article.title}/>
                     <div id="article-content">
-                        <ReactMarkdown>{article.content}</ReactMarkdown>
+                        {article.embedUrl && article.content.includes('[iframe]') ? (
+                            <>
+                                {article.content.split('[iframe]').map((part: string, i: number) => (
+                                    <React.Fragment key={i}>
+                                        {i > 0 && (
+                                            <iframe
+                                                src={article.embedUrl}
+                                                title={article.title}
+                                                style={{ border: 'none', width: '100%', height: `${article.embedHeight || 600}px` }}
+                                                sandbox="allow-scripts"
+                                                loading="lazy"
+                                            />
+                                        )}
+                                        <ReactMarkdown>{part}</ReactMarkdown>
+                                    </React.Fragment>
+                                ))}
+                            </>
+                        ) : (
+                            <>
+                                <ReactMarkdown>{article.content}</ReactMarkdown>
+                                {article.embedUrl && (
+                                    <iframe
+                                        src={article.embedUrl}
+                                        title={article.title}
+                                        style={{ border: 'none', width: '100%', height: `${article.embedHeight || 600}px` }}
+                                        sandbox="allow-scripts"
+                                        loading="lazy"
+                                    />
+                                )}
+                            </>
+                        )}
                     </div>
-                    {article.script && (
-                        <InlineArticleScriptRunner
-                            code={article.script}
-                            targetSelector="#article-content"
-                        />
-                    )}
                     <div>
                         {article.authorAddress && <div className="uk-card uk-card-default">
                             Make a donation to the author of this article:<br/>

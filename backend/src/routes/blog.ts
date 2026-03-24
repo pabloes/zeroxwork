@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { prisma } from "../db";
 import { ROLE } from "../constants/roles";
 import {verifyToken} from "../middleware/authMiddleware";
-import requireAdminIfScript from "../middleware/requireAdminIfScript";
+// Whitelist of allowed embed URL prefixes.
+// Internal paths and explicitly approved external origins.
+const EMBED_URL_WHITELIST = [
+    '/embeds/',                                  // internal embeds
+    'https://pabloes.github.io/',                // Pablo's GitHub Pages tools
+];
 import { slugify, computeSourceHash, makeUniqueSlug } from "../utils/slug";
 import { createArticleTranslations, updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
 const router = Router();
@@ -141,8 +146,8 @@ router.delete('/tags/:id', verifyToken, async (req, res) => {
 
 // ==================== ARTICLES ====================
 // Crear un artículo
-router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => {
-    const { title, content, thumbnail, script, categoryId, tagIds, newTags, slug: customSlug, lang = 'es', type = 'post', redirectUrl } = req.body;
+router.post('/articles', verifyToken, async (req, res) => {
+    const { title, content, thumbnail, embedUrl, embedHeight, categoryId, tagIds, newTags, slug: customSlug, lang = 'es', type = 'post', redirectUrl } = req.body;
     const userId = (req as any).user.id;
 
     try {
@@ -156,6 +161,11 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
 
         if (type === 'link' && !redirectUrl) {
             return res.status(400).json({ error: 'Redirect URL is required for link type articles' });
+        }
+
+        // Validate embedUrl against whitelist
+        if (embedUrl && !EMBED_URL_WHITELIST.some(prefix => embedUrl.startsWith(prefix))) {
+            return res.status(400).json({ error: 'Embed URL not allowed. Must match a whitelisted prefix (e.g. /embeds/ or approved external origins).' });
         }
 
         // Generate slug
@@ -201,7 +211,8 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
                 slug: articleSlug,
                 lang: lang.toLowerCase(),
                 sourceHash,
-                script: script && typeof script === 'string' && script.trim().length ? script : null,
+                embedUrl: embedUrl || null,
+                embedHeight: embedHeight ? Number(embedHeight) : 600,
                 thumbnail: thumbnail || null,
                 published: true,
                 categoryId: categoryId ? Number(categoryId) : null,
@@ -239,9 +250,9 @@ router.post('/articles', verifyToken, requireAdminIfScript, async (req, res) => 
 });
 
 // Actualizar un artículo
-router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) => {
+router.put('/articles/:id', verifyToken, async (req, res) => {
     const { id } = req.params;
-    const { title, content, thumbnail, script, categoryId, tagIds, newTags, slug: customSlug, lang, type = 'post', redirectUrl } = req.body;
+    const { title, content, thumbnail, embedUrl, embedHeight, categoryId, tagIds, newTags, slug: customSlug, lang, type = 'post', redirectUrl } = req.body;
     const userId = (req as any).user.id;
     const userRole = (req as any).user.role;
 
@@ -256,6 +267,11 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
 
         if (type === 'link' && !redirectUrl) {
             return res.status(400).json({ error: 'Redirect URL is required for link type articles' });
+        }
+
+        // Validate embedUrl against whitelist
+        if (embedUrl && !EMBED_URL_WHITELIST.some(prefix => embedUrl.startsWith(prefix))) {
+            return res.status(400).json({ error: 'Embed URL not allowed. Must match a whitelisted prefix (e.g. /embeds/ or approved external origins).' });
         }
 
         // Verificar que el artículo existe
@@ -348,7 +364,8 @@ router.put('/articles/:id', verifyToken, requireAdminIfScript, async (req, res) 
                 slug: newSlug,
                 lang: lang ? lang.toLowerCase() : existingArticle.lang,
                 sourceHash: newHash,
-                script: script && typeof script === 'string' && script.trim().length ? script : null,
+                embedUrl: embedUrl || null,
+                embedHeight: embedHeight ? Number(embedHeight) : 600,
                 thumbnail: thumbnail || null,
                 categoryId: categoryId ? Number(categoryId) : null,
                 tags: {
@@ -611,7 +628,8 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
                 content: translation.content,
                 slug: translation.slug,
                 lang: translation.targetLang,
-                script: article.script,
+                embedUrl: article.embedUrl,
+                embedHeight: article.embedHeight,
                 thumbnail: article.thumbnail,
                 createdAt: article.createdAt,
                 updatedAt: translation.cachedAt,

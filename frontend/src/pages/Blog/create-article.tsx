@@ -6,7 +6,6 @@ import UIkit from 'uikit';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../../services/axios-setup';
 import { useAuth } from '../../context/AuthContext';
-import { ROLE } from '../../constants/roles';
 import { slugify } from '../../utils/slug';
 
 const SUPPORTED_LANGS = [
@@ -33,7 +32,8 @@ const createArticle = async (newArticle: {
     thumbnail: string;
     slug?: string;
     lang?: string;
-    script?: string;
+    embedUrl?: string;
+    embedHeight?: number;
     categoryId?: number | null;
     tagIds?: number[];
     newTags?: string[];
@@ -57,7 +57,8 @@ const fetchTags = async (): Promise<Tag[]> => {
 const CreateArticle: React.FC = () => {
     const [title, setTitle] = useState<string>('');
     const [content, setContent] = useState<string>('');
-    const [script, setScript] = useState<string>('');
+    const [embedUrl, setEmbedUrl] = useState<string>('');
+    const [embedHeight, setEmbedHeight] = useState<number>(600);
     const [thumbnail, setThumbnail] = useState<string>('');
     const [slug, setSlug] = useState<string>('');
     const [lang, setLang] = useState<string>(() => localStorage.getItem('blogLang') || 'en');
@@ -69,7 +70,7 @@ const CreateArticle: React.FC = () => {
     const [articleType, setArticleType] = useState<'post' | 'link'>('post');
     const [redirectUrl, setRedirectUrl] = useState<string>('');
     const navigate = useNavigate();
-    const { user } = useAuth();
+    useAuth(); // ensure authenticated
 
     // Auto-generate slug from title when autoSlug is enabled
     useEffect(() => {
@@ -143,7 +144,8 @@ const CreateArticle: React.FC = () => {
             thumbnail,
             slug: slug || undefined,
             lang,
-            script: articleType === 'post' && user?.role === ROLE.ADMIN ? script : undefined,
+            embedUrl: embedUrl || undefined,
+            embedHeight: embedHeight || 600,
             categoryId: categoryId || null,
             tagIds: selectedTagIds,
             newTags: newTags,
@@ -389,24 +391,38 @@ const CreateArticle: React.FC = () => {
                             </div>
                         </div>
 
-                        {user?.role === ROLE.ADMIN && (
+                        <div className="uk-margin">
+                            <label className="uk-form-label" htmlFor="embedUrl">Embed URL (optional):</label>
+                            <div className="uk-form-controls">
+                                <input
+                                    className="uk-input"
+                                    id="embedUrl"
+                                    type="text"
+                                    value={embedUrl}
+                                    onChange={(e) => setEmbedUrl(e.target.value)}
+                                    placeholder="/embeds/my-tool/"
+                                />
+                            </div>
+                            <p className="uk-text-meta">
+                                Internal paths (e.g. /embeds/my-tool/) or approved external URLs (e.g. https://pabloes.github.io/...). Use [iframe] in the content to position it, or it will be appended at the end.
+                            </p>
+                        </div>
+
+                        {embedUrl && (
                             <div className="uk-margin">
-                                <label className="uk-form-label" htmlFor="script">Script (optional, ADMIN only):</label>
+                                <label className="uk-form-label" htmlFor="embedHeight">Embed Height (px):</label>
                                 <div className="uk-form-controls">
-                                    <textarea
-                                        className="uk-textarea"
-                                        id="script"
-                                        rows={10}
-                                        value={script}
-                                        onChange={(e) => setScript(e.target.value)}
-                                        placeholder={`// Example:\n// import getHtmlCode from 'https://cdn.jsdelivr.net/npm/my-lib@1.0.0/dist/index.esm.js';\n// getArticleElement().append(getHtmlCode());\n// or dynamic:\n// const { default: fn } = await import('lodash-es');\n// getArticleElement().append(fn())`}
+                                    <input
+                                        className="uk-input"
+                                        id="embedHeight"
+                                        type="number"
+                                        value={embedHeight}
+                                        onChange={(e) => setEmbedHeight(Number(e.target.value) || 600)}
+                                        min={200}
+                                        max={2000}
+                                        style={{ width: '120px' }}
                                     />
                                 </div>
-                                <p className="uk-text-meta">
-                                    The script runs in-page (not sandboxed). Use getArticleElement() to manipulate the rendered Markdown.
-                                    Static and dynamic imports are supported. Bare specifiers (e.g., 'lodash-es') auto-resolve via jsdelivr CDN; full URLs also work.
-                                    Your code can access browser APIs (e.g., localStorage) and the current page context.
-                                </p>
                             </div>
                         )}
                     </>

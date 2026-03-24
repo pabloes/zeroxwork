@@ -92,7 +92,9 @@ model Article {
   id           Int                  @id @default(autoincrement())
   title        String
   content      String
-  script       String?
+  script       String?              // DEPRECATED: kept for backfill migration, will be dropped after migration
+  embedUrl     String?
+  embedHeight  Int?                 @default(600)
   type         String               @default("post")
   redirectUrl  String?
   createdAt    DateTime             @default(now())
