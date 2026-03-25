@@ -1,12 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-/**
- * Tests for requireEnv from src/config/env.ts.
- * Uses vi.resetModules() + dynamic imports to re-evaluate the module per test.
- * Mocks dotenv so .env file doesn't interfere with controlled test scenarios.
- */
-
 vi.mock('dotenv', () => ({ default: { config: () => {} }, config: () => {} }));
+
+// All secrets that env.ts validates at module level
+const ALL_SECRETS = {
+    JWT_SECRET: 'x',
+    SESSION_SECRET: 'x',
+    ADMIN_COOKIE_PASSWORD: 'x',
+    VERIFICATION_RESEND_SECRET: 'x',
+};
+
+function setAllSecrets(overrides: Record<string, string | undefined> = {}) {
+    Object.entries({ ...ALL_SECRETS, ...overrides }).forEach(([k, v]) => {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+    });
+}
 
 describe('requireEnv', () => {
     const ORIGINAL_ENV = { ...process.env };
@@ -21,19 +30,13 @@ describe('requireEnv', () => {
     }
 
     it('returns the value when env var is set', async () => {
-        process.env.JWT_SECRET = 'test-jwt';
-        process.env.SESSION_SECRET = 'test-session';
-        process.env.ADMIN_COOKIE_PASSWORD = 'test-cookie';
-
+        setAllSecrets({ JWT_SECRET: 'test-jwt' });
         const { requireEnv } = await loadModule();
         expect(requireEnv('JWT_SECRET')).toBe('test-jwt');
     });
 
     it('throws when env var is undefined', async () => {
-        process.env.JWT_SECRET = 'x';
-        process.env.SESSION_SECRET = 'x';
-        process.env.ADMIN_COOKIE_PASSWORD = 'x';
-
+        setAllSecrets();
         const { requireEnv } = await loadModule();
         delete process.env.MISSING_VAR;
         expect(() => requireEnv('MISSING_VAR'))
@@ -41,10 +44,7 @@ describe('requireEnv', () => {
     });
 
     it('throws on empty string', async () => {
-        process.env.JWT_SECRET = 'x';
-        process.env.SESSION_SECRET = 'x';
-        process.env.ADMIN_COOKIE_PASSWORD = 'x';
-
+        setAllSecrets();
         const { requireEnv } = await loadModule();
         process.env.EMPTY = '';
         expect(() => requireEnv('EMPTY'))
@@ -52,10 +52,7 @@ describe('requireEnv', () => {
     });
 
     it('throws on whitespace-only value', async () => {
-        process.env.JWT_SECRET = 'x';
-        process.env.SESSION_SECRET = 'x';
-        process.env.ADMIN_COOKIE_PASSWORD = 'x';
-
+        setAllSecrets();
         const { requireEnv } = await loadModule();
         process.env.WS = '   ';
         expect(() => requireEnv('WS'))
@@ -63,20 +60,20 @@ describe('requireEnv', () => {
     });
 
     it('env object fails when JWT_SECRET is missing', async () => {
-        delete process.env.JWT_SECRET;
-        process.env.SESSION_SECRET = 'x';
-        process.env.ADMIN_COOKIE_PASSWORD = 'x';
-
+        setAllSecrets({ JWT_SECRET: undefined });
         await expect(loadModule())
             .rejects.toThrow('Missing required environment variable: JWT_SECRET');
     });
 
     it('env object fails when SESSION_SECRET is missing', async () => {
-        process.env.JWT_SECRET = 'x';
-        delete process.env.SESSION_SECRET;
-        process.env.ADMIN_COOKIE_PASSWORD = 'x';
-
+        setAllSecrets({ SESSION_SECRET: undefined });
         await expect(loadModule())
             .rejects.toThrow('Missing required environment variable: SESSION_SECRET');
+    });
+
+    it('env object fails when VERIFICATION_RESEND_SECRET is missing', async () => {
+        setAllSecrets({ VERIFICATION_RESEND_SECRET: undefined });
+        await expect(loadModule())
+            .rejects.toThrow('Missing required environment variable: VERIFICATION_RESEND_SECRET');
     });
 });

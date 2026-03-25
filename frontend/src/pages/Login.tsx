@@ -7,38 +7,42 @@ import {Link} from "react-router-dom"; // Ensure UIkit is installed
 const Login: React.FC = () => {
     const { login } = useAuth(); // Get the login function from the AuthContext
     const [email, setEmail] = useState('');
-    const [userId, setUserId] = useState(0);
     const [password, setPassword] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
+    const [resendToken, setResendToken] = useState<string | null>(null);
     const [sendingVerification, setSendingVerification] = useState(false);
 
     const handleLoginSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        setIsSubmitting(true); // Activate loading state
+        setIsSubmitting(true);
+        setResendToken(null);
 
         try {
-            // Use the login function from useAuth context
             await login(email, password);
             window.location.href = '/';
         } catch (error: any) {
-            if(error.response.data.userId){
-                setUserId(error.response.data.userId)
+            if (error.response?.data?.resendToken) {
+                setResendToken(error.response.data.resendToken);
             }
             const errorMessage = error?.response?.data?.error || 'Error logging in.';
             setMessage(errorMessage);
             UIkit.notification({ message: errorMessage, status: 'danger' });
         } finally {
-            setIsSubmitting(false); // Deactivate loading state
+            setIsSubmitting(false);
         }
     };
+
     async function sendVerificationMailAgain(){
+        if (!resendToken) return;
         setSendingVerification(true);
-        await api.post(`/auth/send-verification-mail`, {
-            userId,
-            email
-        });
-        UIkit.notification({message:"Verification mail sent", status:"warning"})
+        try {
+            await api.post('/auth/send-verification-mail', { resendToken });
+            UIkit.notification({ message: 'Verification mail sent', status: 'success' });
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || 'Failed to send verification mail';
+            UIkit.notification({ message: msg, status: 'danger' });
+        }
     }
 
     return (
@@ -77,7 +81,7 @@ const Login: React.FC = () => {
                     </button>
                 </form>
                 {message && <p className="uk-text-danger">{message}</p>}
-                {message.indexOf("Email not verified") >= 0 && !sendingVerification ? <a onClick={sendVerificationMailAgain}>Send verification mail again</a> :null}
+                {resendToken && !sendingVerification ? <a onClick={sendVerificationMailAgain} style={{cursor:'pointer'}}>Send verification mail again</a> :null}
                 {message.indexOf("not exist") >= 0 ? <Link to={"/register"}>Register a new account</Link> :null}
             </div>
         </div>

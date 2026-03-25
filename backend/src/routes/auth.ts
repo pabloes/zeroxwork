@@ -1,15 +1,21 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
 import {sendMail} from "../services/mailer";
+import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
+import { env } from '../config/env';
+import { prisma } from '../db';
 
 const router = Router();
-const prisma = new PrismaClient();
-import jwt from 'jsonwebtoken';
-import { env } from '../config/env';
 import {updateUserExtraSpace, updateWalletNames} from "../services/decentraland-names";
-// Register Endpoint
-router.post('/register', async (req, res) => {
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 15,
+    message: { message: 'Too many requests. Try again later.' },
+});
+
+router.post('/register', authLimiter, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -62,7 +68,7 @@ async function sendVerificationMail(userId, email){
     );
 }
 
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', authLimiter, async (req: Request, res: Response) => {
     const { email, password } = req.body;
 //TODO if not verified return error
 
@@ -81,7 +87,12 @@ router.post('/login', async (req: Request, res: Response) => {
         if (!user) {
             return res.status(401).json({ error: 'User does not exist' });
         }else if(!user.verified){
-            return res.status(403).json({ error: 'Email not verified. Look your mail inbox.', userId:user.id });
+            const resendToken = jwt.sign(
+                { userId: user.id, purpose: 'resend_verification' },
+                env.VERIFICATION_RESEND_SECRET,
+                { expiresIn: '15m' }
+            );
+            return res.status(403).json({ error: 'Email not verified. Look your mail inbox.', resendToken });
         }
 
         // Verificar que la contraseña sea correcta con argon2
@@ -105,13 +116,43 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-router.post('/send-verification-mail', async(req,res)=>{
-    const {email, userId} = req.body;
+const verificationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { message: 'Too many verification requests. Try again later.' },
+});
+
+router.post('/send-verification-mail', verificationLimiter, async(req,res)=>{
+    const { resendToken } = req.body;
+
+    if (!resendToken || typeof resendToken !== 'string') {
+        return res.status(400).json({ message: 'Missing or invalid resendToken' });
+    }
+
     try {
-        await sendVerificationMail(userId, email);
-        return res.send({ok:true});
-    }catch(error){
-        return res.status(400).json({ message: 'Something wrong happened.' });
+        const decoded = jwt.verify(resendToken, env.VERIFICATION_RESEND_SECRET) as any;
+
+        if (decoded.purpose !== 'resend_verification') {
+            return res.status(400).json({ message: 'Invalid token purpose' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (user.verified) {
+            return res.status(400).json({ message: 'Email is already verified' });
+        }
+        await sendVerificationMail(user.id, user.email);
+        return res.json({ ok: true });
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(400).json({ message: 'Resend token expired. Please try logging in again.' });
+        }
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(400).json({ message: 'Invalid resend token' });
+        }
+        return res.status(500).json({ message: 'Something went wrong' });
     }
 });
 
