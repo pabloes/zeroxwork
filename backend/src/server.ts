@@ -19,6 +19,9 @@ import { ROLE } from './constants/roles';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
+
+// Validate required secrets before anything else
+import { env } from './config/env';
 const _consoleLog = console.log.bind(console);
 console.log = (...args: any[]) => {
     _consoleLog("LOG_",...args);
@@ -34,7 +37,7 @@ const run = async () => {
     }));
     app.use(
         session({
-            secret: process.env.SESSION_SECRET || 'localhost',
+            secret: env.SESSION_SECRET,
             resave: false,
             saveUninitialized: false,
         })
@@ -54,7 +57,7 @@ const run = async () => {
             }
             return user;
         },
-        cookiePassword: process.env.ADMIN_COOKIE_PASSWORD,
+        cookiePassword: env.ADMIN_COOKIE_PASSWORD,
     }, undefined );
 
     app.use(admin.options.rootPath, router);

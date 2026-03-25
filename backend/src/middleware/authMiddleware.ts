@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import {prisma} from "../db";
+import { env } from '../config/env';
 
 export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers['authorization']?.split(" ")[1];
@@ -9,7 +10,7 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
     }
 
     try {
-        const verified = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key') as any;
+        const verified = jwt.verify(token, env.JWT_SECRET) as any;
 
         if((verified.exp *1000) < Date.now()){
             throw new jwt.TokenExpiredError("Session expired", verified.iat);

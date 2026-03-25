@@ -5,8 +5,8 @@ import {sendMail} from "../services/mailer";
 
 const router = Router();
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 import jwt from 'jsonwebtoken';
+import { env } from '../config/env';
 import {updateUserExtraSpace, updateWalletNames} from "../services/decentraland-names";
 // Register Endpoint
 router.post('/register', async (req, res) => {
@@ -50,7 +50,7 @@ router.post('/register', async (req, res) => {
 async function sendVerificationMail(userId, email){
     const verificationToken = jwt.sign(
         { userId },
-        JWT_SECRET,
+        env.JWT_SECRET,
         { expiresIn: '6h' } // Token expires in 1 hour
     );
     const verificationUrl = `https://zeroxwork.com/verify?token=${verificationToken}`;
@@ -93,7 +93,7 @@ router.post('/login', async (req: Request, res: Response) => {
         // Generar un token JWT
         const token = jwt.sign(
             { userId: user.id, email: user.email, role: user.role },
-            JWT_SECRET,
+            env.JWT_SECRET,
             { expiresIn: 10000 }
         );
         await updateUserExtraSpace(user);
@@ -124,7 +124,7 @@ router.post('/verify', async (req, res) => {
 
     try {
         // Verify the token
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, env.JWT_SECRET);
 
         // Check if user exists in the database
         const user = await prisma.user.findUnique({
