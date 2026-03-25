@@ -3,6 +3,7 @@ import { prisma } from "../db";
 import { ROLE } from "../constants/roles";
 import {verifyToken} from "../middleware/authMiddleware";
 import { isEmbedUrlAllowed } from "../config/embed";
+import { requireAdmin } from "../middleware/requireAdmin";
 import { slugify, computeSourceHash, makeUniqueSlug } from "../utils/slug";
 import { createArticleTranslations, updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
 const router = Router();
@@ -28,7 +29,7 @@ const include = {
 
 // ==================== CATEGORIES ====================
 
-// Get all categories
+// Get all categories (public)
 router.get('/categories', async (req, res) => {
     try {
         const categories = await prisma.category.findMany({
@@ -40,8 +41,8 @@ router.get('/categories', async (req, res) => {
     }
 });
 
-// Create a category (admin only would be ideal, but keeping it simple)
-router.post('/categories', verifyToken, async (req, res) => {
+// Create a category (admin only)
+router.post('/categories', verifyToken, requireAdmin, async (req, res) => {
     const { name } = req.body;
     try {
         if (!name || !name.trim()) {
@@ -56,40 +57,6 @@ router.post('/categories', verifyToken, async (req, res) => {
             return res.status(400).json({ error: 'Category already exists' });
         }
         res.status(500).json({ message: 'Error creating category', error: error.message });
-    }
-});
-
-// Update a category
-router.put('/categories/:id', verifyToken, async (req, res) => {
-    const { id } = req.params;
-    const { name } = req.body;
-    try {
-        if (!name || !name.trim()) {
-            return res.status(400).json({ error: 'Category name is required' });
-        }
-        const category = await prisma.category.update({
-            where: { id: Number(id) },
-            data: { name: name.trim() },
-        });
-        res.status(200).json(category);
-    } catch (error: any) {
-        if (error.code === 'P2002') {
-            return res.status(400).json({ error: 'Category already exists' });
-        }
-        res.status(500).json({ message: 'Error updating category', error: error.message });
-    }
-});
-
-// Delete a category
-router.delete('/categories/:id', verifyToken, async (req, res) => {
-    const { id } = req.params;
-    try {
-        await prisma.category.delete({
-            where: { id: Number(id) },
-        });
-        res.status(200).json({ message: 'Category deleted successfully' });
-    } catch (error: any) {
-        res.status(500).json({ message: 'Error deleting category', error: error.message });
     }
 });
 
