@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /account
+Disallow: /my-images
+Disallow: /my-articles
+Disallow: /image-upload
+Disallow: /create-article
+Disallow: /edit-article
+Disallow: /uploaded-image-page
+Disallow: /verify
+Disallow: /old-brain-wallet
+
+Sitemap: https://zeroxwork.com/sitemap.xml
