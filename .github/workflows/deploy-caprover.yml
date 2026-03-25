@@ -5,9 +5,15 @@ on:
     branches:
       - main
 
+# Prevent concurrent deploys — queue newer runs, cancel nothing
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -19,18 +25,37 @@ jobs:
           node-version: '20'
 
       - name: Install caprover-cli
-        run: |
-          npm install -g caprover
+        run: npm install -g caprover
 
       - name: Deploy to CapRover
-        env:
-          CAPROVER_SERVER: ${{ secrets.CAPROVER_SERVER }}
-          CAPROVER_TOKEN: ${{ secrets.CAPROVER_TOKEN }}
-          CAPROVER_APP: ${{ secrets.CAPROVER_APP }}
         run: |
           caprover deploy \
-            --caproverUrl "$CAPROVER_SERVER" \
-            --appName "$CAPROVER_APP" \
-            --appToken "$CAPROVER_TOKEN" \
-            --branch main \
-            --default
+            --caproverUrl "${{ secrets.CAPROVER_SERVER }}" \
+            --appName "${{ secrets.CAPROVER_APP }}" \
+            --appToken "${{ secrets.CAPROVER_TOKEN }}" \
+            --branch main
+
+      - name: Health check
+        run: |
+          APP_URL="${{ secrets.APP_URL }}"
+          if [ -z "$APP_URL" ]; then
+            echo "::warning::APP_URL secret not set, skipping health check"
+            exit 0
+          fi
+
+          echo "Waiting 60s for container startup (prisma migrate + app init)..."
+          sleep 60
+
+          MAX_RETRIES=5
+          for i in $(seq 1 $MAX_RETRIES); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/api/blog/articles" || echo "000")
+            echo "Attempt $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed"
+              exit 0
+            fi
+            sleep 15
+          done
+
+          echo "::error::Health check failed after $MAX_RETRIES attempts (last status: $STATUS)"
+          exit 1

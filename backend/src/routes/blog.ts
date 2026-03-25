@@ -2,12 +2,7 @@ import { Router } from 'express';
 import { prisma } from "../db";
 import { ROLE } from "../constants/roles";
 import {verifyToken} from "../middleware/authMiddleware";
-// Whitelist of allowed embed URL prefixes.
-// Internal paths and explicitly approved external origins.
-const EMBED_URL_WHITELIST = [
-    '/embeds/',                                  // internal embeds
-    'https://pabloes.github.io/',                // Pablo's GitHub Pages tools
-];
+import { isEmbedUrlAllowed } from "../config/embed";
 import { slugify, computeSourceHash, makeUniqueSlug } from "../utils/slug";
 import { createArticleTranslations, updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
 const router = Router();
@@ -164,7 +159,7 @@ router.post('/articles', verifyToken, async (req, res) => {
         }
 
         // Validate embedUrl against whitelist
-        if (embedUrl && !EMBED_URL_WHITELIST.some(prefix => embedUrl.startsWith(prefix))) {
+        if (embedUrl && !isEmbedUrlAllowed(embedUrl)) {
             return res.status(400).json({ error: 'Embed URL not allowed. Must match a whitelisted prefix (e.g. /embeds/ or approved external origins).' });
         }
 
@@ -270,7 +265,7 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
         }
 
         // Validate embedUrl against whitelist
-        if (embedUrl && !EMBED_URL_WHITELIST.some(prefix => embedUrl.startsWith(prefix))) {
+        if (embedUrl && !isEmbedUrlAllowed(embedUrl)) {
             return res.status(400).json({ error: 'Embed URL not allowed. Must match a whitelisted prefix (e.g. /embeds/ or approved external origins).' });
         }
 
