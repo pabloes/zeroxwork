@@ -28,8 +28,14 @@ const run = async () => {
     const app = express();
     app.set('trust proxy', 1);
     app.use(express.json());
+    const allowedOrigins = process.env.NODE_ENV === 'production'
+        ? ['https://zeroxwork.com', 'https://www.zeroxwork.com', 'https://zerox3.zeroxwork.com']
+        : ['http://localhost:5173', 'http://localhost:3000'];
+
     app.use(cors({
-        allowedHeaders:['Content-Type', 'Authorization', "X-API-Key"]
+        origin: allowedOrigins,
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+        credentials: true,
     }));
     app.use(
         session({
@@ -70,18 +76,6 @@ const run = async () => {
     const frontendDistPath = path.join(__dirname, '../../frontend/dist');
 
     app.use(express.static(frontendDistPath));
-    app.use("/hello/world", (req, res)=>{
-        return res.send("hello world1");
-    })
-
-    app.use("/hello", (req, res)=>{
-        return res.send("hello1")
-    })
-    app.use((req, res, next) => {
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-        next();
-    });
     app.get('*', (req, res) => {
         console.log("*", req.hostname, req.url)
         res.sendFile(path.join(frontendDistPath, 'index.html'));
