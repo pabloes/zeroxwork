@@ -2,7 +2,11 @@
  * Centralized environment variable validation.
  * Import `env` from this module instead of reading process.env directly for secrets.
  * The app will fail to start if any required secret is missing.
+ *
+ * This module loads dotenv itself so it works regardless of ESM import order.
  */
+import dotenv from 'dotenv';
+dotenv.config();
 
 function requireEnv(name: string): string {
     const value = process.env[name];

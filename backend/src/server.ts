@@ -1,5 +1,5 @@
+import { env } from './config/env'; // Must be first — loads dotenv and validates secrets
 import express from 'express';
-import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import options from "../adminjs/config";
 import initializeDb, { prisma } from './db/index';
@@ -18,10 +18,6 @@ import { ROLE } from './constants/roles';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-dotenv.config();
-
-// Validate required secrets before anything else
-import { env } from './config/env';
 const _consoleLog = console.log.bind(console);
 console.log = (...args: any[]) => {
     _consoleLog("LOG_",...args);
