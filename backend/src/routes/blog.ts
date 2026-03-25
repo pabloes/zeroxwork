@@ -114,8 +114,9 @@ router.post('/tags', verifyToken, async (req, res) => {
         if (!name || !name.trim()) {
             return res.status(400).json({ error: 'Tag name is required' });
         }
+        const normalized = name.trim().toUpperCase();
         const tag = await prisma.tag.create({
-            data: { name: name.trim() },
+            data: { name: normalized },
         });
         res.status(201).json(tag);
     } catch (error: any) {
@@ -175,16 +176,16 @@ router.post('/articles', verifyToken, async (req, res) => {
         if (newTags && Array.isArray(newTags) && newTags.length > 0) {
             for (const tagName of newTags) {
                 if (tagName && tagName.trim()) {
+                    const normalizedTag = tagName.trim().toUpperCase();
                     try {
                         const tag = await prisma.tag.create({
-                            data: { name: tagName.trim() },
+                            data: { name: normalizedTag },
                         });
                         createdTagIds.push(tag.id);
                     } catch (e: any) {
-                        // Tag already exists, find it
                         if (e.code === 'P2002') {
                             const existingTag = await prisma.tag.findUnique({
-                                where: { name: tagName.trim() },
+                                where: { name: normalizedTag },
                             });
                             if (existingTag) {
                                 createdTagIds.push(existingTag.id);
@@ -328,16 +329,16 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
         if (newTags && Array.isArray(newTags) && newTags.length > 0) {
             for (const tagName of newTags) {
                 if (tagName && tagName.trim()) {
+                    const normalizedTag = tagName.trim().toUpperCase();
                     try {
                         const tag = await prisma.tag.create({
-                            data: { name: tagName.trim() },
+                            data: { name: normalizedTag },
                         });
                         createdTagIds.push(tag.id);
                     } catch (e: any) {
-                        // Tag already exists, find it
                         if (e.code === 'P2002') {
                             const existingTag = await prisma.tag.findUnique({
-                                where: { name: tagName.trim() },
+                                where: { name: normalizedTag },
                             });
                             if (existingTag) {
                                 createdTagIds.push(existingTag.id);
