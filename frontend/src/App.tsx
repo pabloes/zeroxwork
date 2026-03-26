@@ -3,10 +3,13 @@ import { BrowserRouter as Router, Route, Routes,Navigate } from 'react-router-do
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import {AuthProvider, useAuth} from "./context/AuthContext";
+import {LanguageProvider} from "./i18n/LanguageProvider";
+import {useTranslation} from "./i18n";
 import {pageRoutes} from "./services/routes";
 
 const App: React.FC = () => {
-    return (<AuthProvider>
+    return (<LanguageProvider>
+        <AuthProvider>
         <Router>
             <div className="app-container">
                 <Header />
@@ -27,6 +30,7 @@ const App: React.FC = () => {
             </div>
         </Router>
         </AuthProvider>
+        </LanguageProvider>
     );
 };
 
@@ -34,9 +38,10 @@ export default App;
 
 function PrivateRoute({ children }: { children: ReactNode }) {
     const { isAuthenticated, isAuthResolved } = useAuth();
+    const { t } = useTranslation();
     useEffect(()=>{
         if(isAuthResolved && isAuthenticated !== undefined && !isAuthenticated){
-            alert("You need to Register and Login to access this page")
+            alert(t("auth.login_required"))
         }
     },[isAuthResolved])
     return (

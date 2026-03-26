@@ -1,0 +1,40 @@
+{
+  "nav.blog": "Blog",
+  "nav.tools": "Tools",
+  "nav.my_account": "My Account",
+  "nav.my_articles": "My Articles",
+  "nav.my_images": "My Images",
+  "nav.settings": "Settings",
+  "nav.logout": "Logout",
+  "nav.register": "Register",
+  "nav.login": "Login",
+
+  "login.title": "Login",
+  "login.email": "Email",
+  "login.password": "Password",
+  "login.submit": "Login",
+  "login.submitting": "Logging in...",
+  "login.resend_verification": "Send verification mail again",
+  "login.register_link": "Register a new account",
+  "login.error_default": "Error logging in.",
+
+  "register.title": "Register",
+  "register.email": "Email",
+  "register.password": "Password",
+  "register.submit": "Register",
+  "register.submitting": "Registering...",
+  "register.accept_terms": "I have read and agree to the",
+  "register.terms_link": "Terms and Conditions",
+  "register.accept_privacy": "I have read and agree to the",
+  "register.privacy_link": "Privacy Policy",
+  "register.accept_responsibility": "I accept full responsibility for any content I upload and acknowledge that I may be held legally liable for any harm caused. I will indemnify ZEROxWORK in the event of any legal action arising from my content.",
+  "register.success": "Thank you for registering! Please check your email to verify your account.",
+  "register.error_default": "Error registering user.",
+
+  "footer.follow_us": "Follow us on:",
+  "footer.rights": "All rights reserved.",
+  "footer.terms": "Terms and Conditions",
+  "footer.privacy": "Privacy Policy",
+
+  "auth.login_required": "You need to Register and Login to access this page"
+}

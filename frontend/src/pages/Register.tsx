@@ -1,30 +1,33 @@
 import { useState } from 'react';
 import {AxiosError} from 'axios';
 import UIkit from 'uikit';
-import {api} from "../services/axios-setup"; // Asegúrate de tener UIkit instalado
+import {api} from "../services/axios-setup";
+import {useTranslation} from "../i18n";
 
 const Register: React.FC = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false); // Estado para el botón de carga
-    const [isRegistered, setIsRegistered] = useState(false); // Estado para mostrar el mensaje
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isRegistered, setIsRegistered] = useState(false);
     const [message, setMessage] = useState('');
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [acceptPrivacy, setAcceptPrivacy] = useState(false);
     const [acceptResponsibility, setAcceptResponsibility] = useState(false);
+
     const handleRegisterSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        setIsSubmitting(true); // Activa el estado de carga
+        setIsSubmitting(true);
 
         try {
             await api.post('/auth/register', { email, password });
-            setIsRegistered(true); // Muestra el mensaje de verificación
+            setIsRegistered(true);
         } catch (axiosError:AxiosError|any) {
-            const errorMessage = (typeof axiosError?.response?.data?.error === "string" ? axiosError?.response?.data?.error : axiosError?.response?.data?.error?.message) || 'Error registering user.'
+            const errorMessage = (typeof axiosError?.response?.data?.error === "string" ? axiosError?.response?.data?.error : axiosError?.response?.data?.error?.message) || t('register.error_default');
             setMessage(errorMessage);
             UIkit.notification({ message: errorMessage, status: 'danger' });
         } finally {
-            setIsSubmitting(false); // Desactiva el estado de carga
+            setIsSubmitting(false);
         }
     };
 
@@ -33,9 +36,9 @@ const Register: React.FC = () => {
             <div className="uk-container">
                 {!isRegistered ? (
                     <form onSubmit={handleRegisterSubmit} className="uk-form-stacked">
-                        <h2>Register</h2>
+                        <h2>{t('register.title')}</h2>
                         <div className="uk-margin">
-                            <label className="uk-form-label" htmlFor="email">Email</label>
+                            <label className="uk-form-label" htmlFor="email">{t('register.email')}</label>
                             <input
                                 id="email"
                                 className="uk-input"
@@ -46,7 +49,7 @@ const Register: React.FC = () => {
                             />
                         </div>
                         <div className="uk-margin">
-                            <label className="uk-form-label" htmlFor="password">Password</label>
+                            <label className="uk-form-label" htmlFor="password">{t('register.password')}</label>
                             <input
                                 id="password"
                                 className="uk-input"
@@ -65,7 +68,7 @@ const Register: React.FC = () => {
                                     onChange={() => setAcceptTerms(!acceptTerms)}
                                     required
                                 />{' '}
-                                I have read and agree to the <a href="/terms" target="_blank">Terms and Conditions</a>.
+                                {t('register.accept_terms')} <a href="/terms" target="_blank">{t('register.terms_link')}</a>.
                             </label>
                         </div>
                         <div className="uk-margin">
@@ -77,7 +80,7 @@ const Register: React.FC = () => {
                                     onChange={() => setAcceptPrivacy(!acceptPrivacy)}
                                     required
                                 />{' '}
-                                I have read and agree to the <a href="/privacy" target="_blank">Privacy Policy</a>.
+                                {t('register.accept_privacy')} <a href="/privacy" target="_blank">{t('register.privacy_link')}</a>.
                             </label>
                         </div>
                         <div className="uk-margin">
@@ -89,7 +92,7 @@ const Register: React.FC = () => {
                                     onChange={() => setAcceptResponsibility(!acceptResponsibility)}
                                     required
                                 />{' '}
-                                I accept full responsibility for any content I upload and acknowledge that I may be held legally liable for any harm caused. I will indemnify ZEROxWORK in the event of any legal action arising from my content.
+                                {t('register.accept_responsibility')}
                             </label>
                         </div>
                         <button
@@ -97,13 +100,12 @@ const Register: React.FC = () => {
                             className={`uk-button uk-button-primary ${isSubmitting ? 'uk-disabled' : ''}`}
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? 'Registering...' : 'Register'}
+                            {isSubmitting ? t('register.submitting') : t('register.submit')}
                         </button>
                     </form>
-
                 ) : (
                     <div className="uk-alert-success" uk-alert="true">
-                        <p>Thank you for registering! Please check your email to verify your account.</p>
+                        <p>{t('register.success')}</p>
                     </div>
                 )}
                 {message && <p>{message}</p>}

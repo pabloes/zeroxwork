@@ -1,0 +1,40 @@
+{
+  "nav.blog": "Blog",
+  "nav.tools": "Herramientas",
+  "nav.my_account": "Mi Cuenta",
+  "nav.my_articles": "Mis Articulos",
+  "nav.my_images": "Mis Imagenes",
+  "nav.settings": "Ajustes",
+  "nav.logout": "Cerrar sesion",
+  "nav.register": "Registro",
+  "nav.login": "Iniciar sesion",
+
+  "login.title": "Iniciar sesion",
+  "login.email": "Correo electronico",
+  "login.password": "Contrasena",
+  "login.submit": "Iniciar sesion",
+  "login.submitting": "Iniciando sesion...",
+  "login.resend_verification": "Reenviar correo de verificacion",
+  "login.register_link": "Registrar una nueva cuenta",
+  "login.error_default": "Error al iniciar sesion.",
+
+  "register.title": "Registro",
+  "register.email": "Correo electronico",
+  "register.password": "Contrasena",
+  "register.submit": "Registrarse",
+  "register.submitting": "Registrando...",
+  "register.accept_terms": "He leido y acepto los",
+  "register.terms_link": "Terminos y Condiciones",
+  "register.accept_privacy": "He leido y acepto la",
+  "register.privacy_link": "Politica de Privacidad",
+  "register.accept_responsibility": "Acepto toda la responsabilidad por el contenido que suba y reconozco que puedo ser legalmente responsable por cualquier dano causado. Indemnizare a ZEROxWORK en caso de cualquier accion legal derivada de mi contenido.",
+  "register.success": "Gracias por registrarte. Revisa tu correo para verificar tu cuenta.",
+  "register.error_default": "Error al registrar usuario.",
+
+  "footer.follow_us": "Siguenos en:",
+  "footer.rights": "Todos los derechos reservados.",
+  "footer.terms": "Terminos y Condiciones",
+  "footer.privacy": "Politica de Privacidad",
+
+  "auth.login_required": "Necesitas registrarte e iniciar sesion para acceder a esta pagina"
+}
