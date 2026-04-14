@@ -36,5 +36,18 @@
   "footer.terms": "Terminos y Condiciones",
   "footer.privacy": "Politica de Privacidad",
 
-  "auth.login_required": "Necesitas registrarte e iniciar sesion para acceder a esta pagina"
+  "auth.login_required": "Necesitas registrarte e iniciar sesion para acceder a esta pagina",
+
+  "speedtest.title": "Test de Velocidad de Internet",
+  "speedtest.subtitle": "Mide la velocidad entre tu dispositivo y este servidor.",
+  "speedtest.ping": "Ping",
+  "speedtest.download": "Descarga",
+  "speedtest.upload": "Subida",
+  "speedtest.start": "Iniciar Test",
+  "speedtest.stop": "Detener",
+  "speedtest.retest": "Repetir Test",
+  "speedtest.phase_ping": "Midiendo latencia...",
+  "speedtest.phase_download": "Probando descarga...",
+  "speedtest.phase_upload": "Probando subida...",
+  "speedtest.note": "Los resultados miden la velocidad entre tu dispositivo y este servidor, no el ancho de banda total de tu ISP."
 }

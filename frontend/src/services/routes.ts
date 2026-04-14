@@ -15,6 +15,7 @@ import CreateArticle from "../pages/Blog/create-article";
 import ViewArticle from "../pages/Blog/view-article";
 import EditArticle from "../pages/Blog/edit-article";
 import MyArticles from "../pages/Blog/my-articles";
+import SpeedTest from "../pages/SpeedTest";
 
 export const pageRoutes = [
     {RouteElement:Home, title:`Welcome`, path:`/`, props:{}},
@@ -37,4 +38,6 @@ export const pageRoutes = [
     {RouteElement:ViewArticle, title:"", path:"/view-article/:id", props:{}, auth:false},
     {RouteElement:EditArticle, title:"", path:"/edit-article/:id", props:{}, auth:true},
     {RouteElement:MyArticles, title:"My articles", path:"/my-articles", props:{}, auth:true},
+
+    {RouteElement:SpeedTest, title:"Speed Test", path:"/speed-test", props:{}},
 ]

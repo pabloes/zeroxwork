@@ -36,5 +36,18 @@
   "footer.terms": "Terms and Conditions",
   "footer.privacy": "Privacy Policy",
 
-  "auth.login_required": "You need to Register and Login to access this page"
+  "auth.login_required": "You need to Register and Login to access this page",
+
+  "speedtest.title": "Internet Speed Test",
+  "speedtest.subtitle": "Measure the speed between your device and this server.",
+  "speedtest.ping": "Ping",
+  "speedtest.download": "Download",
+  "speedtest.upload": "Upload",
+  "speedtest.start": "Start Test",
+  "speedtest.stop": "Stop",
+  "speedtest.retest": "Test Again",
+  "speedtest.phase_ping": "Measuring latency...",
+  "speedtest.phase_download": "Testing download...",
+  "speedtest.phase_upload": "Testing upload...",
+  "speedtest.note": "Results measure speed between your device and this server, not your full ISP bandwidth."
 }

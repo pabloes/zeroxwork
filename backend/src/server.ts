@@ -14,6 +14,7 @@ import imageRoutes from './routes/image';
 import userRoutes from "./routes/user";
 import walletRoutes from "./routes/wallet";
 import blogRoutes from "./routes/blog";
+import speedtestRoutes from "./routes/speedtest";
 import { ROLE } from './constants/roles';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -70,6 +71,7 @@ const run = async () => {
     app.use('/api/user', userRoutes);
     app.use('/api/wallet', walletRoutes);
     app.use('/api/blog', blogRoutes);
+    app.use('/api/speedtest', speedtestRoutes);
 
     const port = process.env.PORT || 3000;
     console.log("Listening...")
