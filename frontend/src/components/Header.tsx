@@ -6,6 +6,8 @@ import { useTranslation, SUPPORTED_LANGS, type SupportedLang } from "../i18n";
 const LANG_NAMES: Record<SupportedLang, string> = {
     'en': 'EN',
     'es': 'ES',
+    'pt-br': 'PT',
+    'zh': 'ZH',
 };
 
 const Header: React.FC = () => {
@@ -52,7 +54,7 @@ const Header: React.FC = () => {
                             className="uk-select uk-form-small"
                             value={lang}
                             onChange={(e) => setLanguage(e.target.value as SupportedLang)}
-                            style={{ width: '70px' }}
+                            style={{ width: '80px' }}
                         >
                             {SUPPORTED_LANGS.map((l) => (
                                 <option key={l} value={l}>{LANG_NAMES[l]}</option>

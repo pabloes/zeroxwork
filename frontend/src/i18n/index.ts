@@ -1,11 +1,18 @@
 import { createContext, useContext } from 'react';
 import en from './en.json';
 import es from './es.json';
+import ptBr from './pt-br.json';
+import zh from './zh.json';
 
-export const SUPPORTED_LANGS = ['en', 'es'] as const;
+export const SUPPORTED_LANGS = ['en', 'es', 'pt-br', 'zh'] as const;
 export type SupportedLang = typeof SUPPORTED_LANGS[number];
 
-const dictionaries: Record<SupportedLang, Record<string, string>> = { en, es };
+const dictionaries: Record<SupportedLang, Record<string, string>> = {
+    en,
+    es,
+    'pt-br': ptBr,
+    zh,
+};
 
 /**
  * Detect initial language:
@@ -21,7 +28,12 @@ export function getInitialLanguage(): SupportedLang {
 
     const browserLangs = navigator.languages?.length ? navigator.languages : [navigator.language];
     for (const raw of browserLangs) {
-        const base = raw.split('-')[0].toLowerCase();
+        const lower = raw.toLowerCase();
+        // Map any Portuguese variant to pt-br
+        if (lower === 'pt' || lower.startsWith('pt-')) return 'pt-br';
+        // Map any Chinese variant to zh
+        if (lower === 'zh' || lower.startsWith('zh-')) return 'zh';
+        const base = lower.split('-')[0];
         if (SUPPORTED_LANGS.includes(base as SupportedLang)) {
             return base as SupportedLang;
         }
