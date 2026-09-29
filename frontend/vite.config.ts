@@ -20,6 +20,9 @@ const nodeGlobalPolyfillPlugin =  NodeGlobalsPolyfillPlugin({
   buffer: true,   // Polyfill buffer
 });
 
+// dev only: point the API proxy elsewhere (e.g. VITE_API_PROXY=https://zeroxwork.com) when no local backend is running
+const apiTarget = process.env.VITE_API_PROXY || 'http://localhost:3000';
+
 export default defineConfig({
   plugins: [react(), wasm(),nodePolyFillPlugin, nodeGlobalPolyfillPlugin],
   build: {
@@ -38,12 +41,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000', // Proxy to the backend server
+        target: apiTarget, // Proxy to the backend server
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'), // Adjust the path if needed
       },
       '/admin': {
-        target: 'http://localhost:3000', // Proxy to the backend server
+        target: apiTarget, // Proxy to the backend server
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'), // Adjust the path if needed
       },

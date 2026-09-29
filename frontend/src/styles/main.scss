@@ -7,12 +7,11 @@
 @import "uikit/src/scss/components/grid.scss";
 @import "uikit/src/scss/components/button.scss";
 
+// ZEROxWORK skin: tokens, global styles and landing sections
+@import "./theme.scss";
+@import "./landing.scss";
+
 // Your custom styles here
-html, body {
-  background-color: #ffffff;
-  font-family: 'Helvetica Neue', Arial, sans-serif;
-  height: 100%;
-}
 .app-container {
   display:flex;
   flex-direction: column;

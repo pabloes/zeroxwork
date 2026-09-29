@@ -1,4 +1,5 @@
-import Home from "../pages/Home";
+import Landing from "../pages/Landing";
+import BlogList from "../pages/Blog/blog-list";
 import Tools from "../pages/Tools";
 import Register from "../pages/Register";
 import ImageUploadPage from "../pages/ImageUploadPage";
@@ -18,7 +19,8 @@ import MyArticles from "../pages/Blog/my-articles";
 import SpeedTest from "../pages/SpeedTest";
 
 export const pageRoutes = [
-    {RouteElement:Home, title:`Welcome`, path:`/`, props:{}},
+    {RouteElement:Landing, title:`Welcome`, path:`/`, props:{}},
+    {RouteElement:BlogList, title:`Blog`, path:`/blog`, props:{}},
     {RouteElement:Tools, title:`Tools`, path:`/tools`, props:{}},
     {RouteElement:Register, title:`Register new account`, path:`/register`, props:{}},
     {RouteElement:ImageUploadPage, title:`Image upload`, path:`/image-upload`, props:{}, auth:true},

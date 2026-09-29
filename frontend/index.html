@@ -5,8 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="msapplication-TileColor" content="#ffffff">
   <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
-  <meta name="theme-color" content="#ffffff">
-  <title>ZEROxWORK</title>
+  <meta name="theme-color" content="#0B0F13">
+  <title>ZEROxWORK — Cowork online donde la tecnología y el arte se cruzan</title>
+  <meta name="description" content="ZEROxWORK es una comunidad-cowork online. Juntamos equipos de código y diseño para construir proyectos ambiciosos, con herramientas gratuitas para todos los miembros.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ZEROxWORK">
+  <meta property="og:title" content="ZEROxWORK — Cowork online donde la tecnología y el arte se cruzan">
+  <meta property="og:description" content="Juntamos equipos de código y diseño para construir proyectos ambiciosos. Herramientas gratuitas para todos los miembros.">
+  <meta property="og:url" content="https://zeroxwork.com/">
+  <meta property="og:image" content="https://zeroxwork.com/zeroxwork-logo.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@zeroxwork">
+
+  <!-- Tema: elección guardada, si no la del sistema. Antes del primer pintado -->
+  <script>
+    (function () {
+      var t;
+      try { t = localStorage.getItem('zx-theme'); } catch (e) { /* storage bloqueado */ }
+      if (t !== 'light' && t !== 'dark') {
+        t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Íconos y Favicon -->
   <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
@@ -34,7 +59,7 @@
 
 <!-- Aviso de Cookies -->
 <div id="cookie-consent" style="display: none;">
-  <div class="uk-alert-primary uk-position-bottom-center uk-width-1-1 uk-padding-small" uk-alert>
+  <div class="uk-alert-primary uk-padding-small" uk-alert>
     <p>
       Este sitio utiliza cookies para mejorar la experiencia del usuario. Al continuar navegando, aceptas el uso de cookies.
       <a href="/privacy-policy" class="uk-link-reset">Política de privacidad</a>
