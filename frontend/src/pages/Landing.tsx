@@ -4,6 +4,7 @@ import { useTranslation } from "../i18n";
 import { useArticles } from "../services/use-articles";
 import ArticleCard from "../components/ArticleCard";
 import ToolCard from "../components/ToolCard";
+import ZxMark from "../components/ZxMark";
 
 // one row each: the rest lives on /tools and /blog
 const TOOLS_IN_ROW = 4;
@@ -75,7 +76,7 @@ const Landing: React.FC = () => {
                                 <line x1="190" y1="240" x2="-60" y2="430" stroke="var(--zx-cyan)" />
                             </g>
                         </svg>
-                        <span className="zx-mark zx-bigmark" role="img" aria-label="ZEROxWORK" />
+                        <ZxMark className="zx-bigmark" />
                     </div>
                 </div>
             </header>

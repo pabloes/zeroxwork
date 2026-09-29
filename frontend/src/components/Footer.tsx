@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from "../i18n";
+import ZxMark from "./ZxMark";
 
 const Footer: React.FC = () => {
     const { t } = useTranslation();
@@ -9,7 +10,7 @@ const Footer: React.FC = () => {
         <footer className="zx-footer">
             <div className="zx-wrap zx-foot-in">
                 <Link to="/" className="zx-brand" aria-label="ZEROxWORK">
-                    <span className="zx-mark" role="img" aria-label="ZEROxWORK" />
+                    <ZxMark />
                     <span className="zx-wordmark"><span className="z">ZEROx</span>WORK</span>
                 </Link>
 

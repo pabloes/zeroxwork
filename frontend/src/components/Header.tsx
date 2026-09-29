@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from "../context/AuthContext";
 import { useTranslation, SUPPORTED_LANGS, type SupportedLang } from "../i18n";
 import { getTheme, setTheme, type Theme } from "../services/theme";
+import LangFlag from "./LangFlag";
+import ZxMark from "./ZxMark";
 
 const LANG_NAMES: Record<SupportedLang, string> = {
     'en': 'EN',
@@ -41,7 +43,7 @@ const Header: React.FC = () => {
         <header className="zx-header">
             <div className="zx-wrap zx-nav">
                 <Link to="/" className="zx-brand" aria-label="ZEROxWORK">
-                    <span className="zx-mark" role="img" aria-label="ZEROxWORK" />
+                    <ZxMark />
                     <span className="zx-wordmark"><span className="z">ZEROx</span>WORK</span>
                 </Link>
 
@@ -52,16 +54,19 @@ const Header: React.FC = () => {
                         {!isAuthenticated && <Link to="/register" className="zx-nav-cta">{t('nav.join')} →</Link>}
                     </nav>
 
-                    <select
-                        className="zx-lang"
-                        value={lang}
-                        onChange={(e) => setLanguage(e.target.value as SupportedLang)}
-                        aria-label={t('nav.language')}
-                    >
-                        {SUPPORTED_LANGS.map((l) => (
-                            <option key={l} value={l}>{LANG_NAMES[l]}</option>
-                        ))}
-                    </select>
+                    <span className="zx-lang-wrap">
+                        <LangFlag lang={lang} className="zx-lang-flag" />
+                        <select
+                            className="zx-lang"
+                            value={lang}
+                            onChange={(e) => setLanguage(e.target.value as SupportedLang)}
+                            aria-label={t('nav.language')}
+                        >
+                            {SUPPORTED_LANGS.map((l) => (
+                                <option key={l} value={l}>{LANG_NAMES[l]}</option>
+                            ))}
+                        </select>
+                    </span>
 
                     <button
                         type="button"

@@ -27,8 +27,8 @@
   --zx-tech-ink: #3A4855;
   --zx-glow-a: rgba(239, 77, 66, .08);
   --zx-glow-b: rgba(47, 156, 251, .07);
-  // the logo's white "0" disc reads on dark as-is
-  --zx-zero-filter: none;
+  // the logo's "0" disc, light on the dark ground
+  --zx-zero: #F5F7F9;
 
   --zx-spectrum: linear-gradient(115deg,
     var(--zx-red) 0%, var(--zx-orange) 28%, var(--zx-mint) 55%, var(--zx-cyan) 78%, var(--zx-blue) 100%);
@@ -65,8 +65,8 @@
   --zx-tech-ink: #AAB3BC;
   --zx-glow-a: rgba(239, 77, 66, .06);
   --zx-glow-b: rgba(47, 156, 251, .06);
-  // on a light ground the white disc would vanish: flip it to ink
-  --zx-zero-filter: invert(.95);
+  // on a light ground the disc flips to ink
+  --zx-zero: #15222B;
 }
 
 /* ---------- base ---------- */
@@ -132,28 +132,18 @@ a:hover {
 
 /* ---------- shared pieces ---------- */
 
-// one PNG drawn in two halves so the "0" disc can flip in light mode
+// see ZxMark.tsx: the X disc keeps the original artwork, the "0" is vector
 .zx-mark {
   display: block;
-  position: relative;
   aspect-ratio: 240 / 136;
+}
 
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: url('/zx-mark.png') center / 100% 100% no-repeat;
-  }
+.zx-mark-zero {
+  fill: var(--zx-zero);
+}
 
-  &::before {
-    clip-path: inset(0 49.6% 0 0);
-    filter: var(--zx-zero-filter);
-  }
-
-  &::after {
-    clip-path: inset(0 0 0 50.4%);
-  }
+.zx-mark-gap {
+  stroke: var(--zx-bg);
 }
 
 .zx-wordmark {
@@ -587,6 +577,22 @@ a:hover {
   }
 }
 
+.zx-lang-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.zx-lang-flag {
+  position: absolute;
+  left: 9px;
+  width: 18px;
+  height: 13px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px var(--zx-line-2);
+  border-radius: 2px;
+}
+
 .zx-lang {
   font-family: var(--zx-mono);
   font-size: 12.5px;
@@ -594,7 +600,7 @@ a:hover {
   background: transparent;
   border: 1px solid var(--zx-line-2);
   border-radius: 9px;
-  padding: 9px 8px;
+  padding: 9px 8px 9px 33px;
   cursor: pointer;
 
   &:focus {
@@ -958,7 +964,13 @@ a.uk-link-reset {
   }
 
   .zx-lang {
-    padding: 8px 4px;
+    padding: 8px 2px 8px 27px;
+  }
+
+  .zx-lang-flag {
+    left: 6px;
+    width: 16px;
+    height: 12px;
   }
 
   .zx-hide-sm {
