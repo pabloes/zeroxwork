@@ -44,6 +44,9 @@ const Login: React.FC = () => {
         } catch (error: any) {
             const msg = error?.response?.data?.message || 'Failed to send verification mail';
             UIkit.notification({ message: msg, status: 'danger' });
+            // Bring the link back so the send can be retried; on success it
+            // stays hidden on purpose.
+            setSendingVerification(false);
         }
     }
 

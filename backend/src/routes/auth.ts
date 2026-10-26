@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import argon2 from 'argon2';
-import {sendMail} from "../services/mailer";
+import {MailDeliveryError, sendMail} from "../services/mailer";
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import { env } from '../config/env';
@@ -18,8 +18,10 @@ const authLimiter = rateLimit({
 router.post('/register', authLimiter, async (req, res) => {
     const { email, password } = req.body;
 
+    // Both `error` and `message` are sent on failures: the Register page reads
+    // `error`, while older clients read `message`.
     if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required.' });
+        return res.status(400).json({ error: 'Email and password are required.', message: 'Email and password are required.' });
     }
 
     try {
@@ -29,7 +31,7 @@ router.post('/register', authLimiter, async (req, res) => {
         });
 
         if (existingUser) {
-            return res.status(400).json({ message: 'Email is already registered.' });
+            return res.status(400).json({ error: 'Email is already registered.', message: 'Email is already registered.' });
         }
 
         // Hash the password
@@ -44,12 +46,21 @@ router.post('/register', authLimiter, async (req, res) => {
             },
         });
 
-        await sendVerificationMail(newUser.id, email);
+        try {
+            await sendVerificationMail(newUser.id, email);
+        } catch (mailError) {
+            // The account exists but the verification mail never left. Say so
+            // instead of telling the user to check an inbox that stays empty:
+            // they can ask for a new mail from the login page.
+            console.error('Registration: verification mail failed for', email, mailError);
+            const text = 'Your account was created, but we could not send the verification email. Please try again from the login page in a few minutes.';
+            return res.status(502).json({ error: text, message: text, accountCreated: true, mailSent: false });
+        }
 
-        res.json({ message: 'Registration successful! Please check your email to verify your account. The token expires in 6 hours.' });
+        res.json({ message: 'Registration successful! Please check your email to verify your account. The token expires in 6 hours.', mailSent: true });
     } catch (error) {
         console.error('Error during registration:', error);
-        res.status(500).json({ message: 'Internal server error. Please try again later.' });
+        res.status(500).json({ error: 'Internal server error. Please try again later.', message: 'Internal server error. Please try again later.' });
     }
 });
 
@@ -146,6 +157,13 @@ router.post('/send-verification-mail', verificationLimiter, async(req,res)=>{
         await sendVerificationMail(user.id, user.email);
         return res.json({ ok: true });
     } catch (error) {
+        if (error instanceof MailDeliveryError) {
+            console.error('Resend: verification mail failed:', error);
+            return res.status(502).json({
+                ok: false,
+                message: 'The verification email could not be sent right now. Please try again in a few minutes.',
+            });
+        }
         if (error.name === 'TokenExpiredError') {
             return res.status(400).json({ message: 'Resend token expired. Please try logging in again.' });
         }

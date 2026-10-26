@@ -15,19 +15,22 @@ import userRoutes from "./routes/user";
 import walletRoutes from "./routes/wallet";
 import blogRoutes from "./routes/blog";
 import speedtestRoutes from "./routes/speedtest";
+import logsRoutes from "./routes/logs";
 import { ROLE } from './constants/roles';
+import { installConsoleCapture } from './services/log-store';
+import requestLogger from './middleware/requestLogger';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const _consoleLog = console.log.bind(console);
-console.log = (...args: any[]) => {
-    _consoleLog("LOG_",...args);
-}
+// Keeps the "LOG_" prefix on console.log and mirrors every console call into
+// the in-memory buffer served by /api/logs.
+installConsoleCapture();
 const run = async () => {
     await initializeDb();
 
     const app = express();
     app.set('trust proxy', 1);
+    app.use(requestLogger);
     app.use(express.json());
     const allowedOrigins = process.env.NODE_ENV === 'production'
         ? ['https://zeroxwork.com', 'https://www.zeroxwork.com', 'https://zerox3.zeroxwork.com']
@@ -72,6 +75,7 @@ const run = async () => {
     app.use('/api/wallet', walletRoutes);
     app.use('/api/blog', blogRoutes);
     app.use('/api/speedtest', speedtestRoutes);
+    app.use('/api/logs', logsRoutes);
 
     const port = process.env.PORT || 3000;
     console.log("Listening...")
