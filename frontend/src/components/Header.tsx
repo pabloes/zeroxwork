@@ -11,6 +11,7 @@ const LANG_NAMES: Record<SupportedLang, string> = {
     'es': 'ES',
     'pt-br': 'PT',
     'zh': 'ZH',
+    'fr': 'FR',
 };
 
 const Header: React.FC = () => {

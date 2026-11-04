@@ -3,15 +3,20 @@ import en from './en.json';
 import es from './es.json';
 import ptBr from './pt-br.json';
 import zh from './zh.json';
+import fr from './fr.json';
 
-export const SUPPORTED_LANGS = ['en', 'es', 'pt-br', 'zh'] as const;
+export const SUPPORTED_LANGS = ['en', 'es', 'pt-br', 'zh', 'fr'] as const;
 export type SupportedLang = typeof SUPPORTED_LANGS[number];
+
+/** Language used when the browser asks for something we do not speak. */
+export const DEFAULT_LANG: SupportedLang = 'en';
 
 const dictionaries: Record<SupportedLang, Record<string, string>> = {
     en,
     es,
     'pt-br': ptBr,
     zh,
+    fr,
 };
 
 /**
@@ -39,7 +44,12 @@ export function getInitialLanguage(): SupportedLang {
         }
     }
 
-    return 'en';
+    return DEFAULT_LANG;
+}
+
+/** HTML lang attribute for the active language. */
+export function htmlLang(lang: SupportedLang): string {
+    return lang === 'pt-br' ? 'pt-BR' : lang;
 }
 
 /**

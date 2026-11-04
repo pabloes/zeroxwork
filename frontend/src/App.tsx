@@ -2,6 +2,7 @@ import React, {ReactNode, useEffect} from 'react';
 import { BrowserRouter as Router, Route, Routes,Navigate } from 'react-router-dom';
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import CookieBanner from "./components/CookieBanner";
 import {AuthProvider, useAuth} from "./context/AuthContext";
 import {LanguageProvider} from "./i18n/LanguageProvider";
 import {useTranslation} from "./i18n";
@@ -27,6 +28,7 @@ const App: React.FC = () => {
                     </Routes>
                 </div>
                 <Footer/>
+                <CookieBanner/>
             </div>
         </Router>
         </AuthProvider>

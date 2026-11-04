@@ -8,6 +8,9 @@ import { slugify, computeSourceHash, makeUniqueSlug } from "../utils/slug";
 import { createArticleTranslations, updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
 const router = Router();
 
+// Shown when the requested language has no articles yet
+const FALLBACK_LANG = 'en';
+
 const include = {
         user: {
             select: {
@@ -375,99 +378,112 @@ router.get('/articles', async (req, res) => {
                 ? `AND LOWER(c.name) = LOWER($2)`
                 : `AND TRUE`;
 
-            const params = category && typeof category === 'string'
-                ? [normalizedLang, category, limitNum, offsetNum]
-                : [normalizedLang, limitNum, offsetNum];
+            // Articles written in that language plus translations into it
+            const fetchForLang = async (targetLang: string) => {
+                const params = category && typeof category === 'string'
+                    ? [targetLang, category, limitNum, offsetNum]
+                    : [targetLang, limitNum, offsetNum];
 
-            const limitParam = category ? '$3' : '$2';
-            const offsetParam = category ? '$4' : '$3';
+                const limitParam = category ? '$3' : '$2';
+                const offsetParam = category ? '$4' : '$3';
 
-            // Use raw SQL with UNION to get both base articles and translations, properly sorted
-            const rawArticles = await prisma.$queryRawUnsafe<any[]>(`
-                SELECT
-                    a.id,
-                    a.title,
-                    a.content,
-                    a.slug,
-                    a.lang,
-                    a.thumbnail,
-                    a."createdAt",
-                    a."updatedAt",
-                    a.featured,
-                    a."userId",
-                    c.id as "categoryId",
-                    c.name as "categoryName",
-                    wn.name as author,
-                    w.address as "authorAddress",
-                    FALSE as "isTranslation"
-                FROM articles a
-                LEFT JOIN categories c ON a."categoryId" = c.id
-                LEFT JOIN users u ON a."userId" = u.id
-                LEFT JOIN "WalletDecentralandNames" wn ON u."defaultNameId" = wn.id
-                LEFT JOIN "Wallet" w ON wn."walletId" = w.id
-                WHERE a.published = TRUE
-                AND a.lang = $1
-                ${categoryCondition}
+                // Use raw SQL with UNION to get both base articles and translations, properly sorted
+                const rawArticles = await prisma.$queryRawUnsafe<any[]>(`
+                    SELECT
+                        a.id,
+                        a.title,
+                        a.content,
+                        a.slug,
+                        a.lang,
+                        a.thumbnail,
+                        a."createdAt",
+                        a."updatedAt",
+                        a.featured,
+                        a."userId",
+                        c.id as "categoryId",
+                        c.name as "categoryName",
+                        wn.name as author,
+                        w.address as "authorAddress",
+                        FALSE as "isTranslation"
+                    FROM articles a
+                    LEFT JOIN categories c ON a."categoryId" = c.id
+                    LEFT JOIN users u ON a."userId" = u.id
+                    LEFT JOIN "WalletDecentralandNames" wn ON u."defaultNameId" = wn.id
+                    LEFT JOIN "Wallet" w ON wn."walletId" = w.id
+                    WHERE a.published = TRUE
+                    AND a.lang = $1
+                    ${categoryCondition}
 
-                UNION ALL
+                    UNION ALL
 
-                SELECT
-                    a.id,
-                    t.title,
-                    t.content,
-                    t.slug,
-                    t."targetLang" as lang,
-                    a.thumbnail,
-                    a."createdAt",
-                    t."cachedAt" as "updatedAt",
-                    a.featured,
-                    a."userId",
-                    c.id as "categoryId",
-                    c.name as "categoryName",
-                    wn.name as author,
-                    w.address as "authorAddress",
-                    TRUE as "isTranslation"
-                FROM article_translations t
-                JOIN articles a ON t."articleId" = a.id
-                LEFT JOIN categories c ON a."categoryId" = c.id
-                LEFT JOIN users u ON a."userId" = u.id
-                LEFT JOIN "WalletDecentralandNames" wn ON u."defaultNameId" = wn.id
-                LEFT JOIN "Wallet" w ON wn."walletId" = w.id
-                WHERE t."targetLang" = $1
-                AND a.lang != $1
-                ${categoryCondition}
+                    SELECT
+                        a.id,
+                        t.title,
+                        t.content,
+                        t.slug,
+                        t."targetLang" as lang,
+                        a.thumbnail,
+                        a."createdAt",
+                        t."cachedAt" as "updatedAt",
+                        a.featured,
+                        a."userId",
+                        c.id as "categoryId",
+                        c.name as "categoryName",
+                        wn.name as author,
+                        w.address as "authorAddress",
+                        TRUE as "isTranslation"
+                    FROM article_translations t
+                    JOIN articles a ON t."articleId" = a.id
+                    LEFT JOIN categories c ON a."categoryId" = c.id
+                    LEFT JOIN users u ON a."userId" = u.id
+                    LEFT JOIN "WalletDecentralandNames" wn ON u."defaultNameId" = wn.id
+                    LEFT JOIN "Wallet" w ON wn."walletId" = w.id
+                    WHERE t."targetLang" = $1
+                    AND a.lang != $1
+                    ${categoryCondition}
 
-                ORDER BY featured DESC, "createdAt" DESC
-                LIMIT ${limitParam} OFFSET ${offsetParam}
-            `, ...params);
+                    ORDER BY featured DESC, "createdAt" DESC
+                    LIMIT ${limitParam} OFFSET ${offsetParam}
+                `, ...params);
 
-            // Get tags for each article
-            const articleIds = [...new Set(rawArticles.map(a => a.id))];
-            const articleTags = await prisma.article.findMany({
-                where: { id: { in: articleIds } },
-                select: { id: true, tags: true },
-            });
-            const tagsMap = new Map(articleTags.map(a => [a.id, a.tags]));
+                // Get tags for each article
+                const articleIds = [...new Set(rawArticles.map(a => a.id))];
+                const articleTags = await prisma.article.findMany({
+                    where: { id: { in: articleIds } },
+                    select: { id: true, tags: true },
+                });
+                const tagsMap = new Map(articleTags.map(a => [a.id, a.tags]));
 
-            // Format the results
-            const formattedArticles = rawArticles.map(article => ({
-                id: article.id,
-                title: article.title,
-                content: article.content,
-                slug: article.slug,
-                lang: article.lang,
-                thumbnail: article.thumbnail,
-                createdAt: article.createdAt,
-                updatedAt: article.updatedAt,
-                featured: article.featured,
-                author: article.author || 'Anonymous',
-                authorAddress: article.authorAddress,
-                category: article.categoryId ? { id: article.categoryId, name: article.categoryName } : null,
-                tags: tagsMap.get(article.id) || [],
-                isTranslation: article.isTranslation,
-            }));
+                // Format the results
+                const formattedArticles = rawArticles.map(article => ({
+                    id: article.id,
+                    title: article.title,
+                    content: article.content,
+                    slug: article.slug,
+                    lang: article.lang,
+                    thumbnail: article.thumbnail,
+                    createdAt: article.createdAt,
+                    updatedAt: article.updatedAt,
+                    featured: article.featured,
+                    author: article.author || 'Anonymous',
+                    authorAddress: article.authorAddress,
+                    category: article.categoryId ? { id: article.categoryId, name: article.categoryName } : null,
+                    tags: tagsMap.get(article.id) || [],
+                    isTranslation: article.isTranslation,
+                }));
 
-            return res.status(200).json(formattedArticles);
+                return formattedArticles;
+            };
+
+            let articlesForLang = await fetchForLang(normalizedLang);
+
+            // Nothing in that language yet (translation pending or language not covered):
+            // show the English ones instead of an empty page
+            if (articlesForLang.length === 0 && normalizedLang !== FALLBACK_LANG) {
+                articlesForLang = await fetchForLang(FALLBACK_LANG);
+            }
+
+            return res.status(200).json(articlesForLang);
         }
 
         // Default: return all base articles

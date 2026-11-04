@@ -1,4 +1,11 @@
 {
+  "meta.title": "ZEROxWORK — Online cowork where technology and art cross",
+  "meta.description": "ZEROxWORK is an online community-cowork. We put together teams of code and design to build ambitious projects, with free tools for every member.",
+  "cookies.title": "Cookie notice",
+  "cookies.text": "This site uses cookies to improve your experience. Analytics and ads only load once you accept.",
+  "cookies.link": "Privacy policy",
+  "cookies.accept": "Accept",
+
   "nav.blog": "Blog",
   "nav.tools": "Tools",
   "nav.my_account": "My Account",
@@ -17,6 +24,13 @@
   "login.resend_verification": "Send verification mail again",
   "login.register_link": "Register a new account",
   "login.error_default": "Error logging in.",
+  "login.verified_notice": "Your email has been verified. You can log in now.",
+
+  "verify.title": "Email verification",
+  "verify.checking": "Verifying your email...",
+  "verify.failed": "Verification failed. The link is invalid or has expired.",
+  "verify.no_token": "Invalid verification request. No token provided.",
+  "verify.login_link": "Go to login",
 
   "register.title": "Register",
   "register.email": "Email",
@@ -30,6 +44,13 @@
   "register.accept_responsibility": "I accept full responsibility for any content I upload and acknowledge that I may be held legally liable for any harm caused. I will indemnify ZEROxWORK in the event of any legal action arising from my content.",
   "register.success": "Thank you for registering! Please check your email to verify your account.",
   "register.error_default": "Error registering user.",
+
+  "socials.title": "Social profiles (optional)",
+  "socials.hint": "Add the ones you use. You can leave them all empty.",
+  "socials.add": "Add another network",
+  "socials.search_placeholder": "Search a network...",
+  "socials.no_results": "No networks match",
+  "socials.remove": "Remove",
 
   "footer.follow_us": "Follow us on:",
   "footer.rights": "All rights reserved.",

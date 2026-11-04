@@ -1,4 +1,11 @@
 {
+  "meta.title": "ZEROxWORK — 技术与艺术交汇的在线共创空间",
+  "meta.description": "ZEROxWORK 是一个在线社区共创空间。我们把代码与设计的团队组合起来，打造有野心的项目，每位成员都能免费使用我们的工具。",
+  "cookies.title": "Cookie 提示",
+  "cookies.text": "本站使用 Cookie 以改善您的体验。只有在您同意后才会加载分析与广告。",
+  "cookies.link": "隐私政策",
+  "cookies.accept": "同意",
+
   "nav.blog": "博客",
   "nav.tools": "工具",
   "nav.my_account": "我的账户",
@@ -17,6 +24,13 @@
   "login.resend_verification": "重新发送验证邮件",
   "login.register_link": "注册新账户",
   "login.error_default": "登录出错。",
+  "login.verified_notice": "您的邮箱已验证，现在可以登录。",
+
+  "verify.title": "邮箱验证",
+  "verify.checking": "正在验证您的邮箱…",
+  "verify.failed": "验证失败。链接无效或已过期。",
+  "verify.no_token": "验证请求无效，缺少令牌。",
+  "verify.login_link": "前往登录",
 
   "register.title": "注册",
   "register.email": "电子邮箱",
@@ -30,6 +44,13 @@
   "register.accept_responsibility": "我对所上传的任何内容承担全部责任，并承认我可能因造成的任何损害承担法律责任。如果因我的内容引发任何法律诉讼，我将赔偿 ZEROxWORK。",
   "register.success": "感谢您的注册！请查收邮件以验证您的账户。",
   "register.error_default": "注册用户时出错。",
+
+  "socials.title": "社交主页（可选）",
+  "socials.hint": "填写您使用的平台，也可以全部留空。",
+  "socials.add": "添加其他平台",
+  "socials.search_placeholder": "搜索平台…",
+  "socials.no_results": "没有匹配的平台",
+  "socials.remove": "移除",
 
   "footer.follow_us": "关注我们：",
   "footer.rights": "版权所有。",

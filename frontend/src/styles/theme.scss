@@ -874,42 +874,54 @@ a.uk-link-reset {
   color: inherit;
 }
 
-// cookie banner lives in index.html
-#cookie-consent {
+// cookie notice (CookieBanner.tsx); the consent script lives in index.html
+.zx-cookie {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 1000;
   font-family: var(--zx-body);
+  padding: 0 14px 14px;
+  pointer-events: none;
+}
 
-  .uk-alert-primary {
-    max-width: calc(var(--zx-maxw) - 60px);
-    margin: 0 14px 14px;
-    background: var(--zx-surface);
-    box-shadow: 0 24px 50px -24px rgba(0, 0, 0, .45);
-  }
-
-  @media (min-width: 1240px) {
-    .uk-alert-primary {
-      margin: 0 auto 14px;
-    }
-  }
+.zx-cookie-box {
+  pointer-events: auto;
+  max-width: calc(var(--zx-maxw) - 60px);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  background: var(--zx-surface);
+  border: 1px solid var(--zx-line-2);
+  border-radius: 12px;
+  box-shadow: 0 24px 50px -24px rgba(0, 0, 0, .45);
 
   p {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    flex-wrap: wrap;
+    margin: 0;
     font-size: 13.5px;
     color: var(--zx-ink-dim);
-    margin: 0;
   }
+}
+
+.zx-cookie-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 
   a {
+    font-size: 13px;
     color: var(--zx-ink);
     text-decoration: underline;
+  }
+
+  .zx-btn {
+    padding: 10px 20px;
+    font-size: 14px;
   }
 }
 

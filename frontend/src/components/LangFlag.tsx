@@ -26,6 +26,13 @@ const FLAGS: Record<SupportedLang, React.ReactNode> = {
             <circle cx="10" cy="7" r="3.1" fill="#002776" />
         </>
     ),
+    'fr': (
+        <>
+            <rect width="20" height="14" fill="#FFFFFF" />
+            <rect width="6.67" height="14" fill="#002395" />
+            <rect x="13.33" width="6.67" height="14" fill="#ED2939" />
+        </>
+    ),
     'zh': (
         <>
             <rect width="20" height="14" fill="#DE2910" />

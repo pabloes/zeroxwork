@@ -1,4 +1,11 @@
 {
+  "meta.title": "ZEROxWORK — Cowork online donde la tecnología y el arte se cruzan",
+  "meta.description": "ZEROxWORK es una comunidad-cowork online. Juntamos equipos de código y diseño para construir proyectos ambiciosos, con herramientas gratuitas para todos los miembros.",
+  "cookies.title": "Aviso de cookies",
+  "cookies.text": "Este sitio usa cookies para mejorar tu experiencia. La analítica y los anuncios solo se cargan si aceptas.",
+  "cookies.link": "Política de privacidad",
+  "cookies.accept": "Aceptar",
+
   "nav.blog": "Blog",
   "nav.tools": "Herramientas",
   "nav.my_account": "Mi Cuenta",
@@ -17,6 +24,13 @@
   "login.resend_verification": "Reenviar correo de verificacion",
   "login.register_link": "Registrar una nueva cuenta",
   "login.error_default": "Error al iniciar sesion.",
+  "login.verified_notice": "Tu correo esta verificado. Ya puedes iniciar sesion.",
+
+  "verify.title": "Verificacion de correo",
+  "verify.checking": "Verificando tu correo...",
+  "verify.failed": "No se pudo verificar. El enlace no es valido o ha caducado.",
+  "verify.no_token": "Peticion de verificacion no valida. Falta el token.",
+  "verify.login_link": "Ir a iniciar sesion",
 
   "register.title": "Registro",
   "register.email": "Correo electronico",
@@ -30,6 +44,13 @@
   "register.accept_responsibility": "Acepto toda la responsabilidad por el contenido que suba y reconozco que puedo ser legalmente responsable por cualquier dano causado. Indemnizare a ZEROxWORK en caso de cualquier accion legal derivada de mi contenido.",
   "register.success": "Gracias por registrarte. Revisa tu correo para verificar tu cuenta.",
   "register.error_default": "Error al registrar usuario.",
+
+  "socials.title": "Perfiles sociales (opcional)",
+  "socials.hint": "Añade los que uses. Puedes dejarlos todos vacíos.",
+  "socials.add": "Añadir otra red",
+  "socials.search_placeholder": "Buscar una red...",
+  "socials.no_results": "Ninguna red coincide",
+  "socials.remove": "Quitar",
 
   "footer.follow_us": "Siguenos en:",
   "footer.rights": "Todos los derechos reservados.",

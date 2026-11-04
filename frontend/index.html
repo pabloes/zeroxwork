@@ -6,14 +6,20 @@
   <meta name="msapplication-TileColor" content="#ffffff">
   <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
   <meta name="theme-color" content="#0B0F13">
-  <title>ZEROxWORK — Cowork online donde la tecnología y el arte se cruzan</title>
-  <meta name="description" content="ZEROxWORK es una comunidad-cowork online. Juntamos equipos de código y diseño para construir proyectos ambiciosos, con herramientas gratuitas para todos los miembros.">
+  <!-- English by default; the app rewrites title, description and <html lang> for the reader's language -->
+  <title>ZEROxWORK — Online cowork where technology and art cross</title>
+  <meta name="description" content="ZEROxWORK is an online community-cowork. We put together teams of code and design to build ambitious projects, with free tools for every member.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="ZEROxWORK">
-  <meta property="og:title" content="ZEROxWORK — Cowork online donde la tecnología y el arte se cruzan">
-  <meta property="og:description" content="Juntamos equipos de código y diseño para construir proyectos ambiciosos. Herramientas gratuitas para todos los miembros.">
+  <meta property="og:title" content="ZEROxWORK — Online cowork where technology and art cross">
+  <meta property="og:description" content="We put together teams of code and design to build ambitious projects. Free tools for every member.">
   <meta property="og:url" content="https://zeroxwork.com/">
   <meta property="og:image" content="https://zeroxwork.com/zeroxwork-logo.png">
+  <meta property="og:locale" content="en">
+  <meta property="og:locale:alternate" content="es">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="zh">
+  <meta property="og:locale:alternate" content="fr">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@zeroxwork">
 
@@ -57,17 +63,7 @@
 <script src="https://cdn.jsdelivr.net/npm/uikit@3.21.11/dist/js/uikit.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/uikit@3.21.11/dist/js/uikit-icons.min.js"></script>
 
-<!-- Aviso de Cookies -->
-<div id="cookie-consent" style="display: none;">
-  <div class="uk-alert-primary uk-padding-small" uk-alert>
-    <p>
-      Este sitio utiliza cookies para mejorar la experiencia del usuario. Al continuar navegando, aceptas el uso de cookies.
-      <a href="/privacy-policy" class="uk-link-reset">Política de privacidad</a>
-      <button class="uk-button uk-button-primary" id="accept-cookies">Aceptar</button>
-    </p>
-  </div>
-</div>
-
+<!-- Consentimiento de cookies: el aviso lo pinta React (traducido), aquí solo vive la carga de scripts -->
 <script>
   // Función para cargar Google Analytics
   function loadGoogleAnalytics() {
@@ -90,23 +86,20 @@
     document.head.appendChild(script);
   }
 
-  // Verificar si el usuario ya ha aceptado las cookies
-  if (!localStorage.getItem('cookiesAccepted')) {
-    document.getElementById('cookie-consent').style.display = 'block';
-  } else {
-    // Cargar los scripts si las cookies ya fueron aceptadas
+  // Llamado por el aviso de cookies de React al aceptar
+  window.zxAcceptCookies = function () {
+    try { localStorage.setItem('cookiesAccepted', 'true'); } catch (e) { /* storage bloqueado */ }
     loadGoogleAnalytics();
     loadGoogleAdSense();
-  }
+  };
 
-  document.getElementById('accept-cookies').addEventListener('click', function () {
-    localStorage.setItem('cookiesAccepted', 'true');
-    document.getElementById('cookie-consent').style.display = 'none';
-
-    // Cargar Google Analytics y AdSense solo después de aceptar cookies
-    loadGoogleAnalytics();
-    loadGoogleAdSense();
-  });
+  // Cargar los scripts si las cookies ya fueron aceptadas
+  try {
+    if (localStorage.getItem('cookiesAccepted')) {
+      loadGoogleAnalytics();
+      loadGoogleAdSense();
+    }
+  } catch (e) { /* storage bloqueado: sin analytics hasta que se acepte */ }
 </script>
 
 </body>

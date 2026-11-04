@@ -16,6 +16,7 @@ const LANG_NAMES: Record<string, string> = {
     'en': 'English',
     'pt-br': 'Português',
     'zh': '中文',
+    'fr': 'Français',
 };
 
 function getUserLang(): string {

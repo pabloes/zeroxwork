@@ -1,8 +1,15 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { LanguageContext, getInitialLanguage, translate, type SupportedLang } from './index';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { LanguageContext, getInitialLanguage, htmlLang, translate, type SupportedLang } from './index';
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [lang, setLangState] = useState<SupportedLang>(getInitialLanguage);
+
+    // keep the document in sync: lang attribute, title and description
+    useEffect(() => {
+        document.documentElement.lang = htmlLang(lang);
+        document.title = translate(lang, 'meta.title');
+        document.querySelector('meta[name="description"]')?.setAttribute('content', translate(lang, 'meta.description'));
+    }, [lang]);
 
     const setLanguage = useCallback((newLang: SupportedLang) => {
         localStorage.setItem('lang', newLang);

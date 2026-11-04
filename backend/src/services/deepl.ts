@@ -1,6 +1,6 @@
 const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
 
-export const SUPPORTED_LANGS = ['PT-BR', 'ZH', 'EN', 'ES'] as const;
+export const SUPPORTED_LANGS = ['PT-BR', 'ZH', 'EN', 'ES', 'FR'] as const;
 export type SupportedLang = typeof SUPPORTED_LANGS[number];
 
 /**
@@ -14,6 +14,7 @@ export function toDeepLLang(lang: string): string {
         'ZH': 'ZH',
         'EN': 'EN',
         'ES': 'ES',
+        'FR': 'FR',
     };
     return mapping[upper] || upper;
 }
