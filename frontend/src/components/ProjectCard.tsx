@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { articleExcerpt, articlePath, type Article } from "../services/use-articles";
 import { useTranslation } from "../i18n";
+import CreditList from "./CreditList";
 
 const TAGS_ON_CARD = 4;
 
@@ -8,6 +9,7 @@ const ProjectCard: React.FC<{ project: Article }> = ({ project }) => {
     const { t } = useTranslation();
     const summary = articleExcerpt(project);
     const tags = (project.tags ?? []).slice(0, TAGS_ON_CARD);
+    const credits = project.credits ?? [];
 
     return (
         <Link to={articlePath(project)} className="zx-post zx-proj">
@@ -19,6 +21,8 @@ const ProjectCard: React.FC<{ project: Article }> = ({ project }) => {
             <div className="zx-post-body">
                 <h3>{project.title}</h3>
                 {summary && <p className="zx-proj-desc">{summary}</p>}
+                {/* linked={false}: the whole card is already a link */}
+                <CreditList credits={credits} linked={false} />
                 {tags.length > 0 && (
                     <span className="zx-proj-tags">
                         {tags.map((tag) => (

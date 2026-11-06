@@ -31,6 +31,14 @@ const include = {
         },
         category: true,
         tags: true,
+        credits: {
+            orderBy: [{ position: 'asc' as const }, { id: 'asc' as const }],
+            select: {
+                name: true,
+                role: true,
+                user: { select: { handle: true, displayName: true, avatarUrl: true } },
+            },
+        },
 };
 
 /**
@@ -44,6 +52,26 @@ const authorFields = (user: any) => ({
     authorAddress: user?.defaultName?.wallet?.address || null,
     authorDisplayName: user?.displayName || null,
     authorAvatar: user?.avatarUrl || null,
+});
+
+/**
+ * Credited collaborators, flattened for the frontend. `name` is what was typed
+ * when the credit was created; a credit linked to an account prefers that
+ * account's public name and carries the handle, which is what makes the name a
+ * link to /member/<handle>.
+ */
+const creditFields = (credits: any[] | undefined) =>
+    (credits ?? []).map((credit) => ({
+        name: credit.user?.displayName || credit.name,
+        role: credit.role ?? null,
+        handle: credit.user?.handle ?? null,
+        avatarUrl: credit.user?.avatarUrl ?? null,
+    }));
+
+/** The public author and credit block every article response carries. */
+const publicFields = (article: any) => ({
+    ...authorFields(article.user),
+    credits: creditFields(article.credits),
 });
 
 // ==================== CATEGORIES ====================
@@ -220,7 +248,7 @@ router.post('/articles', verifyToken, async (req, res) => {
         createArticleTranslations(article.id, title, content, article.lang, sourceHash, article.redirectUrl)
             .catch(err => console.error('Translation error:', err));
 
-        const fields = authorFields(article.user);
+        const fields = publicFields(article);
 
         // Admin notice, same fire-and-forget shape as the translations above.
         notifyAdminNewArticle({
@@ -483,6 +511,25 @@ router.get('/articles', async (req, res) => {
                 });
                 const tagsMap = new Map(articleTags.map(a => [a.id, a.tags]));
 
+                // And the credits, fetched the same way: the UNION above would
+                // multiply the rows if it joined them in.
+                const rawCredits = await prisma.articleCredit.findMany({
+                    where: { articleId: { in: articleIds } },
+                    orderBy: [{ position: 'asc' }, { id: 'asc' }],
+                    select: {
+                        articleId: true,
+                        name: true,
+                        role: true,
+                        user: { select: { handle: true, displayName: true, avatarUrl: true } },
+                    },
+                });
+                const creditsMap = new Map<number, typeof rawCredits>();
+                rawCredits.forEach((credit) => {
+                    const list = creditsMap.get(credit.articleId) ?? [];
+                    list.push(credit);
+                    creditsMap.set(credit.articleId, list);
+                });
+
                 // Format the results
                 const formattedArticles = rawArticles.map(article => ({
                     id: article.id,
@@ -500,6 +547,7 @@ router.get('/articles', async (req, res) => {
                     authorAvatar: article.authorAvatar || null,
                     category: article.categoryId ? { id: article.categoryId, name: article.categoryName } : null,
                     tags: tagsMap.get(article.id) || [],
+                    credits: creditFields(creditsMap.get(article.id)),
                     isTranslation: article.isTranslation,
                 }));
 
@@ -528,7 +576,7 @@ router.get('/articles', async (req, res) => {
         });
         const formattedArticles = articles.map((article) => ({
             ...article,
-            ...authorFields(article.user),
+            ...publicFields(article),
         }));
 
         res.status(200).json(formattedArticles);
@@ -594,7 +642,7 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
 
             return res.status(200).json({
                 ...article,
-                ...authorFields(article.user),
+                ...publicFields(article),
                 hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
             });
         }
@@ -634,7 +682,7 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
                 thumbnail: article.thumbnail,
                 createdAt: article.createdAt,
                 updatedAt: translation.cachedAt,
-                ...authorFields(article.user),
+                ...publicFields(article),
                 category: article.category,
                 tags: article.tags,
                 type: article.type,
@@ -660,7 +708,7 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
 
         return res.status(200).json({
             ...article,
-            ...authorFields(article.user),
+            ...publicFields(article),
             hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
             fallback: true,
         });
@@ -683,7 +731,7 @@ router.get('/my-articles', verifyToken, async (req, res) => {
 
         const formattedArticles = articles.map((article) => ({
             ...article,
-            ...authorFields(article.user),
+            ...publicFields(article),
         }));
 
         res.status(200).json(formattedArticles);
@@ -706,7 +754,7 @@ router.get('/articles/:id', async (req, res) => {
         }
         res.status(200).json({
             ...article,
-            ...authorFields(article.user),
+            ...publicFields(article),
         });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching article', error: error.message });

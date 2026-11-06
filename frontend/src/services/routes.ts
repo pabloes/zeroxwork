@@ -2,6 +2,7 @@ import Landing from "../pages/Landing";
 import BlogList from "../pages/Blog/blog-list";
 import Tools from "../pages/Tools";
 import Portfolio from "../pages/Portfolio";
+import Member from "../pages/Member";
 import Register from "../pages/Register";
 import ImageUploadPage from "../pages/ImageUploadPage";
 import Login from "../pages/Login";
@@ -24,6 +25,7 @@ export const pageRoutes = [
     {RouteElement:BlogList, title:`Blog`, path:`/blog`, props:{}},
     {RouteElement:Tools, title:`Tools`, path:`/tools`, props:{}},
     {RouteElement:Portfolio, title:`Portfolio`, path:`/portfolio`, props:{}},
+    {RouteElement:Member, title:``, path:`/member/:handle`, props:{}},
     {RouteElement:Register, title:`Register new account`, path:`/register`, props:{}},
     {RouteElement:ImageUploadPage, title:`Image upload`, path:`/image-upload`, props:{}, auth:true},
     {RouteElement:Login, title:`Login account`, path:`/login`, props:{}},

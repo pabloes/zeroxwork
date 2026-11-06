@@ -3,15 +3,19 @@ import { verifyToken } from '../middleware/authMiddleware';
 const router = Router();
 import {prisma} from "../db";
 import { SOCIAL_NETWORKS } from '../constants/social-networks';
+import { PORTFOLIO_CATEGORY } from '../constants/portfolio-seed.js';
 import NodeCache from 'node-cache';
 import axios from "axios";
 import sharp from "sharp";
 import {
     validateDisplayName,
+    validateHandle,
     avatarUrlHash,
     AVATAR_URL_PREFIX,
     DISPLAY_NAME_MIN,
     DISPLAY_NAME_MAX,
+    HANDLE_MIN,
+    HANDLE_MAX,
 } from "../config/profile.js";
 
 const cache = new NodeCache({ stdTTL: 60 * 60 * 24 }); // Cache expires in 24 hours
@@ -22,6 +26,26 @@ const DISPLAY_NAME_ERRORS = {
     DISPLAY_NAME_INVALID: 'Display name contains characters that are not allowed.',
     DISPLAY_NAME_EMAIL: 'Display name cannot be an email address.',
 };
+
+const HANDLE_ERRORS = {
+    HANDLE_LENGTH: `The handle must be between ${HANDLE_MIN} and ${HANDLE_MAX} characters.`,
+    HANDLE_INVALID: 'The handle can only use lowercase letters, numbers and single hyphens.',
+    HANDLE_RESERVED: 'That handle is reserved.',
+};
+
+/** What a member page needs to know about each piece of work. */
+const WORK_SELECT = {
+    id: true,
+    title: true,
+    slug: true,
+    lang: true,
+    thumbnail: true,
+    createdAt: true,
+    featured: true,
+    category: { select: { name: true } },
+    tags: { select: { id: true, name: true } },
+    translations: { select: { targetLang: true, title: true, slug: true } },
+} as const;
 
 /**
  * GET /api/user/social-networks
@@ -62,6 +86,7 @@ router.get('/me', verifyToken, async (req: Request, res: Response) => {
             email: user.email,
             displayName: user.displayName ?? null,
             avatarUrl: user.avatarUrl ?? null,
+            handle: user.handle ?? null,
             defaultName: user.defaultName ? {
                 id: user.defaultName.id,
                 name: user.defaultName.name,
@@ -126,14 +151,25 @@ router.get('/quota', verifyToken, async (req: Request, res: Response) => {
     }
 });
 
-// Public profile (display name + avatar). Both fields are optional and a
-// missing key leaves the stored value untouched; null or "" clears it.
+// Public profile (display name, handle and avatar). Every field is optional and
+// a missing key leaves the stored value untouched; null or "" clears it.
 router.put('/profile', verifyToken, async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
-    const { displayName, avatarUrl } = req.body ?? {};
-    const data: { displayName?: string | null; avatarUrl?: string | null } = {};
+    const { displayName, avatarUrl, handle } = req.body ?? {};
+    const data: { displayName?: string | null; avatarUrl?: string | null; handle?: string | null } = {};
 
     try {
+        if (handle !== undefined) {
+            const checked = validateHandle(handle);
+            if (!checked.ok) {
+                return res.status(400).json({
+                    message: HANDLE_ERRORS[checked.code],
+                    code: checked.code,
+                });
+            }
+            data.handle = checked.value;
+        }
+
         if (displayName !== undefined) {
             const checked = validateDisplayName(displayName);
             if (!checked.ok) {
@@ -185,13 +221,110 @@ router.put('/profile', verifyToken, async (req: Request, res: Response) => {
         const user = await prisma.user.update({
             where: { id: userId },
             data,
-            select: { id: true, displayName: true, avatarUrl: true },
+            select: { id: true, displayName: true, avatarUrl: true, handle: true },
         });
 
         return res.json(user);
     } catch (error) {
+        // P2002 is Prisma's unique-constraint violation: somebody already has
+        // this handle. Nothing was written.
+        if ((error as any)?.code === 'P2002') {
+            return res.status(409).json({
+                message: 'That handle is already taken.',
+                code: 'HANDLE_TAKEN',
+            });
+        }
         console.error('Error updating profile:', error);
         return res.status(500).json({ message: 'Error updating profile', error: (error as any).message });
+    }
+});
+
+/**
+ * GET /api/user/members/:handle
+ * Public member page: who they are, where to find them, and what they have
+ * worked on. Only fields the member chose to publish; the email is never part
+ * of this response.
+ */
+router.get('/members/:handle', async (req: Request, res: Response) => {
+    const asked = validateHandle(req.params.handle);
+    if (!asked.ok || !asked.value) {
+        return res.status(404).json({ message: 'Member not found' });
+    }
+
+    try {
+        const member = await prisma.user.findUnique({
+            where: { handle: asked.value },
+            select: {
+                id: true,
+                handle: true,
+                displayName: true,
+                avatarUrl: true,
+                createdAt: true,
+                socials: { select: { network: true, handle: true } },
+                defaultName: { select: { name: true, wallet: { select: { address: true } } } },
+            },
+        });
+
+        if (!member) {
+            return res.status(404).json({ message: 'Member not found' });
+        }
+
+        // Everything they are credited on, plus what they wrote themselves.
+        //
+        // Projects are deliberately credit-only: one account publishes them all,
+        // and being the account that pressed the button is not the same as
+        // having worked on the project. Posts keep working the obvious way,
+        // where whoever wrote it is its author.
+        const [credited, authored] = await Promise.all([
+            prisma.article.findMany({
+                where: { published: true, credits: { some: { userId: member.id } } },
+                select: WORK_SELECT,
+                orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+            }),
+            prisma.article.findMany({
+                where: {
+                    published: true,
+                    userId: member.id,
+                    NOT: { category: { name: { equals: PORTFOLIO_CATEGORY, mode: 'insensitive' } } },
+                },
+                select: WORK_SELECT,
+                orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+            }),
+        ]);
+
+        // A member is usually both author and credit of their own project; show
+        // it once.
+        const works = [...credited, ...authored.filter((a) => !credited.some((c) => c.id === a.id))];
+
+        // Show each work in the language the page is being read in, when a
+        // translation exists; otherwise in the language it was written.
+        const wanted = typeof req.query.lang === 'string' ? req.query.lang.toLowerCase() : null;
+        const inReadersLanguage = (work: typeof works[number]) => {
+            const translation = wanted && work.lang !== wanted
+                ? work.translations.find((t) => t.targetLang.toLowerCase() === wanted)
+                : null;
+            const { translations, ...rest } = work;
+            return translation
+                ? { ...rest, title: translation.title, slug: translation.slug }
+                : rest;
+        };
+
+        return res.json({
+            handle: member.handle,
+            displayName: member.displayName,
+            avatarUrl: member.avatarUrl,
+            memberSince: member.createdAt,
+            walletName: member.defaultName?.name ?? null,
+            walletAddress: member.defaultName?.wallet?.address ?? null,
+            socials: member.socials,
+            works: works.map(inReadersLanguage).map((work) => ({
+                ...work,
+                category: work.category?.name ?? null,
+            })),
+        });
+    } catch (error) {
+        console.error('Error fetching member profile:', error);
+        return res.status(500).json({ message: 'Error fetching member profile', error: (error as any).message });
     }
 });
 

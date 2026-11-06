@@ -8,6 +8,7 @@ import {useNavigate} from 'react-router-dom';
 import {useQuery} from "@tanstack/react-query";
 import {getNameAvatarImage} from "../../services/get-name-avatar-image";
 import {authorLabel} from "../../services/use-articles";
+import CreditList from "../../components/CreditList";
 import DonateButton from "../../components/DonateButton";
 import { getIframeSandbox } from "../../utils/iframe-sandbox";
 import {ROLE} from "../../constants/roles";
@@ -96,6 +97,8 @@ const ArticlePage: React.FC = () => {
                         style={{ width: '32px', height: '32px', marginRight: '10px', float:"none", marginLeft:"6px" }}
                     />{authorLabel(article) ?? article.author}
                     </p>
+                    {/* Who worked on it, when the article credits anyone. */}
+                    <CreditList credits={article.credits ?? []} withLabel />
                     <PageTitle title={article.title}/>
                     <div id="article-content">
                         {article.embedUrl && article.content.includes('[iframe]') ? (

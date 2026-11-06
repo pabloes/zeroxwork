@@ -7,6 +7,14 @@ export interface ArticleTag {
     name: string;
 }
 
+/** Someone credited on a project. `handle` is set when a ZEROxWORK account is behind the name. */
+export interface ArticleCredit {
+    name: string;
+    role: string | null;
+    handle: string | null;
+    avatarUrl: string | null;
+}
+
 export interface Article {
     id: number;
     title: string;
@@ -22,6 +30,8 @@ export interface Article {
     /** Optional avatar the author uploaded on /account. */
     authorAvatar?: string | null;
     tags?: ArticleTag[];
+    /** Everyone credited on the work, in display order. Projects use this. */
+    credits?: ArticleCredit[];
 }
 
 /** Public name for an author: their display name, else the wallet name, else nothing. */
@@ -52,7 +62,7 @@ export function articlePath(article: Article) {
 
 /** Plain-text opening of an article's markdown body, for card summaries. */
 export function articleExcerpt(article: Article, maxChars = 150): string {
-    const plain = (article.content ?? '')
+    const body = (article.content ?? '')
         .replace(/```[\s\S]*?```/g, ' ')            // fenced code blocks
         .replace(/`([^`]*)`/g, '$1')                // inline code
         .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')       // images
@@ -60,9 +70,16 @@ export function articleExcerpt(article: Article, maxChars = 150): string {
         .replace(/\[iframe]/gi, ' ')                // embed placeholder
         .replace(/<[^>]+>/g, ' ')                   // inline html
         .replace(/^\s{0,3}(#{1,6}|>+|[-*+]|\d+\.)\s+/gm, '') // block markers
-        .replace(/[*_~]{1,3}/g, '')                 // emphasis
-        .replace(/\s+/g, ' ')
-        .trim();
+        .replace(/[*_~]{1,3}/g, '');                // emphasis
+
+    // Only the opening paragraph. Running the whole body together drags the
+    // headings and the "play it here" line into what should read as a summary.
+    const firstParagraph = body
+        .split(/\n\s*\n/)
+        .map((block) => block.replace(/\s+/g, ' ').trim())
+        .find((block) => block !== '') ?? '';
+
+    const plain = firstParagraph;
 
     if (plain.length <= maxChars) return plain;
     const cut = plain.slice(0, maxChars);

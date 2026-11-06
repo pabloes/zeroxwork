@@ -145,6 +145,15 @@
   "portfolio.filter_label": "Filter projects by tag",
   "portfolio.empty_tag": "No project with that tag yet.",
 
+  "portfolio.made_by": "Made by",
+  "member.projects": "Projects",
+  "member.other_work": "Other posts",
+  "member.no_work": "Nothing published under this name yet.",
+  "member.not_found_title": "Member not found",
+  "member.not_found": "No member goes by that handle.",
+  "account.handle": "Public handle",
+  "account.handle_hint": "Lowercase letters, numbers and hyphens. It is the address of your member page:",
+
   "landing.eyebrow": "Online cowork · tech + art",
   "landing.h1_lead": "Where code and art share a",
   "landing.h1_accent": "table.",

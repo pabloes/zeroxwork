@@ -33,6 +33,10 @@ const options:AdminJSOptions =  {
                     email: { isVisible: { show: true, edit: true, list: true, filter: true } },
                     password: { isVisible: {list: false, edit: false, filter: false, show: false} },
                     role: { isVisible: { show: true, edit: true, list: true, filter: true } },
+                    // Editable here so a member's handle can be set for them,
+                    // which is what links their project credits to their page.
+                    handle: { isVisible: { show: true, edit: true, list: true, filter: true } },
+                    displayName: { isVisible: { show: true, edit: true, list: true, filter: true } },
                 },
             },
             features: [
@@ -198,6 +202,19 @@ const options:AdminJSOptions =  {
             resource: {
                 model: getModelByName("Tag"),
                 client: prisma,
+            },
+        },
+        {
+            // Who is credited on a project. `name` is what gets shown when the
+            // credit has no account behind it; filling `userId` turns the name
+            // into a link to that member's page.
+            resource: {
+                model: getModelByName("ArticleCredit"),
+                client: prisma,
+            },
+            options: {
+                listProperties: ['id', 'articleId', 'name', 'role', 'userId', 'position'],
+                editProperties: ['articleId', 'name', 'role', 'userId', 'position'],
             },
         },
         {

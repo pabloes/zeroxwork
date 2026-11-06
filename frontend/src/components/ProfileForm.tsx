@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/axios-setup';
 import { getNameAvatarImage } from '../services/get-name-avatar-image';
@@ -7,11 +8,13 @@ import { useTranslation } from '../i18n';
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // same ceiling as the upload service
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const DISPLAY_NAME_MAX = 40;
+const HANDLE_MAX = 30;
 
 interface Me {
     id: number;
     displayName: string | null;
     avatarUrl: string | null;
+    handle: string | null;
     defaultName: { id: number; name: string; walletAddress: string } | null;
 }
 
@@ -30,6 +33,7 @@ const ProfileForm: React.FC<{ onSaved?: () => void }> = ({ onSaved }) => {
     });
 
     const [displayName, setDisplayName] = useState('');
+    const [handle, setHandle] = useState('');
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -39,6 +43,7 @@ const ProfileForm: React.FC<{ onSaved?: () => void }> = ({ onSaved }) => {
     useEffect(() => {
         if (!me) return;
         setDisplayName(me.displayName ?? '');
+        setHandle(me.handle ?? '');
         setAvatarUrl(me.avatarUrl ?? null);
     }, [me]);
 
@@ -105,6 +110,7 @@ const ProfileForm: React.FC<{ onSaved?: () => void }> = ({ onSaved }) => {
         try {
             await api.put('/user/profile', {
                 displayName: displayName.trim(),
+                handle: handle.trim().toLowerCase(),
                 avatarUrl,
             });
             await queryClient.invalidateQueries({ queryKey: ['userInfo'] });
@@ -163,6 +169,32 @@ const ProfileForm: React.FC<{ onSaved?: () => void }> = ({ onSaved }) => {
                         disabled={saving}
                     />
                     <p className="zx-profile-hint">{t('account.display_name_hint')}</p>
+
+                    <label className="zx-label" htmlFor="zx-handle">{t('account.handle')}</label>
+                    <input
+                        id="zx-handle"
+                        className="zx-input"
+                        type="text"
+                        value={handle}
+                        maxLength={HANDLE_MAX}
+                        placeholder="carlosmu"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        onChange={(e) => { setHandle(e.target.value); setSaved(false); }}
+                        disabled={saving}
+                    />
+                    <p className="zx-profile-hint">
+                        {t('account.handle_hint')}
+                        {handle.trim() !== '' && (
+                            <>
+                                {' '}
+                                <Link className="zx-profile-link" to={`/member/${handle.trim().toLowerCase()}`}>
+                                    /member/{handle.trim().toLowerCase()}
+                                </Link>
+                            </>
+                        )}
+                    </p>
+
                     <p className="zx-profile-hint">{t('account.avatar_hint')}</p>
 
                     <div className="zx-profile-actions">

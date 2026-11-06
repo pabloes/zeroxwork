@@ -145,6 +145,15 @@
   "portfolio.filter_label": "Filtrar projetos por etiqueta",
   "portfolio.empty_tag": "Ainda não há nenhum projeto com essa etiqueta.",
 
+  "portfolio.made_by": "Feito por",
+  "member.projects": "Projetos",
+  "member.other_work": "Outras publicações",
+  "member.no_work": "Ainda não há nada publicado com esse nome.",
+  "member.not_found_title": "Membro não encontrado",
+  "member.not_found": "Nenhum membro usa esse identificador.",
+  "account.handle": "Identificador público",
+  "account.handle_hint": "Letras minúsculas, números e hifens. É o endereço da sua página de membro:",
+
   "landing.eyebrow": "Cowork online · tecnologia + arte",
   "landing.h1_lead": "Onde o código e a arte dividem a mesma",
   "landing.h1_accent": "mesa.",

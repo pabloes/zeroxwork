@@ -25,10 +25,12 @@ model User {
   extraQuota       Int          @default(0)
   displayName      String?      // Optional public name shown instead of the email
   avatarUrl        String?      // Optional avatar, always a path served by our own image service
+  handle           String?      @unique // Optional public handle; the address of /member/<handle>
   fileUploads      FileUpload[]
   apiKeys          ApiKey[]
   wallets          Wallet[]
   articles         Article[]
+  credits          ArticleCredit[]
   socials          UserSocial[]
   discordLink      DiscordLink?
   discordRoles     DiscordRoleGrant[]
@@ -172,11 +174,36 @@ model Article {
   sourceHash   String?
   translations ArticleTranslation[]
   slugHistory  ArticleSlug[]
+  credits      ArticleCredit[]
 
   @@index([userId])
   @@index([categoryId])
   @@index([slug])
   @@map("articles")
+}
+
+/// Someone credited on an article. Used by the portfolio: a project has one
+/// author (the account that published it) but is usually the work of several
+/// people.
+///
+/// `name` is always stored, so collaborators without a ZEROxWORK account can be
+/// credited too. `userId` links the credit to an account when there is one, and
+/// that link is what turns the name into a link to /member/<handle>.
+model ArticleCredit {
+  id        Int      @id @default(autoincrement())
+  articleId Int
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  role      String?  // free text: "code", "art", "3D"... shown next to the name
+  position  Int      @default(0) // display order inside the article
+  createdAt DateTime @default(now())
+
+  @@unique([articleId, name])
+  @@index([articleId])
+  @@index([userId])
+  @@map("article_credits")
 }
 
 model ArticleTranslation {

@@ -1258,3 +1258,138 @@ a.uk-link-reset {
     margin-right: auto;
   }
 }
+
+/* ---------- project credits ---------- */
+
+.zx-credits {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.zx-credits-label {
+  font-family: var(--zx-mono);
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--zx-ink-dim);
+}
+
+.zx-credits-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.zx-credit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--zx-ink-dim);
+
+  a {
+    color: var(--zx-ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--zx-line-2);
+
+    &:hover {
+      color: var(--zx-cyan, var(--zx-ink));
+      border-bottom-color: currentColor;
+    }
+  }
+}
+
+.zx-credit-role {
+  font-family: var(--zx-mono);
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--zx-ink-dim);
+  opacity: .75;
+}
+
+/* ---------- member page ---------- */
+
+.zx-member-head {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding: 0 0 28px;
+  margin: 0 0 8px;
+  border-bottom: 1px solid var(--zx-line);
+}
+
+.zx-member-avatar {
+  border-radius: 50%;
+  border: 1px solid var(--zx-line-2);
+  background: var(--zx-glass);
+  object-fit: cover;
+}
+
+.zx-member-name {
+  font-family: var(--zx-display);
+  font-weight: 500;
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.08;
+  margin: 0;
+}
+
+.zx-member-handle {
+  font-family: var(--zx-mono);
+  font-size: 13px;
+  color: var(--zx-ink-dim);
+  margin: 4px 0 0;
+}
+
+.zx-member-meta {
+  font-size: 13.5px;
+  color: var(--zx-ink-dim);
+  margin: 6px 0 0;
+}
+
+.zx-member-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+
+  li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+  }
+}
+
+.zx-member-network {
+  font-family: var(--zx-mono);
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--zx-ink-dim);
+}
+
+.zx-member-social-handle {
+  font-size: 13.5px;
+}
+
+.zx-member-section {
+  margin: 44px 0 0;
+
+  .zx-sec-title {
+    font-size: clamp(22px, 3.4vw, 28px);
+    margin: 0 0 20px;
+  }
+}
+
+.zx-profile-link {
+  font-family: var(--zx-mono);
+  font-size: 12px;
+  color: var(--zx-ink);
+  white-space: nowrap;
+}

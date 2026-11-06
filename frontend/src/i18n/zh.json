@@ -145,6 +145,15 @@
   "portfolio.filter_label": "按标签筛选项目",
   "portfolio.empty_tag": "还没有带这个标签的项目。",
 
+  "portfolio.made_by": "制作者",
+  "member.projects": "项目",
+  "member.other_work": "其他文章",
+  "member.no_work": "目前还没有以此名义发布的内容。",
+  "member.not_found_title": "找不到该成员",
+  "member.not_found": "没有使用该用户名的成员。",
+  "account.handle": "公开用户名",
+  "account.handle_hint": "仅限小写字母、数字和连字符。这就是你的成员页面地址：",
+
   "landing.eyebrow": "在线共创空间 · 技术 + 艺术",
   "landing.h1_lead": "代码与艺术，在同一张桌上",
   "landing.h1_accent": "共创。",
