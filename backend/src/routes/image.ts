@@ -171,7 +171,12 @@ const uploadHttpHandler =  async (req: Request, res: Response) => {
             // what a client needs to embed the image
             url: `/api/images/user-uploaded-images/${fileName}`,
             filePageUrl,
-            fileUrl: `/user-uploaded-images/${req.file.originalname}`
+            fileUrl: `/user-uploaded-images/${req.file.originalname}`,
+            // Stored name (<sha256>.<ext>) and ban flag, so callers can build the
+            // served URL without guessing the extension.
+            fileName,
+            banned: fileUpload.banned,
+            servedUrl: `/api/images/user-uploaded-images/${fileName}`
         });
 
         function mustBan(detections){

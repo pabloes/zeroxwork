@@ -13,9 +13,21 @@ export interface Article {
     slug?: string;
     thumbnail: string | null;
     createdAt: string;
+    /** Default wallet name, or 'Anonymous'. Drives the dcl/base avatars. */
     author?: string;
     authorAddress?: string;
+    /** Optional public name the author set on /account. */
+    authorDisplayName?: string | null;
+    /** Optional avatar the author uploaded on /account. */
+    authorAvatar?: string | null;
     tags?: ArticleTag[];
+}
+
+/** Public name for an author: their display name, else the wallet name, else nothing. */
+export function authorLabel(article: Pick<Article, 'author' | 'authorDisplayName'>): string | null {
+    if (article.authorDisplayName) return article.authorDisplayName;
+    if (article.author && article.author !== 'Anonymous') return article.author;
+    return null;
 }
 
 export type ArticleCategory = 'blog' | 'tool';

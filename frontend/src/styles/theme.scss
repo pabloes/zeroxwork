@@ -874,6 +874,143 @@ a.uk-link-reset {
   color: inherit;
 }
 
+/* ---------- public profile form (ProfileForm.tsx) ---------- */
+
+.zx-account-section {
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+.zx-profile {
+  padding: 22px 24px 24px;
+  border: 1px solid var(--zx-line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--zx-glass), transparent);
+}
+
+.zx-profile-title {
+  font-family: var(--zx-display);
+  font-weight: 600;
+  font-size: 19px;
+  margin: 0 0 6px;
+  color: var(--zx-ink);
+}
+
+.zx-profile-hint {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--zx-ink-dim);
+}
+
+.zx-profile-grid {
+  display: flex;
+  gap: 26px;
+  align-items: flex-start;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.zx-profile-avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  img {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--zx-line-2);
+    background: var(--zx-bg-2);
+  }
+}
+
+.zx-profile-file {
+  position: relative;
+  padding: 9px 16px;
+  font-size: 13px;
+
+  input[type='file'] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.zx-profile-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--zx-mono);
+  font-size: 12px;
+  color: var(--zx-ink-faint);
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--zx-red);
+  }
+}
+
+.zx-profile-fields {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zx-label {
+  color: var(--zx-ink-dim);
+  font-family: var(--zx-mono);
+  font-size: 12.5px;
+  letter-spacing: .04em;
+}
+
+.zx-input {
+  width: 100%;
+  padding: 11px 13px;
+  background: var(--zx-surface);
+  border: 1px solid var(--zx-line-2);
+  border-radius: 10px;
+  color: var(--zx-ink);
+  font-family: var(--zx-body);
+  font-size: 15px;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(239, 141, 40, .6);
+  }
+
+  &::placeholder {
+    color: var(--zx-ink-faint);
+  }
+}
+
+.zx-profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.zx-profile-ok {
+  font-family: var(--zx-mono);
+  font-size: 12.5px;
+  color: var(--zx-ok);
+}
+
+.zx-profile-error {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--zx-red);
+}
+
 // cookie notice (CookieBanner.tsx); the consent script lives in index.html
 .zx-cookie {
   position: fixed;

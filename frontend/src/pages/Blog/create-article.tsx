@@ -14,6 +14,7 @@ const SUPPORTED_LANGS = [
     { code: 'en', name: 'English' },
     { code: 'pt-br', name: 'Português (Brasil)' },
     { code: 'zh', name: '中文' },
+    { code: 'fr', name: 'Français' },
 ];
 
 interface Category {

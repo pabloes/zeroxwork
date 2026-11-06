@@ -23,6 +23,8 @@ model User {
   updatedAt        DateTime     @updatedAt
   maxQuota         Int          @default(5242880)
   extraQuota       Int          @default(0)
+  displayName      String?      // Optional public name shown instead of the email
+  avatarUrl        String?      // Optional avatar, always a path served by our own image service
   fileUploads      FileUpload[]
   apiKeys          ApiKey[]
   wallets          Wallet[]

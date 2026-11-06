@@ -1,6 +1,7 @@
 import AccountQuota from "../components/AccountQuota";
 import BindDiscord from "../components/BindDiscord";
 import BindWallet from "../components/BindWallet";
+import ProfileForm from "../components/ProfileForm";
 import {useState} from "react";
 import {Link} from "react-router-dom";
 
@@ -16,6 +17,10 @@ const AccountPage: React.FC = () => {
                         <Link to={"/my-articles"} >My articles</Link>&nbsp;|&nbsp;<Link to="/my-images">My images</Link>
                     </div>
 
+                </div>
+
+                <div className="zx-wrap zx-account-section">
+                    <ProfileForm onSaved={() => setChanges(changes + 1)} />
                 </div>
 
                 <AccountQuota changes={changes} />
