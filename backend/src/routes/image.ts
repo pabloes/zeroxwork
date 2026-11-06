@@ -165,18 +165,18 @@ const uploadHttpHandler =  async (req: Request, res: Response) => {
         res.status(200).json({
             message: 'File uploaded successfully and passed scan',
             sha256: sha256Hash,
-            fileName,
-            mimeType: imageType.mime,
-            banned: fileUpload.banned,
-            // what a client needs to embed the image
-            url: `/api/images/user-uploaded-images/${fileName}`,
-            filePageUrl,
-            fileUrl: `/user-uploaded-images/${req.file.originalname}`,
             // Stored name (<sha256>.<ext>) and ban flag, so callers can build the
             // served URL without guessing the extension.
             fileName,
+            mimeType: imageType.mime,
             banned: fileUpload.banned,
-            servedUrl: `/api/images/user-uploaded-images/${fileName}`
+            // what a client needs to embed the image. `url` and `servedUrl` are
+            // the same path under two names: the editor reads one, the profile
+            // form the other.
+            url: `/api/images/user-uploaded-images/${fileName}`,
+            servedUrl: `/api/images/user-uploaded-images/${fileName}`,
+            filePageUrl,
+            fileUrl: `/user-uploaded-images/${req.file.originalname}`
         });
 
         function mustBan(detections){
