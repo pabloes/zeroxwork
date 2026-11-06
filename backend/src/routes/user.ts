@@ -5,9 +5,23 @@ import {prisma} from "../db";
 import NodeCache from 'node-cache';
 import axios from "axios";
 import sharp from "sharp";
+import {
+    validateDisplayName,
+    avatarUrlHash,
+    AVATAR_URL_PREFIX,
+    DISPLAY_NAME_MIN,
+    DISPLAY_NAME_MAX,
+} from "../config/profile.js";
 
 const cache = new NodeCache({ stdTTL: 60 * 60 * 24 }); // Cache expires in 24 hours
 const DECENTRALAND_API_URL = 'https://peer.decentraland.org/lambdas/profiles';
+
+const DISPLAY_NAME_ERRORS = {
+    DISPLAY_NAME_LENGTH: `Display name must be between ${DISPLAY_NAME_MIN} and ${DISPLAY_NAME_MAX} characters.`,
+    DISPLAY_NAME_INVALID: 'Display name contains characters that are not allowed.',
+    DISPLAY_NAME_EMAIL: 'Display name cannot be an email address.',
+};
+
 router.get('/me', verifyToken, async (req: Request, res: Response) => {
     try {
         // Fetch the authenticated user's information
@@ -36,6 +50,8 @@ router.get('/me', verifyToken, async (req: Request, res: Response) => {
         const response = {
             id: user.id,
             email: user.email,
+            displayName: user.displayName ?? null,
+            avatarUrl: user.avatarUrl ?? null,
             defaultName: user.defaultName ? {
                 id: user.defaultName.id,
                 name: user.defaultName.name,
@@ -97,6 +113,75 @@ router.get('/quota', verifyToken, async (req: Request, res: Response) => {
         res.json(await getUserQuota(req.user.id));
     } catch (error) {
         res.status(500).json({ message: 'Error fetching quota information', error: error.message });
+    }
+});
+
+// Public profile (display name + avatar). Both fields are optional and a
+// missing key leaves the stored value untouched; null or "" clears it.
+router.put('/profile', verifyToken, async (req: Request, res: Response) => {
+    const userId = (req as any).user.id;
+    const { displayName, avatarUrl } = req.body ?? {};
+    const data: { displayName?: string | null; avatarUrl?: string | null } = {};
+
+    try {
+        if (displayName !== undefined) {
+            const checked = validateDisplayName(displayName);
+            if (!checked.ok) {
+                return res.status(400).json({
+                    message: DISPLAY_NAME_ERRORS[checked.code],
+                    code: checked.code,
+                });
+            }
+            data.displayName = checked.value;
+        }
+
+        if (avatarUrl !== undefined) {
+            if (avatarUrl === null || String(avatarUrl).trim() === '') {
+                data.avatarUrl = null;
+            } else {
+                const sha256Hash = avatarUrlHash(avatarUrl);
+                if (!sha256Hash) {
+                    return res.status(400).json({
+                        message: 'The avatar must be an image uploaded through this site.',
+                        code: 'AVATAR_URL_INVALID',
+                    });
+                }
+                // The image has to be one of this user's own uploads, and it has
+                // to have survived the scanning pipeline.
+                const upload = await prisma.fileUpload.findUnique({
+                    where: { sha256Hash },
+                    select: { userId: true, banned: true, dangerous: true, fileName: true },
+                });
+                if (!upload || upload.userId !== userId) {
+                    return res.status(404).json({
+                        message: 'That image was not found among your uploads.',
+                        code: 'AVATAR_NOT_FOUND',
+                    });
+                }
+                if (upload.banned || upload.dangerous) {
+                    return res.status(400).json({
+                        message: 'That image was rejected by the content scan and cannot be used as an avatar.',
+                        code: 'AVATAR_BANNED',
+                    });
+                }
+                data.avatarUrl = `${AVATAR_URL_PREFIX}${upload.fileName}`;
+            }
+        }
+
+        if (Object.keys(data).length === 0) {
+            return res.status(400).json({ message: 'Nothing to update.', code: 'NO_CHANGES' });
+        }
+
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data,
+            select: { id: true, displayName: true, avatarUrl: true },
+        });
+
+        return res.json(user);
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        return res.status(500).json({ message: 'Error updating profile', error: (error as any).message });
     }
 });
 

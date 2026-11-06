@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import { getNameAvatarImage } from "../services/get-name-avatar-image";
-import { articlePath, type Article } from "../services/use-articles";
+import { articlePath, authorLabel, type Article } from "../services/use-articles";
 import { useTranslation } from "../i18n";
 
 const ArticleCard: React.FC<{ article: Article }> = ({ article }) => {
     const { lang, t } = useTranslation();
     const date = new Date(article.createdAt).toLocaleDateString(lang === 'pt-br' ? 'pt-BR' : lang);
+    const name = authorLabel(article);
 
     return (
         <Link to={articlePath(article)} className="zx-post">
@@ -16,13 +17,18 @@ const ArticleCard: React.FC<{ article: Article }> = ({ article }) => {
             </div>
             <div className="zx-post-body">
                 <span className="zx-post-meta">
-                    {article.authorAddress && (
+                    {(article.authorAvatar || article.authorAddress || name) && (
                         <img
-                            src={getNameAvatarImage({ name: article.author as string, address: article.authorAddress })}
+                            src={getNameAvatarImage({
+                                name: article.author,
+                                address: article.authorAddress,
+                                avatarUrl: article.authorAvatar,
+                                seed: article.authorAddress ?? name,
+                            })}
                             alt=""
                         />
                     )}
-                    {article.author && article.author !== 'Anonymous' ? `${article.author} · ` : ''}{date}
+                    {name ? `${name} · ` : ''}{date}
                 </span>
                 <h3>{article.title}</h3>
                 <span className="zx-tool-go">{t('common.read')} →</span>

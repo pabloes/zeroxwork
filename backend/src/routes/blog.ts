@@ -14,6 +14,8 @@ const FALLBACK_LANG = 'en';
 const include = {
         user: {
             select: {
+                displayName: true, // Optional public name, preferred over the wallet name
+                avatarUrl: true,   // Optional uploaded avatar
                 defaultName: {
                     select: {
                         wallet: {
@@ -29,6 +31,19 @@ const include = {
         category: true,
         tags: true,
 };
+
+/**
+ * Public author identity for an article response.
+ * `author` and `authorAddress` keep exactly the meaning they always had (the
+ * wallet name is what tells the frontend to use a Decentraland/Base avatar), the
+ * profile fields are additive. The email is never part of this.
+ */
+const authorFields = (user: any) => ({
+    author: user?.defaultName?.name || 'Anonymous',
+    authorAddress: user?.defaultName?.wallet?.address || null,
+    authorDisplayName: user?.displayName || null,
+    authorAvatar: user?.avatarUrl || null,
+});
 
 // ==================== CATEGORIES ====================
 
@@ -204,11 +219,9 @@ router.post('/articles', verifyToken, async (req, res) => {
         createArticleTranslations(article.id, title, content, article.lang, sourceHash, article.redirectUrl)
             .catch(err => console.error('Translation error:', err));
 
-        const authorAddress = article.user?.defaultName?.wallet?.address || null;
         res.status(201).json({
             ...article,
-            author: article.user?.defaultName?.name || 'Anonymous',
-            authorAddress,
+            ...authorFields(article.user),
         });
     } catch (error:any) {
         res.status(500).json({ message: 'Error creating article', error: error.message });
@@ -404,6 +417,8 @@ router.get('/articles', async (req, res) => {
                         c.name as "categoryName",
                         wn.name as author,
                         w.address as "authorAddress",
+                        u."displayName" as "authorDisplayName",
+                        u."avatarUrl" as "authorAvatar",
                         FALSE as "isTranslation"
                     FROM articles a
                     LEFT JOIN categories c ON a."categoryId" = c.id
@@ -431,6 +446,8 @@ router.get('/articles', async (req, res) => {
                         c.name as "categoryName",
                         wn.name as author,
                         w.address as "authorAddress",
+                        u."displayName" as "authorDisplayName",
+                        u."avatarUrl" as "authorAvatar",
                         TRUE as "isTranslation"
                     FROM article_translations t
                     JOIN articles a ON t."articleId" = a.id
@@ -467,6 +484,8 @@ router.get('/articles', async (req, res) => {
                     featured: article.featured,
                     author: article.author || 'Anonymous',
                     authorAddress: article.authorAddress,
+                    authorDisplayName: article.authorDisplayName || null,
+                    authorAvatar: article.authorAvatar || null,
                     category: article.categoryId ? { id: article.categoryId, name: article.categoryName } : null,
                     tags: tagsMap.get(article.id) || [],
                     isTranslation: article.isTranslation,
@@ -495,14 +514,10 @@ router.get('/articles', async (req, res) => {
             include,
             orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
         });
-        const formattedArticles = articles.map((article) => {
-            const authorAddress = article.user?.defaultName?.wallet?.address || null;
-            return {
-                ...article,
-                author: article.user?.defaultName?.name || 'Anonymous',
-                authorAddress
-            }
-        });
+        const formattedArticles = articles.map((article) => ({
+            ...article,
+            ...authorFields(article.user),
+        }));
 
         res.status(200).json(formattedArticles);
     } catch (error) {
@@ -553,8 +568,6 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
 
         // If requesting base language, return base article
         if (slugRecord.lang === article.lang) {
-            const authorAddress = article.user?.defaultName?.wallet?.address || null;
-
             // Get all current slugs for hreflang (most recent per lang)
             const allSlugsRaw = await prisma.articleSlug.findMany({
                 where: { articleId: article.id },
@@ -569,8 +582,7 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
 
             return res.status(200).json({
                 ...article,
-                author: article.user?.defaultName?.name || 'Anonymous',
-                authorAddress,
+                ...authorFields(article.user),
                 hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
             });
         }
@@ -587,8 +599,6 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
 
         // If translation exists and is up to date, return it
         if (translation && translation.sourceHash === article.sourceHash) {
-            const authorAddress = article.user?.defaultName?.wallet?.address || null;
-
             // Get all current slugs for hreflang (most recent per lang)
             const allSlugsRaw = await prisma.articleSlug.findMany({
                 where: { articleId: article.id },
@@ -612,8 +622,7 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
                 thumbnail: article.thumbnail,
                 createdAt: article.createdAt,
                 updatedAt: translation.cachedAt,
-                author: article.user?.defaultName?.name || 'Anonymous',
-                authorAddress,
+                ...authorFields(article.user),
                 category: article.category,
                 tags: article.tags,
                 type: article.type,
@@ -626,7 +635,6 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
         }
 
         // Fallback to base article
-        const authorAddress = article.user?.defaultName?.wallet?.address || null;
         const allSlugsRaw = await prisma.articleSlug.findMany({
             where: { articleId: article.id },
             orderBy: { createdAt: 'desc' },
@@ -640,8 +648,7 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
 
         return res.status(200).json({
             ...article,
-            author: article.user?.defaultName?.name || 'Anonymous',
-            authorAddress,
+            ...authorFields(article.user),
             hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
             fallback: true,
         });
@@ -662,14 +669,10 @@ router.get('/my-articles', verifyToken, async (req, res) => {
         });
 
 
-        const formattedArticles = articles.map((article) => {
-            const authorAddress = article.user?.defaultName?.wallet?.address || null;
-            return {
-                ...article,
-                author: article.user?.defaultName?.name || 'Anonymous', // Send the author's name or 'Anonymous'
-                authorAddress
-            }
-        });
+        const formattedArticles = articles.map((article) => ({
+            ...article,
+            ...authorFields(article.user),
+        }));
 
         res.status(200).json(formattedArticles);
     } catch (error) {
@@ -689,12 +692,9 @@ router.get('/articles/:id', async (req, res) => {
         if (!article) {
             return res.status(404).json({ message: 'Article not found' });
         }
-        const authorAddress = article.user?.defaultName?.wallet?.address || null;
-
         res.status(200).json({
             ...article,
-            author: article.user?.defaultName?.name || 'Anonymous', // Send the author's name
-            authorAddress
+            ...authorFields(article.user),
         });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching article', error: error.message });
