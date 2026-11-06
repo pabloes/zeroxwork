@@ -2,12 +2,15 @@ import { useState } from 'react';
 import UIkit from 'uikit';
 import {useAuth} from "../context/AuthContext";
 import {api} from "../services/axios-setup";
-import {Link} from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import {useTranslation} from "../i18n";
 
 const Login: React.FC = () => {
     const { login } = useAuth();
     const { t } = useTranslation();
+    const location = useLocation();
+    // Set by VerifyEmail right after a successful verification.
+    const justVerified = Boolean((location.state as { verified?: boolean } | null)?.verified);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,6 +58,7 @@ const Login: React.FC = () => {
             <div className="uk-container">
                 <form onSubmit={handleLoginSubmit} className="uk-form-stacked">
                     <h2>{t('login.title')}</h2>
+                    {justVerified && <p className="uk-text-success">{t('login.verified_notice')}</p>}
                     <div className="uk-margin">
                         <label className="uk-form-label" htmlFor="email">{t('login.email')}</label>
                         <input

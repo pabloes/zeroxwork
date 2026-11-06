@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from "../i18n";
+import { useAuth } from "../context/AuthContext";
 import { useArticles } from "../services/use-articles";
 import ArticleCard from "../components/ArticleCard";
 import ToolCard from "../components/ToolCard";
@@ -28,6 +29,10 @@ const DISCIPLINES = [
 
 const Landing: React.FC = () => {
     const { t } = useTranslation();
+    const { isAuthenticated, isAuthResolved } = useAuth();
+    // Waiting for isAuthResolved too: isAuthenticated starts false while the
+    // stored token is read, and without it a member sees the sign-up CTA flash.
+    const showJoinCta = isAuthResolved && !isAuthenticated;
     const { data: tools = [] } = useArticles('tool');
     const { data: articles = [] } = useArticles('blog');
 
@@ -48,7 +53,10 @@ const Landing: React.FC = () => {
 
         document.querySelectorAll('.zx-reveal').forEach((el) => observer.observe(el));
         return () => observer.disconnect();
-    }, [tools.length, articles.length]);
+        // showJoinCta included: the closing band is a .zx-reveal that mounts
+        // only once auth resolves, and an observer set up before that would
+        // never see it, leaving it hidden for good.
+    }, [tools.length, articles.length, showJoinCta]);
 
     return (
         <div className="zx-landing">
@@ -61,9 +69,11 @@ const Landing: React.FC = () => {
                         <h1>{t('landing.h1_lead')} <span className="zx-spectrum-text">{t('landing.h1_accent')}</span></h1>
                         <p className="zx-lede">{t('landing.lede')}</p>
                         <div className="zx-cta-row">
-                            <Link className="zx-btn zx-btn-primary" to="/register">
-                                {t('landing.cta_join')} <span className="arr">→</span>
-                            </Link>
+                            {showJoinCta && (
+                                <Link className="zx-btn zx-btn-primary" to="/register">
+                                    {t('landing.cta_join')} <span className="arr">→</span>
+                                </Link>
+                            )}
                             <a className="zx-btn zx-btn-ghost" href="#tools">{t('landing.cta_tools')}</a>
                         </div>
                     </div>
@@ -221,21 +231,23 @@ const Landing: React.FC = () => {
                 </div>
             </section>
 
-            {/* closing CTA */}
-            <section className="zx-cta-band" id="join">
-                <div className="zx-wrap">
-                    <div className="zx-cta-box zx-reveal">
-                        <h2>
-                            {t('landing.cta_title_a')}<br />
-                            {t('landing.cta_title_b')} <span className="zx-spectrum-text">{t('landing.cta_title_accent')}</span>
-                        </h2>
-                        <p>{t('landing.cta_text')}</p>
-                        <Link className="zx-btn zx-btn-primary" to="/register">
-                            {t('landing.cta_button')} <span className="arr">→</span>
-                        </Link>
+            {/* closing CTA — same sign-up pitch as the hero, so it goes too */}
+            {showJoinCta && (
+                <section className="zx-cta-band" id="join">
+                    <div className="zx-wrap">
+                        <div className="zx-cta-box zx-reveal">
+                            <h2>
+                                {t('landing.cta_title_a')}<br />
+                                {t('landing.cta_title_b')} <span className="zx-spectrum-text">{t('landing.cta_title_accent')}</span>
+                            </h2>
+                            <p>{t('landing.cta_text')}</p>
+                            <Link className="zx-btn zx-btn-primary" to="/register">
+                                {t('landing.cta_button')} <span className="arr">→</span>
+                            </Link>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            )}
         </div>
     );
 };
