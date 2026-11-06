@@ -52,6 +52,7 @@ const Header: React.FC = () => {
                     <nav className="zx-nav-links">
                         <Link to="/blog" className={isActive('/blog') ? 'is-active' : ''}>{t('nav.blog')}</Link>
                         <Link to="/tools" className={isActive('/tools') ? 'is-active' : ''}>{t('nav.tools')}</Link>
+                        <Link to="/portfolio" className={isActive('/portfolio') ? 'is-active' : ''}>{t('nav.portfolio')}</Link>
                         {!isAuthenticated && <Link to="/register" className="zx-nav-cta">{t('nav.join')} →</Link>}
                     </nav>
 

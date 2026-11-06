@@ -8,6 +8,7 @@
 
   "nav.blog": "Blog",
   "nav.tools": "Herramientas",
+  "nav.portfolio": "Portfolio",
   "nav.my_account": "Mi Cuenta",
   "nav.my_articles": "Mis Articulos",
   "nav.my_images": "Mis Imagenes",
@@ -90,6 +91,13 @@
   "tools.title": "Herramientas de la comunidad.",
   "tools.sub": "Utilidades gratuitas hechas en ZEROxWORK, abiertas a todo el mundo.",
 
+  "portfolio.title": "Lo que hemos construido.",
+  "portfolio.sub": "Proyectos de los equipos y miembros de ZEROxWORK: juegos, dapps, herramientas y experimentos.",
+  "portfolio.see_project": "Ver el proyecto",
+  "portfolio.filter_all": "Todos",
+  "portfolio.filter_label": "Filtrar proyectos por etiqueta",
+  "portfolio.empty_tag": "Todavía no hay ningún proyecto con esa etiqueta.",
+
   "landing.eyebrow": "Cowork online · tecnología + arte",
   "landing.h1_lead": "Donde el código y el arte comparten",
   "landing.h1_accent": "mesa.",
@@ -146,6 +154,11 @@
   "landing.disc2": "Frontend y creative coding",
   "landing.disc3": "3D · WebGL · motion",
   "landing.disc4": "Diseño, UI e ilustración",
+
+  "landing.portfolio_eyebrow": "Portfolio",
+  "landing.portfolio_title": "Lo que sale de los equipos.",
+  "landing.portfolio_sub": "Proyectos construidos en ZEROxWORK por nuestros equipos y miembros.",
+  "landing.portfolio_all": "Ver todo el portfolio",
 
   "landing.blog_eyebrow": "Blog",
   "landing.blog_title": "Lo que construimos y aprendemos.",
