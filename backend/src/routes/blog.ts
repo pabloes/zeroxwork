@@ -6,6 +6,7 @@ import { isEmbedUrlAllowed } from "../config/embed";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { slugify, computeSourceHash, makeUniqueSlug } from "../utils/slug";
 import { createArticleTranslations, updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
+import { notifyAdminNewArticle } from "../services/admin-notify";
 const router = Router();
 
 // Shown when the requested language has no articles yet
@@ -205,9 +206,20 @@ router.post('/articles', verifyToken, async (req, res) => {
             .catch(err => console.error('Translation error:', err));
 
         const authorAddress = article.user?.defaultName?.wallet?.address || null;
+        const author = article.user?.defaultName?.name || 'Anonymous';
+
+        // Admin notice, same fire-and-forget shape as the translations above.
+        notifyAdminNewArticle({
+            title: article.title,
+            author,
+            category: article.category?.name || null,
+            lang: article.lang,
+            slug: article.slug,
+        }).catch((err: any) => console.error('Admin notify error:', err));
+
         res.status(201).json({
             ...article,
-            author: article.user?.defaultName?.name || 'Anonymous',
+            author,
             authorAddress,
         });
     } catch (error:any) {

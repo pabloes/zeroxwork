@@ -38,6 +38,22 @@ with a clear error message.
 
 `DATABASE_URL` is consumed by Prisma directly (before the app code runs).
 
+### Optional variables
+
+| Variable | Purpose |
+|----------|---------|
+| `ADMIN_NOTIFY_EMAIL` | Mailbox that receives an admin notice on each sign-up and each new article |
+| `LOGS_TOKEN` | Lets `/api/logs` be read with the `X-Logs-Token` header instead of an admin JWT |
+| `LOG_BUFFER_SIZE` | Entries kept in the in-memory log buffer (default 2000, max 20000) |
+
+`ADMIN_NOTIFY_EMAIL` is set in the **CapRover web panel** like every other env
+var (never via the CapRover API, see above). It is optional: leave it empty and
+no notices are sent at all. When set, the notices go out over the same SMTP
+transport as the verification mail, with subjects `[ZEROxWORK] Nueva alta: ...`
+and `[ZEROxWORK] Nuevo artículo: ...`. A notice that cannot be delivered is
+recorded under scope `admin-notify` in `/api/logs` and never affects the
+registration or the article.
+
 ## Verifying production after deploy
 
 ```bash
