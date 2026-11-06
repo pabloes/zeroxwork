@@ -3,6 +3,7 @@ import {AxiosError} from 'axios';
 import UIkit from 'uikit';
 import {api} from "../services/axios-setup";
 import {useTranslation} from "../i18n";
+import SocialLinksFields from "../components/SocialLinksFields";
 
 const Register: React.FC = () => {
     const { t } = useTranslation();
@@ -14,13 +15,18 @@ const Register: React.FC = () => {
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [acceptPrivacy, setAcceptPrivacy] = useState(false);
     const [acceptResponsibility, setAcceptResponsibility] = useState(false);
+    const [socials, setSocials] = useState<Record<string, string>>({});
 
     const handleRegisterSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         setIsSubmitting(true);
 
         try {
-            await api.post('/auth/register', { email, password });
+            // Networks left blank are dropped: an added-but-empty field is not an answer.
+            const filledSocials = Object.fromEntries(
+                Object.entries(socials).filter(([, handle]) => handle.trim())
+            );
+            await api.post('/auth/register', { email, password, socials: filledSocials });
             setIsRegistered(true);
         } catch (axiosError:AxiosError|any) {
             const errorMessage = (typeof axiosError?.response?.data?.error === "string" ? axiosError?.response?.data?.error : axiosError?.response?.data?.error?.message) || t('register.error_default');
@@ -59,6 +65,7 @@ const Register: React.FC = () => {
                                 required
                             />
                         </div>
+                        <SocialLinksFields value={socials} onChange={setSocials} />
                         <div className="uk-margin">
                             <label>
                                 <input

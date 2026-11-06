@@ -1004,3 +1004,57 @@ a.uk-link-reset {
     transition: none !important;
   }
 }
+
+/* ---------- account panels ---------- */
+
+.zx-panel {
+  border: 1px solid var(--zx-line);
+  border-radius: 14px;
+  padding: 24px 26px 26px;
+  background: linear-gradient(180deg, var(--zx-glass), transparent);
+}
+
+.zx-panel-title {
+  font-family: var(--zx-display);
+  font-weight: 500;
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+
+.zx-panel-sub {
+  color: var(--zx-ink-dim);
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin: 0 0 18px;
+  max-width: 44em;
+}
+
+.zx-panel-status {
+  font-family: var(--zx-mono);
+  font-size: 12.5px;
+  color: var(--zx-ok);
+  border: 1px solid color-mix(in srgb, var(--zx-ok) 30%, transparent);
+  background: color-mix(in srgb, var(--zx-ok) 7%, transparent);
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin: 0 0 18px;
+}
+
+.zx-discord-linked {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+
+  img {
+    border-radius: 50%;
+    border: 1px solid var(--zx-line-2);
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-right: auto;
+  }
+}

@@ -27,10 +27,68 @@ model User {
   apiKeys          ApiKey[]
   wallets          Wallet[]
   articles         Article[]
+  socials          UserSocial[]
+  discordLink      DiscordLink?
+  discordRoles     DiscordRoleGrant[]
   defaultNameId    Int?         @unique // Mark this as unique for one-to-one relation
   defaultName      WalletNames? @relation(fields: [defaultNameId], references: [id]) // Updated relation to renamed model
 
   @@map("users")
+}
+
+/// Optional social profiles a user links to their account.
+/// `network` is a plain string validated against SOCIAL_NETWORKS in code, so
+/// adding a network later needs no migration.
+model UserSocial {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  network   String
+  handle    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, network])
+  @@index([userId])
+  @@map("user_socials")
+}
+
+/// Verified link between a ZEROxWORK account and a Discord account, created
+/// through OAuth2. Unique on both sides: a Discord account cannot be claimed by
+/// two users, and a user keeps a single Discord identity.
+/// No Discord token is stored here; the bot acts with its own credentials.
+model DiscordLink {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discordId    String    @unique
+  username     String
+  globalName   String?
+  avatar       String?
+  linkedAt     DateTime  @default(now())
+  lastSyncedAt DateTime?
+  updatedAt    DateTime  @updatedAt
+
+  @@map("discord_links")
+}
+
+/// Extra Discord roles handed to a user from the admin panel. The bot grants
+/// the base role to anyone linked; these are the ones someone decides by hand,
+/// such as CRASH CITY participants and creators.
+/// `roleKey` is a plain string validated in code against DISCORD_ROLE_KEYS, so
+/// adding a role later needs no migration (same approach as UserSocial).
+model DiscordRoleGrant {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleKey   String
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, roleKey])
+  @@index([userId])
+  @@map("discord_role_grants")
 }
 
 model Wallet {

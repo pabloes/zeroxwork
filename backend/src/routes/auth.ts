@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import argon2 from 'argon2';
 import {MailDeliveryError, sendMail} from "../services/mailer";
+import { InvalidSocialError, normalizeSocial } from '../constants/social-networks';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import { env } from '../config/env';
@@ -16,7 +17,7 @@ const authLimiter = rateLimit({
 });
 
 router.post('/register', authLimiter, async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, socials } = req.body;
 
     // Both `error` and `message` are sent on failures: the Register page reads
     // `error`, while older clients read `message`.
@@ -34,6 +35,18 @@ router.post('/register', authLimiter, async (req, res) => {
             return res.status(400).json({ error: 'Email is already registered.', message: 'Email is already registered.' });
         }
 
+        // Validated before the account exists: a bad handle must not leave a
+        // half-registered user behind.
+        let socialRows: { network: string; handle: string }[];
+        try {
+            socialRows = normalizeSocials(socials);
+        } catch (socialError) {
+            if (socialError instanceof InvalidSocialError) {
+                return res.status(400).json({ error: socialError.message, message: socialError.message });
+            }
+            throw socialError;
+        }
+
         // Hash the password
         const hashedPassword = await argon2.hash(password);
 
@@ -43,6 +56,7 @@ router.post('/register', authLimiter, async (req, res) => {
                 email,
                 password: hashedPassword,
                 verified: false, // User is not verified yet
+                socials: socialRows.length ? { create: socialRows } : undefined,
             },
         });
 
@@ -63,6 +77,23 @@ router.post('/register', authLimiter, async (req, res) => {
         res.status(500).json({ error: 'Internal server error. Please try again later.', message: 'Internal server error. Please try again later.' });
     }
 });
+
+/**
+ * Takes the form's `{ network: handle }` object and returns the rows worth
+ * storing. Blank values are dropped; unknown networks and unusable handles
+ * throw InvalidSocialError. Keys are unique, so the catalogue bounds the size.
+ */
+function normalizeSocials(socials: unknown): { network: string; handle: string }[] {
+    if (!socials || typeof socials !== 'object' || Array.isArray(socials)) return [];
+
+    const rows: { network: string; handle: string }[] = [];
+    for (const [network, raw] of Object.entries(socials as Record<string, unknown>)) {
+        if (typeof raw !== 'string') continue;
+        const normalized = normalizeSocial(network, raw);
+        if (normalized) rows.push(normalized);
+    }
+    return rows;
+}
 
 async function sendVerificationMail(userId, email){
     const verificationToken = jwt.sign(

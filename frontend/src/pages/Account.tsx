@@ -1,4 +1,5 @@
 import AccountQuota from "../components/AccountQuota";
+import BindDiscord from "../components/BindDiscord";
 import BindWallet from "../components/BindWallet";
 import {useState} from "react";
 import {Link} from "react-router-dom";
@@ -18,6 +19,8 @@ const AccountPage: React.FC = () => {
                 </div>
 
                 <AccountQuota changes={changes} />
+                <br/>
+                <BindDiscord />
                 <br/>
                 <BindWallet onAddWallet={()=>setChanges(changes+1)} onRemoveWallet={()=>setChanges(changes+1)} />
 

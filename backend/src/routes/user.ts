@@ -2,12 +2,22 @@ import { Router, Request, Response } from 'express';
 import { verifyToken } from '../middleware/authMiddleware';
 const router = Router();
 import {prisma} from "../db";
+import { SOCIAL_NETWORKS } from '../constants/social-networks';
 import NodeCache from 'node-cache';
 import axios from "axios";
 import sharp from "sharp";
 
 const cache = new NodeCache({ stdTTL: 60 * 60 * 24 }); // Cache expires in 24 hours
 const DECENTRALAND_API_URL = 'https://peer.decentraland.org/lambdas/profiles';
+/**
+ * GET /api/user/social-networks
+ * Public on purpose: the sign-up form needs it before anyone has a token.
+ * Keeps the catalogue in one place instead of a copy inside the frontend.
+ */
+router.get('/social-networks', (_req: Request, res: Response) => {
+    res.json({ networks: SOCIAL_NETWORKS });
+});
+
 router.get('/me', verifyToken, async (req: Request, res: Response) => {
     try {
         // Fetch the authenticated user's information

@@ -7,6 +7,7 @@ import {fileURLToPath} from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import PasswordsFeature from '@adminjs/passwords';
+import { GRANTABLE_ROLES } from '../src/constants/discord-roles';
 import {Components, componentLoader} from './component-loader';
 import path from "path";
 
@@ -197,6 +198,39 @@ const options:AdminJSOptions =  {
             resource: {
                 model: getModelByName("Tag"),
                 client: prisma,
+            },
+        },
+        {
+            // Written by the OAuth flow, never by hand: editing an id here would
+            // hand someone else's Discord account a role.
+            resource: {
+                model: getModelByName("DiscordLink"),
+                client: prisma,
+            },
+            options: {
+                navigation: { name: 'Discord' },
+                actions: {
+                    new: { isAccessible: false },
+                    edit: { isAccessible: false },
+                },
+                listProperties: ['id', 'userId', 'discordId', 'username', 'globalName', 'linkedAt', 'lastSyncedAt'],
+            },
+        },
+        {
+            // Roles handed out by hand. The bot grants the base role on its own.
+            resource: {
+                model: getModelByName("DiscordRoleGrant"),
+                client: prisma,
+            },
+            options: {
+                navigation: { name: 'Discord' },
+                properties: {
+                    roleKey: {
+                        availableValues: GRANTABLE_ROLES.map((role) => ({ value: role.key, label: role.label })),
+                    },
+                    note: { type: 'textarea' },
+                },
+                listProperties: ['id', 'userId', 'roleKey', 'note', 'createdAt'],
             },
         }
     ],
