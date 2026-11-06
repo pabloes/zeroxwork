@@ -1,2 +1,4 @@
 node_modules
 
+# Claude Code: permisos locales y worktrees de agentes (varios GB)
+.claude/
