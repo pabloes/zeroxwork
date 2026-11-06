@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import argon2 from 'argon2';
 import {MailDeliveryError, sendMail} from "../services/mailer";
+import {notifyAdminNewUser} from "../services/admin-notify";
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import { env } from '../config/env';
@@ -45,6 +46,12 @@ router.post('/register', authLimiter, async (req, res) => {
                 verified: false, // User is not verified yet
             },
         });
+
+        // Tell the owner the account exists. Not awaited (the response must not
+        // wait on SMTP) and it never rejects, but keep the catch anyway so a
+        // future change cannot turn this into an unhandled rejection.
+        notifyAdminNewUser(newUser.email, newUser.createdAt)
+            .catch((err: any) => console.error('Admin notify error:', err));
 
         try {
             await sendVerificationMail(newUser.id, email);
