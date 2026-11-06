@@ -1,3 +1,4 @@
+import { protect, restore, missingTokens } from './markdown-protect';
 const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
 
 export const SUPPORTED_LANGS = ['PT-BR', 'ZH', 'EN', 'ES', 'FR'] as const;
@@ -68,14 +69,25 @@ export async function translateArticle(
     content: string,
     targetLang: string
 ): Promise<{ title: string; content: string }> {
+    // image/link targets, code and embed markers must survive untouched
+    const protectedContent = protect(content);
+
     const [translatedTitle, translatedContent] = await Promise.all([
         translateText(title, targetLang),
-        translateText(content, targetLang),
+        translateText(protectedContent.text, targetLang),
     ]);
+
+    const lost = missingTokens(translatedContent, protectedContent.tokens);
+    if (lost.length > 0) {
+        console.warn(
+            `Translation to ${targetLang} dropped ${lost.length} protected fragment(s); ` +
+            `those links or images will be missing from this version.`
+        );
+    }
 
     return {
         title: translatedTitle,
-        content: translatedContent,
+        content: restore(translatedContent, protectedContent.tokens),
     };
 }
 

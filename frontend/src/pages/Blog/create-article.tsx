@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import SimpleMDE from 'react-simplemde-editor';
-import 'easymde/dist/easymde.min.css';
+import React, { useState, useEffect } from 'react';
+import ArticleEditor from '../../components/editor/ArticleEditor';
+import ImagePicker from '../../components/editor/ImagePicker';
+import { useTranslation } from '../../i18n';
 import { useNavigate } from 'react-router-dom';
 import UIkit from 'uikit';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -55,6 +56,7 @@ const fetchTags = async (): Promise<Tag[]> => {
 };
 
 const CreateArticle: React.FC = () => {
+    const { t } = useTranslation();
     const [title, setTitle] = useState<string>('');
     const [content, setContent] = useState<string>('');
     const [embedUrl, setEmbedUrl] = useState<string>('');
@@ -66,6 +68,7 @@ const CreateArticle: React.FC = () => {
     const [categoryId, setCategoryId] = useState<number | null>(null);
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [newTagInput, setNewTagInput] = useState<string>('');
+    const [thumbPickerOpen, setThumbPickerOpen] = useState<boolean>(false);
     const [newTags, setNewTags] = useState<string[]>([]);
     const [articleType, setArticleType] = useState<'post' | 'link'>('post');
     const [redirectUrl, setRedirectUrl] = useState<string>('');
@@ -154,13 +157,6 @@ const CreateArticle: React.FC = () => {
         });
     };
 
-    // Memoize the options for SimpleMDE to avoid losing focus
-    const editorOptions = useMemo(() => {
-        return {
-            placeholder: 'Write your content...',
-            spellChecker: false,
-        };
-    }, []);
 // Check the status for loading state
     const isLoading = status === 'pending';
 
@@ -226,16 +222,28 @@ const CreateArticle: React.FC = () => {
 
                 <div className="uk-margin">
                     <label className="uk-form-label" htmlFor="thumbnail">Thumbnail URL:</label>
-                    <div className="uk-form-controls">
+                    <div className="uk-form-controls zx-thumb-field">
                         <input
                             className="uk-input"
                             id="thumbnail"
-                            type="url"
+                            type="text"
                             value={thumbnail}
                             onChange={(e) => setThumbnail(e.target.value)} // Update thumbnail state
                             placeholder="Enter image URL"
                         />
+                        <button type="button" className="zx-tb-text" onClick={() => setThumbPickerOpen(true)}>
+                            {t('editor.image_from_library')}
+                        </button>
                     </div>
+                    {thumbPickerOpen && (
+                        <ImagePicker
+                            onClose={() => setThumbPickerOpen(false)}
+                            onSelect={(url) => {
+                                setThumbnail(url);
+                                setThumbPickerOpen(false);
+                            }}
+                        />
+                    )}
 
                     {/* Display thumbnail preview if valid URL is present */}
                     {thumbnail && (
@@ -383,11 +391,7 @@ const CreateArticle: React.FC = () => {
                         <div className="uk-margin">
                             <label className="uk-form-label" htmlFor="content">Content (Markdown):</label>
                             <div className="uk-form-controls">
-                                <SimpleMDE
-                                    value={content}
-                                    onChange={handleContentChange}
-                                    options={editorOptions}
-                                />
+                                <ArticleEditor value={content} onChange={handleContentChange} />
                             </div>
                         </div>
 

@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import SimpleMDE from 'react-simplemde-editor';
-import 'easymde/dist/easymde.min.css';
+import React, { useState, useEffect } from 'react';
+import ArticleEditor from '../../components/editor/ArticleEditor';
+import ImagePicker from '../../components/editor/ImagePicker';
+import { useTranslation } from '../../i18n';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/axios-setup';
 import PageTitle from "../../components/PageTitle";
@@ -71,6 +72,7 @@ const EditArticle: React.FC = () => {
     });
 
     // Local state for the form inputs
+    const { t } = useTranslation();
     const [title, setTitle] = useState<string>(article?.title || '');
     const [content, setContent] = useState<string>(article?.content || '');
     const [thumbnail, setThumbnail] = useState<string>(article?.thumbnail || '');
@@ -78,10 +80,13 @@ const EditArticle: React.FC = () => {
     const [embedHeight, setEmbedHeight] = useState<number>(article?.embedHeight || 600);
     const [slug, setSlug] = useState<string>(article?.slug || '');
     const [lang, setLang] = useState<string>(article?.lang || 'es');
-    const [autoSlug, setAutoSlug] = useState<boolean>(true);
+    // off while editing: the article already has a slug and rewriting it from the
+    // title would break the published URL
+    const [autoSlug, setAutoSlug] = useState<boolean>(false);
     const [categoryId, setCategoryId] = useState<number | null>(article?.categoryId || null);
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [newTagInput, setNewTagInput] = useState<string>('');
+    const [thumbPickerOpen, setThumbPickerOpen] = useState<boolean>(false);
     const [newTags, setNewTags] = useState<string[]>([]);
     const [articleType, setArticleType] = useState<'post' | 'link'>(article?.type || 'post');
     const [redirectUrl, setRedirectUrl] = useState<string>(article?.redirectUrl || '');
@@ -160,13 +165,6 @@ const EditArticle: React.FC = () => {
         });
     };
 
-    // Memoize the options for SimpleMDE to avoid losing focus
-    const editorOptions = useMemo(() => {
-        return {
-            placeholder: "Edit your content...",
-            spellChecker: false,
-        };
-    }, []);
 
     // Show loading state while fetching the article
     if (isLoading) {
@@ -236,16 +234,28 @@ const EditArticle: React.FC = () => {
 
                 <div className="uk-margin">
                     <label className="uk-form-label" htmlFor="thumbnail">Thumbnail URL:</label>
-                    <div className="uk-form-controls">
+                    <div className="uk-form-controls zx-thumb-field">
                         <input
                             className="uk-input"
                             id="thumbnail"
-                            type="url"
+                            type="text"
                             value={thumbnail}
                             onChange={(e) => setThumbnail(e.target.value)} // Update the thumbnail state
                             placeholder="Enter image URL"
                         />
+                        <button type="button" className="zx-tb-text" onClick={() => setThumbPickerOpen(true)}>
+                            {t('editor.image_from_library')}
+                        </button>
                     </div>
+                    {thumbPickerOpen && (
+                        <ImagePicker
+                            onClose={() => setThumbPickerOpen(false)}
+                            onSelect={(url) => {
+                                setThumbnail(url);
+                                setThumbPickerOpen(false);
+                            }}
+                        />
+                    )}
 
                     {/* Display thumbnail preview if a valid URL is present */}
                     {thumbnail && (
@@ -393,11 +403,7 @@ const EditArticle: React.FC = () => {
                         <div className="uk-margin">
                             <label className="uk-form-label" htmlFor="content">Content (Markdown):</label>
                             <div className="uk-form-controls">
-                                <SimpleMDE
-                                    value={content}
-                                    onChange={handleContentChange}
-                                    options={editorOptions}
-                                />
+                                <ArticleEditor value={content} onChange={handleContentChange} />
                             </div>
                         </div>
 

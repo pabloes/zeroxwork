@@ -10,6 +10,7 @@
 // ZEROxWORK skin: tokens, global styles and landing sections
 @import "./theme.scss";
 @import "./landing.scss";
+@import "./editor.scss";
 
 // Your custom styles here
 .app-container {
@@ -36,12 +37,41 @@
   overflow: auto;
 }
 
+// Images written inside an article: full width of the column, never overflowing.
+// (The old rule pinned every one of them to 300px floated right, avatar included.)
 .markdown-body img {
-  width: 300px;
+  display: block;
+  max-width: 100%;
   height: auto;
-  display: inline-block;
+  margin: 28px auto;
+  border-radius: 12px;
+  border: 1px solid var(--zx-line);
+}
+
+// Opt-in floats for who wants text beside the image: ![alt](url "float-right")
+.markdown-body img[title="float-right"],
+.markdown-body img[title="float-left"] {
+  max-width: min(320px, 45%);
+  margin-top: 6px;
+}
+
+.markdown-body img[title="float-right"] {
   float: right;
-  margin-left: 20px;
+  margin-left: 24px;
+}
+
+.markdown-body img[title="float-left"] {
+  float: left;
+  margin-right: 24px;
+}
+
+@media (max-width: 640px) {
+  .markdown-body img[title="float-right"],
+  .markdown-body img[title="float-left"] {
+    float: none;
+    max-width: 100%;
+    margin: 24px auto;
+  }
 }
 .uk-overlay-primary {
   background-color: rgba(0, 0, 0, 0.6); /* Black background with 60% opacity */

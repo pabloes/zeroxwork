@@ -63,9 +63,27 @@ try {
 const router = Router();
 const uploadLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute window
-    max: 5, // limit each IP to 5 requests per windowMs
-    message: 'Too many uploads from this IP, please try again later.',
+    max: 30, // an article with several images uploads them in a row
+    // per user when authenticated, per IP otherwise
+    keyGenerator: (req: Request) => (req as any).user?.id ? `user:${(req as any).user.id}` : req.ip,
+    message: { message: 'Too many uploads, please try again in a minute.' },
 });
+
+// Only raster images we can serve safely. SVG is excluded on purpose: it is XML
+// and can carry scripts, and these files are served from our own origin.
+const IMAGE_SIGNATURES: { ext: string; mime: string; matches: (b: Buffer) => boolean }[] = [
+    { ext: 'jpg', mime: 'image/jpeg', matches: b => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+    { ext: 'png', mime: 'image/png', matches: b => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) },
+    { ext: 'gif', mime: 'image/gif', matches: b => b.subarray(0, 6).toString('ascii').startsWith('GIF8') },
+    { ext: 'webp', mime: 'image/webp', matches: b => b.subarray(0, 4).toString('ascii') === 'RIFF' && b.subarray(8, 12).toString('ascii') === 'WEBP' },
+    { ext: 'avif', mime: 'image/avif', matches: b => b.subarray(4, 8).toString('ascii') === 'ftyp' && ['avif', 'avis'].includes(b.subarray(8, 12).toString('ascii')) },
+];
+
+/** Image type read from the file's own bytes, not from its name. */
+export function detectImageType(buffer: Buffer) {
+    if (buffer.length < 12) return null;
+    return IMAGE_SIGNATURES.find(sig => sig.matches(buffer)) ?? null;
+}
 
 // Configure multer for in-memory storage
 const storage = multer.memoryStorage();
@@ -78,6 +96,13 @@ const uploadHttpHandler =  async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'No file uploaded' });
     }
 
+
+    const imageType = detectImageType(req.file.buffer);
+    if (!imageType) {
+        return res.status(400).json({
+            message: 'Unsupported file type. Allowed: JPEG, PNG, GIF, WebP and AVIF.',
+        });
+    }
 
     try {
         const userId = parseInt(req.user.id); // Asumiendo que `req.user` tiene la información del usuario autenticado
@@ -109,8 +134,8 @@ const uploadHttpHandler =  async (req: Request, res: Response) => {
         const filePageUrl = `/user-uploaded-images/${sha256Hash}`;
         // Save file to disk if it passes the virus scan
 
-        const splittedFileName = req.file.originalname.split(".")
-        const fileName = `${sha256Hash}.${splittedFileName[splittedFileName.length-1]}`;
+        // extension comes from the sniffed type, never from the uploaded name
+        const fileName = `${sha256Hash}.${imageType.ext}`;
         const publicFolder = path.join(__dirname, '../../public/user-uploaded-images');
         const publicFilePath = path.join(publicFolder, fileName);
 
@@ -140,6 +165,11 @@ const uploadHttpHandler =  async (req: Request, res: Response) => {
         res.status(200).json({
             message: 'File uploaded successfully and passed scan',
             sha256: sha256Hash,
+            fileName,
+            mimeType: imageType.mime,
+            banned: fileUpload.banned,
+            // what a client needs to embed the image
+            url: `/api/images/user-uploaded-images/${fileName}`,
             filePageUrl,
             fileUrl: `/user-uploaded-images/${req.file.originalname}`
         });
