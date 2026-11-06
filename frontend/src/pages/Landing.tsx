@@ -5,10 +5,12 @@ import { useAuth } from "../context/AuthContext";
 import { useArticles } from "../services/use-articles";
 import ArticleCard from "../components/ArticleCard";
 import ToolCard from "../components/ToolCard";
+import ProjectCard from "../components/ProjectCard";
 import ZxMark from "../components/ZxMark";
 
-// one row each: the rest lives on /tools and /blog
+// one row each: the rest lives on /tools, /portfolio and /blog
 const TOOLS_IN_ROW = 4;
+const PROJECTS_IN_ROW = 3;
 const ARTICLES_IN_ROW = 3;
 
 const KIT = [
@@ -34,6 +36,7 @@ const Landing: React.FC = () => {
     // stored token is read, and without it a member sees the sign-up CTA flash.
     const showJoinCta = isAuthResolved && !isAuthenticated;
     const { data: tools = [] } = useArticles('tool');
+    const { data: projects = [] } = useArticles('project');
     const { data: articles = [] } = useArticles('blog');
 
     const latestArticles = [...articles]
@@ -56,7 +59,7 @@ const Landing: React.FC = () => {
         // showJoinCta included: the closing band is a .zx-reveal that mounts
         // only once auth resolves, and an observer set up before that would
         // never see it, leaving it hidden for good.
-    }, [tools.length, articles.length, showJoinCta]);
+    }, [tools.length, projects.length, articles.length, showJoinCta]);
 
     return (
         <div className="zx-landing">
@@ -212,6 +215,31 @@ const Landing: React.FC = () => {
             </section>
 
             <div className="zx-wrap"><div className="zx-diag-rule" /></div>
+
+            {/* portfolio: one row of what the teams have shipped. Hidden until there is something to show */}
+            {projects.length > 0 && (
+                <>
+                    <section className="zx-section" id="portfolio">
+                        <div className="zx-wrap">
+                            <div className="zx-row-head zx-reveal">
+                                <div style={{ maxWidth: '32em' }}>
+                                    <div className="zx-eyebrow" style={{ color: 'var(--zx-orange)' }}>{t('landing.portfolio_eyebrow')}</div>
+                                    <h2 className="zx-sec-title">{t('landing.portfolio_title')}</h2>
+                                    <p className="zx-sec-sub">{t('landing.portfolio_sub')}</p>
+                                </div>
+                                <Link className="zx-more-link" to="/portfolio">{t('landing.portfolio_all')} →</Link>
+                            </div>
+                            <div className="zx-card-grid zx-reveal">
+                                {projects.slice(0, PROJECTS_IN_ROW).map((project) => (
+                                    <ProjectCard key={project.id} project={project} />
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    <div className="zx-wrap"><div className="zx-diag-rule" /></div>
+                </>
+            )}
 
             {/* blog: one row of the latest articles */}
             <section className="zx-section" id="blog">

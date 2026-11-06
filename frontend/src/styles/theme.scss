@@ -378,6 +378,69 @@ a:hover {
   }
 }
 
+// project card: the post card plus a summary, tech chips and a bottom link
+.zx-proj {
+  .zx-post-body {
+    gap: 12px;
+  }
+
+  .zx-tool-go {
+    margin-top: auto;
+  }
+}
+
+.zx-proj-desc {
+  color: var(--zx-ink-dim);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.zx-proj-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+// tech tag, also used as the filter button on /portfolio
+.zx-chip {
+  font-family: var(--zx-mono);
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--zx-ink-dim);
+  border: 1px solid var(--zx-line);
+  border-radius: 20px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.zx-chip-btn {
+  background: transparent;
+  cursor: pointer;
+  border-color: var(--zx-line-2);
+  transition: color .2s, border-color .2s, background .2s;
+
+  &:hover {
+    color: var(--zx-ink);
+    border-color: var(--zx-ink-dim);
+    background: var(--zx-hover);
+  }
+
+  &.is-active {
+    color: var(--zx-ink);
+    border-color: rgba(239, 141, 40, .55);
+    background: rgba(239, 141, 40, .08);
+  }
+}
+
+.zx-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 26px;
+}
+
 // compact tool card
 .zx-tool {
   display: flex;

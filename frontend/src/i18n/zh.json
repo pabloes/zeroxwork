@@ -36,6 +36,7 @@
 
   "nav.blog": "博客",
   "nav.tools": "工具",
+  "nav.portfolio": "作品集",
   "nav.my_account": "我的账户",
   "nav.my_articles": "我的文章",
   "nav.my_images": "我的图片",
@@ -137,6 +138,13 @@
   "tools.title": "社区工具。",
   "tools.sub": "在 ZEROxWORK 打造的免费工具，向所有人开放。",
 
+  "portfolio.title": "我们已经做出来的东西。",
+  "portfolio.sub": "来自 ZEROxWORK 团队和成员的项目：游戏、dapp、工具与实验。",
+  "portfolio.see_project": "查看项目",
+  "portfolio.filter_all": "全部",
+  "portfolio.filter_label": "按标签筛选项目",
+  "portfolio.empty_tag": "还没有带这个标签的项目。",
+
   "landing.eyebrow": "在线共创空间 · 技术 + 艺术",
   "landing.h1_lead": "代码与艺术，在同一张桌上",
   "landing.h1_accent": "共创。",
@@ -193,6 +201,11 @@
   "landing.disc2": "Frontend 与 creative coding",
   "landing.disc3": "3D · WebGL · motion",
   "landing.disc4": "设计、UI 与插画",
+
+  "landing.portfolio_eyebrow": "作品集",
+  "landing.portfolio_title": "团队做出来的东西。",
+  "landing.portfolio_sub": "由我们的团队和成员在 ZEROxWORK 构建的项目。",
+  "landing.portfolio_all": "查看全部作品集",
 
   "landing.blog_eyebrow": "博客",
   "landing.blog_title": "我们构建与学到的东西。",
