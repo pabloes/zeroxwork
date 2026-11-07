@@ -7,6 +7,7 @@ import { requireAdmin } from "../middleware/requireAdmin";
 import { slugify, computeSourceHash, makeUniqueSlug } from "../utils/slug";
 import { createArticleTranslations, updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
 import { notifyAdminNewArticle } from "../services/admin-notify";
+import { normaliseCredits, CreditError } from "../services/article-credits.js";
 const router = Router();
 
 // Shown when the requested language has no articles yet
@@ -36,6 +37,7 @@ const include = {
             select: {
                 name: true,
                 role: true,
+                userId: true,
                 user: { select: { handle: true, displayName: true, avatarUrl: true } },
             },
         },
@@ -64,6 +66,9 @@ const creditFields = (credits: any[] | undefined) =>
     (credits ?? []).map((credit) => ({
         name: credit.user?.displayName || credit.name,
         role: credit.role ?? null,
+        // Carried so the edit form can save again without dropping the link to
+        // the account. No new exposure: article.userId is already public here.
+        userId: credit.userId ?? null,
         handle: credit.user?.handle ?? null,
         avatarUrl: credit.user?.avatarUrl ?? null,
     }));
@@ -157,7 +162,7 @@ router.delete('/tags/:id', verifyToken, async (req, res) => {
 // ==================== ARTICLES ====================
 // Crear un artículo
 router.post('/articles', verifyToken, async (req, res) => {
-    const { title, content, thumbnail, embedUrl, embedHeight, categoryId, tagIds, newTags, slug: customSlug, lang = 'es', type = 'post', redirectUrl } = req.body;
+    const { title, content, thumbnail, embedUrl, embedHeight, categoryId, tagIds, newTags, slug: customSlug, lang = 'es', type = 'post', redirectUrl, credits } = req.body;
     const userId = (req as any).user.id;
 
     try {
@@ -213,6 +218,10 @@ router.post('/articles', verifyToken, async (req, res) => {
         // Combine existing tagIds with newly created ones
         const allTagIds = [...(tagIds || []), ...createdTagIds];
 
+        // Who worked on this. Written in the same statement as the article so a
+        // bad credit cannot leave a project half created.
+        const cleanCredits = await normaliseCredits(credits);
+
         const article = await prisma.article.create({
             data: {
                 userId,
@@ -231,6 +240,9 @@ router.post('/articles', verifyToken, async (req, res) => {
                 } : undefined,
                 type: type || 'post',
                 redirectUrl: type === 'link' ? redirectUrl : null,
+                credits: cleanCredits.length > 0
+                    ? { create: cleanCredits.map((credit, position) => ({ ...credit, position })) }
+                    : undefined,
             },
             include
         });
@@ -264,6 +276,9 @@ router.post('/articles', verifyToken, async (req, res) => {
             ...fields,
         });
     } catch (error:any) {
+        if (error instanceof CreditError) {
+            return res.status(400).json({ error: error.message });
+        }
         res.status(500).json({ message: 'Error creating article', error: error.message });
     }
 });
@@ -271,7 +286,7 @@ router.post('/articles', verifyToken, async (req, res) => {
 // Actualizar un artículo
 router.put('/articles/:id', verifyToken, async (req, res) => {
     const { id } = req.params;
-    const { title, content, thumbnail, embedUrl, embedHeight, categoryId, tagIds, newTags, slug: customSlug, lang, type = 'post', redirectUrl } = req.body;
+    const { title, content, thumbnail, embedUrl, embedHeight, categoryId, tagIds, newTags, slug: customSlug, lang, type = 'post', redirectUrl, credits } = req.body;
     const userId = (req as any).user.id;
     const userRole = (req as any).user.role;
 
@@ -375,6 +390,11 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
         // Combine existing tagIds with newly created ones
         const allTagIds = [...(tagIds || []), ...createdTagIds];
 
+        // Only touch credits when the form actually sent them: a client that
+        // knows nothing about credits must not wipe the ones already there.
+        const creditsSent = credits !== undefined;
+        const cleanCredits = creditsSent ? await normaliseCredits(credits) : [];
+
         const updatedArticle = await prisma.article.update({
             where: { id: Number(id) },
             data: {
@@ -393,6 +413,12 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
                 },
                 type: type || 'post',
                 redirectUrl: type === 'link' ? redirectUrl : null,
+                credits: creditsSent
+                    ? {
+                        deleteMany: {},
+                        create: cleanCredits.map((credit, position) => ({ ...credit, position })),
+                    }
+                    : undefined,
             },
             include
         });
@@ -404,8 +430,14 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
                 .catch(err => console.error('Translation update error:', err));
         }
 
-        res.status(200).json(updatedArticle);
+        res.status(200).json({
+            ...updatedArticle,
+            ...publicFields(updatedArticle),
+        });
     } catch (error:any) {
+        if (error instanceof CreditError) {
+            return res.status(400).json({ error: error.message });
+        }
         res.status(500).json({ message: 'Error updating article', error: error.message });
     }
 });
@@ -520,6 +552,7 @@ router.get('/articles', async (req, res) => {
                         articleId: true,
                         name: true,
                         role: true,
+                        userId: true,
                         user: { select: { handle: true, displayName: true, avatarUrl: true } },
                     },
                 });
@@ -764,6 +797,35 @@ router.get('/articles/:id', async (req, res) => {
     }
 });
 
+
+/**
+ * DELETE /api/blog/articles/:id/credits/me
+ * Anyone may credit anyone, so anyone must be able to step out of a project
+ * they do not want to appear in. Removes only the caller's own credit; the
+ * article and every other credit are left alone.
+ */
+router.delete('/articles/:id/credits/me', verifyToken, async (req, res) => {
+    const articleId = Number(req.params.id);
+    const userId = (req as any).user.id;
+
+    if (!Number.isInteger(articleId)) {
+        return res.status(400).json({ error: 'Invalid article id' });
+    }
+
+    try {
+        const removed = await prisma.articleCredit.deleteMany({
+            where: { articleId, userId },
+        });
+
+        if (removed.count === 0) {
+            return res.status(404).json({ error: 'You are not credited on this article' });
+        }
+
+        res.status(200).json({ removed: removed.count });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error removing credit', error: error.message });
+    }
+});
 
 // Eliminar un artículo
 router.delete('/articles/:id', verifyToken, async (req, res) => {

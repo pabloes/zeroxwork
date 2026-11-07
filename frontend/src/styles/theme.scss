@@ -1393,3 +1393,22 @@ a.uk-link-reset {
   color: var(--zx-ink);
   white-space: nowrap;
 }
+
+/* Credits editor inside the article form. The rows are a plain list; these
+   rules only stop the member results from looking like body copy. */
+.zx-credit-rows {
+    margin-top: 0;
+
+    li + li { margin-top: 6px; }
+}
+
+.zx-credit-results {
+    border: 1px solid var(--zx-line);
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-top: 0;
+
+    li + li { margin-top: 2px; }
+
+    .zx-tb-text { width: 100%; text-align: left; }
+}

@@ -10,6 +10,7 @@ import UIkit from "uikit";
 import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
 import { apiErrorMessage } from '../../services/api-error';
+import CreditsField, { type CreditDraft } from '../../components/editor/CreditsField';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -95,6 +96,7 @@ const EditArticle: React.FC = () => {
     const [newTagInput, setNewTagInput] = useState<string>('');
     const [thumbPickerOpen, setThumbPickerOpen] = useState<boolean>(false);
     const [newTags, setNewTags] = useState<string[]>([]);
+    const [credits, setCredits] = useState<CreditDraft[]>([]);
     const [articleType, setArticleType] = useState<'post' | 'link'>(article?.type || 'post');
     const [redirectUrl, setRedirectUrl] = useState<string>(article?.redirectUrl || '');
 
@@ -112,6 +114,12 @@ const EditArticle: React.FC = () => {
             setSelectedTagIds(article.tags?.map((t: Tag) => t.id) || []);
             setArticleType(article.type || 'post');
             setRedirectUrl(article.redirectUrl || '');
+            setCredits((article.credits ?? []).map((credit: any) => ({
+                name: credit.name,
+                role: credit.role || '',
+                userId: credit.userId ?? null,
+                handle: credit.handle ?? null,
+            })));
         }
     }, [article]);
 
@@ -179,6 +187,12 @@ const EditArticle: React.FC = () => {
             newTags: newTags,
             type: articleType,
             redirectUrl: articleType === 'link' ? redirectUrl : undefined,
+            credits: credits.map((credit) => ({
+                name: credit.name,
+                role: credit.role || undefined,
+                userId: credit.userId ?? undefined,
+                handle: credit.handle ?? undefined,
+            })),
         });
     };
 
@@ -414,6 +428,8 @@ const EditArticle: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                <CreditsField value={credits} onChange={setCredits} />
 
                 {articleType === 'post' && (
                     <>

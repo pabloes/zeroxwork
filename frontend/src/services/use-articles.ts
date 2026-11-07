@@ -11,6 +11,9 @@ export interface ArticleTag {
 export interface ArticleCredit {
     name: string;
     role: string | null;
+    // The account behind the credit, when there is one. The edit form sends it
+    // back so saving again does not quietly unlink the member.
+    userId: number | null;
     handle: string | null;
     avatarUrl: string | null;
 }

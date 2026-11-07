@@ -9,6 +9,7 @@ import { api } from '../../services/axios-setup';
 import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
 import { apiErrorMessage } from '../../services/api-error';
+import CreditsField, { type CreditDraft } from '../../components/editor/CreditsField';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -42,6 +43,7 @@ const createArticle = async (newArticle: {
     newTags?: string[];
     type?: string;
     redirectUrl?: string;
+    credits?: { name: string; role?: string; userId?: number | null; handle?: string | null }[];
 }) => {
     const response = await api.post('/blog/articles', newArticle);
     return response.data;
@@ -74,6 +76,7 @@ const CreateArticle: React.FC = () => {
     const [newTags, setNewTags] = useState<string[]>([]);
     const [articleType, setArticleType] = useState<'post' | 'link'>('post');
     const [redirectUrl, setRedirectUrl] = useState<string>('');
+    const [credits, setCredits] = useState<CreditDraft[]>([]);
     // Why the last attempt did not go through, kept next to the submit button so
     // it is still on screen after the notification fades.
     const [formError, setFormError] = useState<string | null>(null);
@@ -172,6 +175,12 @@ const CreateArticle: React.FC = () => {
             newTags: newTags,
             type: articleType,
             redirectUrl: articleType === 'link' ? redirectUrl : undefined,
+            credits: credits.map((credit) => ({
+                name: credit.name,
+                role: credit.role || undefined,
+                userId: credit.userId ?? undefined,
+                handle: credit.handle ?? undefined,
+            })),
         });
     };
 
@@ -403,6 +412,8 @@ const CreateArticle: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                <CreditsField value={credits} onChange={setCredits} />
 
                 {articleType === 'post' && (
                     <>

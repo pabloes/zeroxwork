@@ -241,6 +241,38 @@ router.put('/profile', verifyToken, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/user/members?q=
+ * Finds members to credit on a project. Matches only what someone chose to
+ * publish -- their handle and their display name -- so a member who filled in
+ * neither cannot be found here, and the email is never searched nor returned.
+ * Behind a token: this is the authoring UI, not a public directory.
+ */
+router.get('/members', verifyToken, async (req: Request, res: Response) => {
+    const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    if (q.length < 2) {
+        return res.status(200).json([]);
+    }
+
+    try {
+        const members = await prisma.user.findMany({
+            where: {
+                OR: [
+                    { handle: { contains: q, mode: 'insensitive' } },
+                    { displayName: { contains: q, mode: 'insensitive' } },
+                ],
+            },
+            select: { id: true, handle: true, displayName: true, avatarUrl: true },
+            orderBy: [{ handle: 'asc' }, { id: 'asc' }],
+            take: 10,
+        });
+
+        res.status(200).json(members);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error searching members', error: error.message });
+    }
+});
+
+/**
  * GET /api/user/members/:handle
  * Public member page: who they are, where to find them, and what they have
  * worked on. Only fields the member chose to publish; the email is never part
