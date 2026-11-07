@@ -12,8 +12,7 @@ export interface CreditDraft {
 }
 
 interface Member {
-    id: number;
-    handle: string | null;
+    handle: string;
     displayName: string | null;
     avatarUrl: string | null;
 }
@@ -22,7 +21,7 @@ const SEARCH_MIN = 2;
 const SEARCH_WAIT = 300;
 export const MAX_CREDITS = 20;
 
-const memberLabel = (member: Member) => member.displayName || member.handle || `#${member.id}`;
+const memberLabel = (member: Member) => member.displayName || member.handle;
 
 const CreditsField: React.FC<{ value: CreditDraft[]; onChange: (credits: CreditDraft[]) => void }> = ({ value, onChange }) => {
     const { t } = useTranslation();
@@ -67,7 +66,9 @@ const CreditsField: React.FC<{ value: CreditDraft[]; onChange: (credits: CreditD
     };
 
     const addMember = (member: Member) => {
-        add({ name: memberLabel(member), role: '', userId: member.id, handle: member.handle });
+        // Only the handle: the directory is public and carries no account ids,
+        // and the server resolves the handle back to the account on save.
+        add({ name: memberLabel(member), role: '', handle: member.handle });
         setQuery('');
         setResults([]);
     };
@@ -142,10 +143,10 @@ const CreditsField: React.FC<{ value: CreditDraft[]; onChange: (credits: CreditD
                         {!searching && results.length > 0 && (
                             <ul className="zx-credit-results uk-list uk-margin-small-bottom">
                                 {results.map((member) => (
-                                    <li key={member.id}>
+                                    <li key={member.handle}>
                                         <button type="button" className="zx-tb-text" onClick={() => addMember(member)}>
                                             {memberLabel(member)}
-                                            {member.handle ? ` (@${member.handle})` : ''}
+                                            {member.displayName ? ` (@${member.handle})` : ''}
                                         </button>
                                     </li>
                                 ))}

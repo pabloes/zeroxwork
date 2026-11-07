@@ -18,6 +18,7 @@ const Footer: React.FC = () => {
                     <Link to="/blog">{t('nav.blog')}</Link>
                     <Link to="/tools">{t('nav.tools')}</Link>
                     <Link to="/portfolio">{t('nav.portfolio')}</Link>
+                    <Link to="/members">{t('nav.members')}</Link>
                     <Link to="/terms">{t('footer.terms')}</Link>
                     <Link to="/privacy">{t('footer.privacy')}</Link>
                     <a href="https://x.com/zeroxwork" target="_blank" rel="noreferrer noopener">X / Twitter</a>

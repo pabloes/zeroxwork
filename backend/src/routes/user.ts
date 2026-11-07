@@ -242,33 +242,106 @@ router.put('/profile', verifyToken, async (req: Request, res: Response) => {
 
 /**
  * GET /api/user/members?q=
- * Finds members to credit on a project. Matches only what someone chose to
- * publish -- their handle and their display name -- so a member who filled in
- * neither cannot be found here, and the email is never searched nor returned.
- * Behind a token: this is the authoring UI, not a public directory.
+ * The member directory, and the same list the article form searches when you
+ * credit somebody.
+ *
+ * Only members who set a handle are listed: the handle is the address of their
+ * public page, so having one is how somebody opts into being listed at all.
+ * Matching is on handle and display name -- the only things a member chose to
+ * publish. The email is never searched, never returned, and internal account
+ * ids stay out of this response.
  */
-router.get('/members', verifyToken, async (req: Request, res: Response) => {
+router.get('/members', async (req: Request, res: Response) => {
     const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
-    if (q.length < 2) {
-        return res.status(200).json([]);
+    const limit = Math.min(Number(req.query.limit) || 60, 100);
+
+    interface MemberRow {
+        id: number;
+        handle: string | null;
+        displayName: string | null;
+        avatarUrl: string | null;
+        createdAt: Date;
+        defaultName: { name: string; wallet: { address: string } | null } | null;
     }
 
     try {
-        const members = await prisma.user.findMany({
+        const members: MemberRow[] = await prisma.user.findMany({
             where: {
-                OR: [
-                    { handle: { contains: q, mode: 'insensitive' } },
-                    { displayName: { contains: q, mode: 'insensitive' } },
-                ],
+                handle: { not: null },
+                ...(q !== '' ? {
+                    OR: [
+                        { handle: { contains: q, mode: 'insensitive' as const } },
+                        { displayName: { contains: q, mode: 'insensitive' as const } },
+                    ],
+                } : {}),
             },
-            select: { id: true, handle: true, displayName: true, avatarUrl: true },
-            orderBy: [{ handle: 'asc' }, { id: 'asc' }],
-            take: 10,
+            select: {
+                id: true,
+                handle: true,
+                displayName: true,
+                avatarUrl: true,
+                createdAt: true,
+                defaultName: { select: { name: true, wallet: { select: { address: true } } } },
+            },
+            take: limit,
         });
 
-        res.status(200).json(members);
+        const ids = members.map((member) => member.id);
+
+        // Counted the same way the member page splits its two sections:
+        // projects are what you are credited on, posts are what you wrote.
+        const [projectRows, postRows] = ids.length > 0 ? await Promise.all([
+            prisma.articleCredit.groupBy({
+                by: ['userId'],
+                where: {
+                    userId: { in: ids },
+                    article: {
+                        published: true,
+                        category: { name: { equals: PORTFOLIO_CATEGORY, mode: 'insensitive' } },
+                    },
+                },
+                _count: { _all: true },
+            }),
+            prisma.article.groupBy({
+                by: ['userId'],
+                where: {
+                    userId: { in: ids },
+                    published: true,
+                    NOT: { category: { name: { equals: PORTFOLIO_CATEGORY, mode: 'insensitive' } } },
+                },
+                _count: { _all: true },
+            }),
+        ]) : [[], []];
+
+        const projectsBy = new Map<number, number>();
+        for (const row of projectRows as { userId: number | null; _count: { _all: number } }[]) {
+            if (row.userId !== null) projectsBy.set(row.userId, row._count._all);
+        }
+        const postsBy = new Map<number, number>();
+        for (const row of postRows as { userId: number | null; _count: { _all: number } }[]) {
+            if (row.userId !== null) postsBy.set(row.userId, row._count._all);
+        }
+
+        const listed = members
+            .map((member) => ({
+                handle: member.handle,
+                displayName: member.displayName,
+                avatarUrl: member.avatarUrl,
+                memberSince: member.createdAt,
+                walletName: member.defaultName?.name ?? null,
+                walletAddress: member.defaultName?.wallet?.address ?? null,
+                projects: projectsBy.get(member.id) ?? 0,
+                posts: postsBy.get(member.id) ?? 0,
+            }))
+            // Whoever has shipped the most goes first; the handle only breaks ties.
+            .sort((a, b) =>
+                (b.projects - a.projects)
+                || (b.posts - a.posts)
+                || (a.handle ?? '').localeCompare(b.handle ?? ''));
+
+        res.status(200).json(listed);
     } catch (error: any) {
-        res.status(500).json({ message: 'Error searching members', error: error.message });
+        res.status(500).json({ message: 'Error listing members', error: error.message });
     }
 });
 

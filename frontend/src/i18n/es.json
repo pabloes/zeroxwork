@@ -50,6 +50,16 @@
   "credits.add": "Añadir",
   "credits.full": "Has llegado al máximo de 20 créditos.",
 
+  "nav.members": "Miembros",
+  "members.title": "La gente de ZEROxWORK.",
+  "members.sub": "Quien construye aquí, y lo que ha sacado adelante. Entra en cualquiera para ver su portfolio.",
+  "members.project_one": "proyecto",
+  "members.project_many": "proyectos",
+  "members.post_one": "artículo",
+  "members.post_many": "artículos",
+  "members.nothing_yet": "Todavía sin trabajo publicado",
+  "members.empty": "Aún no hay miembros con página pública. Se crea poniéndose un handle en la cuenta.",
+
   "meta.title": "ZEROxWORK — Cowork online donde la tecnología y el arte se cruzan",
   "meta.description": "ZEROxWORK es una comunidad-cowork online. Juntamos equipos de código y diseño para construir proyectos ambiciosos, con herramientas gratuitas para todos los miembros.",
   "cookies.title": "Aviso de cookies",

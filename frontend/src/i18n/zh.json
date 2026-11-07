@@ -50,6 +50,16 @@
   "credits.add": "添加",
   "credits.full": "已达到 20 个参与者的上限。",
 
+  "nav.members": "成员",
+  "members.title": "ZEROxWORK 的伙伴。",
+  "members.sub": "谁在这里创作，以及他们做出了什么。点开任何一位即可查看其作品集。",
+  "members.project_one": "个项目",
+  "members.project_many": "个项目",
+  "members.post_one": "篇文章",
+  "members.post_many": "篇文章",
+  "members.nothing_yet": "还没有公开的作品",
+  "members.empty": "还没有成员拥有公开页面。在账号里设置 handle 就会生成一个。",
+
   "meta.title": "ZEROxWORK — 技术与艺术交汇的在线共创空间",
   "meta.description": "ZEROxWORK 是一个在线社区共创空间。我们把代码与设计的团队组合起来，打造有野心的项目，每位成员都能免费使用我们的工具。",
   "cookies.title": "Cookie 提示",

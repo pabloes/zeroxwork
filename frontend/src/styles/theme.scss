@@ -1412,3 +1412,55 @@ a.uk-link-reset {
 
     .zx-tb-text { width: 100%; text-align: left; }
 }
+
+/* Member directory. Cards are wider than they are tall: the avatar and the
+   name carry them, the counts are the reason to click. */
+.zx-member-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.zx-member-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--zx-line);
+    border-radius: 14px;
+    background: var(--zx-surface);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color .15s ease, transform .15s ease;
+
+    &:hover {
+        border-color: var(--zx-blue);
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+
+    h3 {
+        margin: 0;
+        font-size: 1.02rem;
+        line-height: 1.25;
+    }
+}
+
+.zx-member-card-avatar {
+    width: 72px;
+    height: 72px;
+    flex: none;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--zx-bg-2);
+}
+
+.zx-member-card-body { min-width: 0; }
+
+.zx-member-card-handle,
+.zx-member-card-meta {
+    margin: 2px 0 0;
+    font-size: .82rem;
+    color: var(--zx-ink-dim);
+    overflow-wrap: anywhere;
+}
