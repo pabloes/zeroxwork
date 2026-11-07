@@ -89,11 +89,14 @@ const ArticleEditor: React.FC<Props> = ({ value, onChange }) => {
         },
     });
 
-    // hydrate when the article arrives from the API (edit page)
+    // Hydrate when the article arrives from the API (edit page). emitUpdate
+    // defaults to true in tiptap v3, which would hand the parent a re-serialized
+    // body before the author touches anything: the saved markdown would change
+    // (and DeepL would retranslate) just for opening an old article.
     useEffect(() => {
         if (!editor || value === emitted.current) return;
         emitted.current = value;
-        editor.commands.setContent(value);
+        editor.commands.setContent(value, { emitUpdate: false });
     }, [editor, value]);
 
     const insertImage = useCallback((url: string) => {
