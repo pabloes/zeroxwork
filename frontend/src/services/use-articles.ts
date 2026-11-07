@@ -35,6 +35,12 @@ export interface Article {
     tags?: ArticleTag[];
     /** Everyone credited on the work, in display order. Projects use this. */
     credits?: ArticleCredit[];
+    /** Project gallery, in display order. Empty for posts and tools. */
+    screenshots?: string[] | null;
+    /** External video embed (YouTube or Vimeo), when the project has one. */
+    videoUrl?: string | null;
+    /** False while the article is still a draft. Only its author sees those. */
+    published?: boolean;
 }
 
 /** Public name for an author: their display name, else the wallet name, else nothing. */

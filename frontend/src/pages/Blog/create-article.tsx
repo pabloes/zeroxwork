@@ -10,6 +10,8 @@ import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
 import { apiErrorMessage } from '../../services/api-error';
 import CreditsField, { type CreditDraft } from '../../components/editor/CreditsField';
+import ProjectMediaField from '../../components/editor/ProjectMediaField';
+import { SCREENSHOTS_MIN, isAllowedVideoUrl, isProjectCategory } from '../../services/project-media';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -44,6 +46,8 @@ const createArticle = async (newArticle: {
     type?: string;
     redirectUrl?: string;
     credits?: { name: string; role?: string; userId?: number | null; handle?: string | null }[];
+    screenshots?: string[];
+    videoUrl?: string;
 }) => {
     const response = await api.post('/blog/articles', newArticle);
     return response.data;
@@ -77,6 +81,8 @@ const CreateArticle: React.FC = () => {
     const [articleType, setArticleType] = useState<'post' | 'link'>('post');
     const [redirectUrl, setRedirectUrl] = useState<string>('');
     const [credits, setCredits] = useState<CreditDraft[]>([]);
+    const [screenshots, setScreenshots] = useState<string[]>([]);
+    const [videoUrl, setVideoUrl] = useState<string>('');
     // Why the last attempt did not go through, kept next to the submit button so
     // it is still on screen after the notification fades.
     const [formError, setFormError] = useState<string | null>(null);
@@ -113,7 +119,9 @@ const CreateArticle: React.FC = () => {
         mutationFn: createArticle,
         onSuccess: (data) => {
             setFormError(null);
-            UIkit.notification(t('article.created'), { status: 'success' });
+            // Saved, not published: say so, or the author walks away thinking it
+            // is live and wonders why nobody can see it.
+            UIkit.notification(t('article.created_draft'), { status: 'success', timeout: 7000 });
             navigate(`/view-article/${data.id}`);
         },
         onError: (error) => {
@@ -149,6 +157,16 @@ const CreateArticle: React.FC = () => {
         setNewTags(prev => prev.filter(t => t !== tagName));
     };
 
+    // Which category was picked, by name: only a project has to carry a gallery.
+    const categoryName = categories.find((cat) => cat.id === categoryId)?.name ?? null;
+    const isProject = isProjectCategory(categoryName);
+
+    /** Stop the save and say why, in the two places the author is looking. */
+    const reject = (key: string) => {
+        setFormError(t(key));
+        UIkit.notification(t(key), { status: 'warning', timeout: 7000 });
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -159,6 +177,15 @@ const CreateArticle: React.FC = () => {
             setFormError(t('article.error.no_content'));
             UIkit.notification(t('article.error.no_content'), { status: 'warning', timeout: 7000 });
             return;
+        }
+
+        // A project is judged on what it shows, so the API will not take one
+        // without a cover and three screenshots. Say which of the two is
+        // missing here, where the fields are, instead of after a round trip.
+        if (isProject) {
+            if (thumbnail.trim() === '') return reject('project.error.cover_required');
+            if (screenshots.length < SCREENSHOTS_MIN) return reject('project.error.screenshots_few');
+            if (!isAllowedVideoUrl(videoUrl)) return reject('project.error.video_host');
         }
 
         setFormError(null);
@@ -181,6 +208,8 @@ const CreateArticle: React.FC = () => {
                 userId: credit.userId ?? undefined,
                 handle: credit.handle ?? undefined,
             })),
+            screenshots,
+            videoUrl: videoUrl.trim() || undefined,
         });
     };
 
@@ -248,7 +277,9 @@ const CreateArticle: React.FC = () => {
                 </div>
 
                 <div className="uk-margin">
-                    <label className="uk-form-label" htmlFor="thumbnail">Thumbnail URL:</label>
+                    <label className="uk-form-label" htmlFor="thumbnail">
+                        {isProject ? t('project.cover_required') : 'Thumbnail URL:'}
+                    </label>
                     <div className="uk-form-controls zx-thumb-field">
                         <input
                             className="uk-input"
@@ -303,6 +334,16 @@ const CreateArticle: React.FC = () => {
                         </select>
                     </div>
                 </div>
+
+                {/* A project has to show itself; a post or a tool does not. */}
+                {isProject && (
+                    <ProjectMediaField
+                        screenshots={screenshots}
+                        onScreenshotsChange={setScreenshots}
+                        videoUrl={videoUrl}
+                        onVideoUrlChange={setVideoUrl}
+                    />
+                )}
 
                 <div className="uk-margin">
                     <label className="uk-form-label">Article Type:</label>

@@ -27,7 +27,6 @@
   "editor.error.rejected": "The image was rejected by the content check.",
   "editor.error.unauthorized": "Your session expired. Log in again.",
   "editor.error.failed": "The image could not be uploaded.",
-
   "article.created": "Article created.",
   "article.updated": "Article saved.",
   "article.error.no_content": "The article is empty. Write the text before publishing it.",
@@ -36,7 +35,6 @@
   "article.error.network": "The server could not be reached.",
   "article.error.create_failed": "The article could not be created.",
   "article.error.update_failed": "The article could not be saved.",
-
   "credits.label": "Credits",
   "credits.hint": "Who worked on this. Search members by public name or handle; add anyone without an account by name.",
   "credits.linked": "member",
@@ -49,7 +47,6 @@
   "credits.name_placeholder": "Name of someone without an account",
   "credits.add": "Add",
   "credits.full": "You have reached the maximum of 20 credits.",
-
   "nav.members": "Members",
   "members.title": "The people of ZEROxWORK.",
   "members.sub": "Who builds here, and what they have shipped. Open anyone to see their portfolio.",
@@ -59,14 +56,12 @@
   "members.post_many": "articles",
   "members.nothing_yet": "Nothing published yet",
   "members.empty": "No member has a public page yet. Setting a handle in your account creates one.",
-
   "meta.title": "ZEROxWORK — Online cowork where technology and art cross",
   "meta.description": "ZEROxWORK is an online community-cowork. We put together teams of code and design to build ambitious projects, with free tools for every member.",
   "cookies.title": "Cookie notice",
   "cookies.text": "This site uses cookies to improve your experience. Analytics and ads only load once you accept.",
   "cookies.link": "Privacy policy",
   "cookies.accept": "Accept",
-
   "nav.blog": "Blog",
   "nav.tools": "Tools",
   "nav.portfolio": "Portfolio",
@@ -77,7 +72,6 @@
   "nav.logout": "Logout",
   "nav.register": "Register",
   "nav.login": "Login",
-
   "login.title": "Login",
   "login.email": "Email",
   "login.password": "Password",
@@ -87,13 +81,11 @@
   "login.register_link": "Register a new account",
   "login.error_default": "Error logging in.",
   "login.verified_notice": "Your email has been verified. You can log in now.",
-
   "verify.title": "Email verification",
   "verify.checking": "Verifying your email...",
   "verify.failed": "Verification failed. The link is invalid or has expired.",
   "verify.no_token": "Invalid verification request. No token provided.",
   "verify.login_link": "Go to login",
-
   "register.title": "Register",
   "register.email": "Email",
   "register.password": "Password",
@@ -106,14 +98,12 @@
   "register.accept_responsibility": "I accept full responsibility for any content I upload and acknowledge that I may be held legally liable for any harm caused. I will indemnify ZEROxWORK in the event of any legal action arising from my content.",
   "register.success": "Thank you for registering! Please check your email to verify your account.",
   "register.error_default": "Error registering user.",
-
   "socials.title": "Social profiles (optional)",
   "socials.hint": "Add the ones you use. You can leave them all empty.",
   "socials.add": "Add another network",
   "socials.search_placeholder": "Search a network...",
   "socials.no_results": "No networks match",
   "socials.remove": "Remove",
-
   "account.profile_title": "Public profile",
   "account.profile_hint": "This is what other people see next to your articles. Both fields are optional.",
   "account.display_name": "Display name",
@@ -132,14 +122,11 @@
   "account.saving": "Saving...",
   "account.saved": "Saved.",
   "account.save_error": "Your profile could not be saved.",
-
   "footer.follow_us": "Follow us on:",
   "footer.rights": "All rights reserved.",
   "footer.terms": "Terms and Conditions",
   "footer.privacy": "Privacy Policy",
-
   "auth.login_required": "You need to Register and Login to access this page",
-
   "speedtest.title": "Internet Speed Test",
   "speedtest.subtitle": "Measure the speed between your device and this server.",
   "speedtest.ping": "Ping",
@@ -152,32 +139,25 @@
   "speedtest.phase_download": "Testing download...",
   "speedtest.phase_upload": "Testing upload...",
   "speedtest.note": "Results measure speed between your device and this server, not your full ISP bandwidth.",
-
   "nav.join": "Join",
   "nav.language": "Language",
-
   "theme.to_light": "Switch to light theme",
   "theme.to_dark": "Switch to dark theme",
-
   "common.read": "Read",
   "common.open": "Open",
   "common.live": "live",
   "common.loading": "Loading...",
   "common.empty": "Nothing here yet.",
-
   "blog.title": "Notes from the community.",
   "blog.sub": "What we are building, testing and learning between code and design.",
-
   "tools.title": "Community tools.",
   "tools.sub": "Free utilities built at ZEROxWORK, open to everyone.",
-
   "portfolio.title": "What we have built.",
   "portfolio.sub": "Projects from ZEROxWORK teams and members: games, dapps, tools and experiments.",
   "portfolio.see_project": "See the project",
   "portfolio.filter_all": "All",
   "portfolio.filter_label": "Filter projects by tag",
   "portfolio.empty_tag": "No project with that tag yet.",
-
   "portfolio.made_by": "Made by",
   "member.projects": "Projects",
   "member.other_work": "Other posts",
@@ -186,14 +166,12 @@
   "member.not_found": "No member goes by that handle.",
   "account.handle": "Public handle",
   "account.handle_hint": "Lowercase letters, numbers and hyphens. It is the address of your member page:",
-
   "landing.eyebrow": "Online cowork · tech + art",
   "landing.h1_lead": "Where code and art share a",
   "landing.h1_accent": "table.",
   "landing.lede": "ZEROxWORK is an online community-cowork. We put together teams of code and design to build ambitious projects, and every member gets free tools to do it.",
   "landing.cta_join": "Join the community",
   "landing.cta_tools": "See the tools",
-
   "landing.du_tech_kk": "The name · technical",
   "landing.du_tech_title": "Technology",
   "landing.du_tech_text": "Code, logic and systems. The part that structures, automates and makes things work.",
@@ -201,7 +179,6 @@
   "landing.du_art_title": "Art and design",
   "landing.du_art_text": "Colour, shape, 3D and illustration. The part that gives personality, expresses and makes something worth looking at.",
   "landing.du_caption": "a technical name · a creative soul · the point where they cross",
-
   "landing.how_eyebrow": "How it works",
   "landing.how_title": "We build teams. We build big.",
   "landing.how_sub": "Not a course, not an agency. Real people working side by side on real projects.",
@@ -211,7 +188,6 @@
   "landing.step2_text": "We match you with people whose skills complement yours: code, design, 3D or Web3.",
   "landing.step3_title": "Build",
   "landing.step3_text": "You take ambitious projects all the way, with group feedback and every community tool.",
-
   "landing.tools_eyebrow": "For members",
   "landing.tools_title": "Free tools for everyone.",
   "landing.tools_sub": "Joining unlocks the community kit. No cost, no small print.",
@@ -235,7 +211,6 @@
   "landing.tag_design": "design",
   "landing.tag_community": "community",
   "landing.free_pill": "Included when you join · €0",
-
   "landing.disc_eyebrow": "Disciplines",
   "landing.disc_title": "Room for everything where tech meets art.",
   "landing.disc_sub": "Every wedge of the X is a world. Wherever you come from, you fit in one (or between several).",
@@ -243,22 +218,18 @@
   "landing.disc2": "Frontend and creative coding",
   "landing.disc3": "3D · WebGL · motion",
   "landing.disc4": "Design, UI and illustration",
-
   "landing.portfolio_eyebrow": "Portfolio",
   "landing.portfolio_title": "What comes out of the teams.",
   "landing.portfolio_sub": "Projects built at ZEROxWORK by our teams and members.",
   "landing.portfolio_all": "See the whole portfolio",
-
   "landing.blog_eyebrow": "Blog",
   "landing.blog_title": "What we build and learn.",
   "landing.blog_all": "See the whole blog",
-
   "landing.cta_title_a": "Your level does not matter.",
   "landing.cta_title_b": "What counts is to",
   "landing.cta_title_accent": "build.",
   "landing.cta_text": "Request your spot at ZEROxWORK. We form teams, share tools and build ambitious projects.",
   "landing.cta_button": "Request a spot",
-
   "account.discord.title": "Discord",
   "account.discord.description": "Link your Discord account to get the ZEROxWORK role on the community server.",
   "account.discord.link_button": "Link Discord",
@@ -270,5 +241,32 @@
   "account.discord.status_denied": "You cancelled the authorisation on Discord.",
   "account.discord.status_already_linked": "That Discord account is already linked to another ZEROxWORK user.",
   "account.discord.status_expired": "The authorisation link expired. Please try again.",
-  "account.discord.status_error": "The link could not be completed. Please try again later."
+  "account.discord.status_error": "The link could not be completed. Please try again later.",
+  "project.gallery": "Project gallery",
+  "project.screenshots": "Screenshots",
+  "project.screenshots_need_more": "more needed",
+  "project.screenshots_enough": "enough to publish",
+  "project.screenshot_add": "Add screenshot",
+  "project.screenshots_full": "Maximum reached",
+  "project.screenshot_earlier": "Move earlier",
+  "project.screenshot_later": "Move later",
+  "project.screenshot_remove": "Remove screenshot",
+  "project.cover_required": "Cover image (required):",
+  "project.video": "Video (optional)",
+  "project.video_hint": "A link from",
+  "project.video_bad_host": "Only https links to YouTube or Vimeo are accepted.",
+  "project.video_watch": "Watch the video",
+  "project.error.cover_required": "A project needs a cover image.",
+  "project.error.screenshots_few": "A project needs at least 3 screenshots.",
+  "project.error.video_host": "The video has to be on YouTube or Vimeo, over https.",
+  "article.created_draft": "Saved as a draft. Publish it when it is ready.",
+  "article.draft_notice": "This is a draft: nobody else can see it yet.",
+  "article.draft_go_publish": "Publish it",
+  "article.state_draft": "Draft",
+  "article.state_published": "Published",
+  "article.publish": "Publish",
+  "article.unpublish": "Unpublish",
+  "article.published_ok": "Published.",
+  "article.unpublished_ok": "Back to a draft.",
+  "article.publish_failed": "Could not change the publication state."
 }

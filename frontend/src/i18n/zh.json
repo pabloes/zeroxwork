@@ -27,7 +27,6 @@
   "editor.error.rejected": "该图片未通过内容审核。",
   "editor.error.unauthorized": "登录已过期，请重新登录。",
   "editor.error.failed": "图片上传失败。",
-
   "article.created": "文章已创建。",
   "article.updated": "文章已保存。",
   "article.error.no_content": "文章内容为空。请先写正文再发布。",
@@ -36,7 +35,6 @@
   "article.error.network": "无法连接服务器。",
   "article.error.create_failed": "文章创建失败。",
   "article.error.update_failed": "文章保存失败。",
-
   "credits.label": "参与者",
   "credits.hint": "谁参与了这个项目。可按公开名称或 handle 搜索成员；没有账号的人直接按名字添加。",
   "credits.linked": "成员",
@@ -49,7 +47,6 @@
   "credits.name_placeholder": "没有账号的人的名字",
   "credits.add": "添加",
   "credits.full": "已达到 20 个参与者的上限。",
-
   "nav.members": "成员",
   "members.title": "ZEROxWORK 的伙伴。",
   "members.sub": "谁在这里创作，以及他们做出了什么。点开任何一位即可查看其作品集。",
@@ -59,14 +56,12 @@
   "members.post_many": "篇文章",
   "members.nothing_yet": "还没有公开的作品",
   "members.empty": "还没有成员拥有公开页面。在账号里设置 handle 就会生成一个。",
-
   "meta.title": "ZEROxWORK — 技术与艺术交汇的在线共创空间",
   "meta.description": "ZEROxWORK 是一个在线社区共创空间。我们把代码与设计的团队组合起来，打造有野心的项目，每位成员都能免费使用我们的工具。",
   "cookies.title": "Cookie 提示",
   "cookies.text": "本站使用 Cookie 以改善您的体验。只有在您同意后才会加载分析与广告。",
   "cookies.link": "隐私政策",
   "cookies.accept": "同意",
-
   "nav.blog": "博客",
   "nav.tools": "工具",
   "nav.portfolio": "作品集",
@@ -77,7 +72,6 @@
   "nav.logout": "退出登录",
   "nav.register": "注册",
   "nav.login": "登录",
-
   "login.title": "登录",
   "login.email": "电子邮箱",
   "login.password": "密码",
@@ -87,13 +81,11 @@
   "login.register_link": "注册新账户",
   "login.error_default": "登录出错。",
   "login.verified_notice": "您的邮箱已验证，现在可以登录。",
-
   "verify.title": "邮箱验证",
   "verify.checking": "正在验证您的邮箱…",
   "verify.failed": "验证失败。链接无效或已过期。",
   "verify.no_token": "验证请求无效，缺少令牌。",
   "verify.login_link": "前往登录",
-
   "register.title": "注册",
   "register.email": "电子邮箱",
   "register.password": "密码",
@@ -106,14 +98,12 @@
   "register.accept_responsibility": "我对所上传的任何内容承担全部责任，并承认我可能因造成的任何损害承担法律责任。如果因我的内容引发任何法律诉讼，我将赔偿 ZEROxWORK。",
   "register.success": "感谢您的注册！请查收邮件以验证您的账户。",
   "register.error_default": "注册用户时出错。",
-
   "socials.title": "社交主页（可选）",
   "socials.hint": "填写您使用的平台，也可以全部留空。",
   "socials.add": "添加其他平台",
   "socials.search_placeholder": "搜索平台…",
   "socials.no_results": "没有匹配的平台",
   "socials.remove": "移除",
-
   "account.profile_title": "公开资料",
   "account.profile_hint": "这是其他人在您的文章旁看到的信息。两项均为可选。",
   "account.display_name": "公开名称",
@@ -132,14 +122,11 @@
   "account.saving": "保存中...",
   "account.saved": "已保存。",
   "account.save_error": "无法保存您的资料。",
-
   "footer.follow_us": "关注我们：",
   "footer.rights": "版权所有。",
   "footer.terms": "条款与条件",
   "footer.privacy": "隐私政策",
-
   "auth.login_required": "您需要注册并登录才能访问此页面",
-
   "speedtest.title": "互联网速度测试",
   "speedtest.subtitle": "测量您的设备与此服务器之间的速度。",
   "speedtest.ping": "延迟",
@@ -152,32 +139,25 @@
   "speedtest.phase_download": "正在测试下载...",
   "speedtest.phase_upload": "正在测试上传...",
   "speedtest.note": "结果衡量的是您的设备与此服务器之间的速度，而非您的 ISP 全部带宽。",
-
   "nav.join": "加入",
   "nav.language": "语言",
-
   "theme.to_light": "切换到浅色主题",
   "theme.to_dark": "切换到深色主题",
-
   "common.read": "阅读",
   "common.open": "打开",
   "common.live": "在线",
   "common.loading": "加载中...",
   "common.empty": "这里还什么都没有。",
-
   "blog.title": "社区文章。",
   "blog.sub": "我们在代码与设计之间构建、尝试和学到的东西。",
-
   "tools.title": "社区工具。",
   "tools.sub": "在 ZEROxWORK 打造的免费工具，向所有人开放。",
-
   "portfolio.title": "我们已经做出来的东西。",
   "portfolio.sub": "来自 ZEROxWORK 团队和成员的项目：游戏、dapp、工具与实验。",
   "portfolio.see_project": "查看项目",
   "portfolio.filter_all": "全部",
   "portfolio.filter_label": "按标签筛选项目",
   "portfolio.empty_tag": "还没有带这个标签的项目。",
-
   "portfolio.made_by": "制作者",
   "member.projects": "项目",
   "member.other_work": "其他文章",
@@ -186,14 +166,12 @@
   "member.not_found": "没有使用该用户名的成员。",
   "account.handle": "公开用户名",
   "account.handle_hint": "仅限小写字母、数字和连字符。这就是你的成员页面地址：",
-
   "landing.eyebrow": "在线共创空间 · 技术 + 艺术",
   "landing.h1_lead": "代码与艺术，在同一张桌上",
   "landing.h1_accent": "共创。",
   "landing.lede": "ZEROxWORK 是一个在线社区共创空间。我们把代码与设计的团队组合起来，一起打造有野心的项目，每位成员都能免费使用我们的工具。",
   "landing.cta_join": "加入社区",
   "landing.cta_tools": "查看工具",
-
   "landing.du_tech_kk": "名字 · 技术",
   "landing.du_tech_title": "技术",
   "landing.du_tech_text": "代码、逻辑与系统。负责搭建结构、实现自动化，让一切真正运转的那一面。",
@@ -201,7 +179,6 @@
   "landing.du_art_title": "艺术与设计",
   "landing.du_art_text": "色彩、造型、3D 与插画。赋予个性、表达自我，让作品值得一看的那一面。",
   "landing.du_caption": "技术的名字 · 创意的灵魂 · 二者交汇之处",
-
   "landing.how_eyebrow": "运作方式",
   "landing.how_title": "我们组建团队，做大项目。",
   "landing.how_sub": "这不是课程，也不是代理公司。是真实的人并肩做真实的项目。",
@@ -211,7 +188,6 @@
   "landing.step2_text": "我们为你找到能力互补的伙伴：代码、设计、3D 或 Web3。",
   "landing.step3_title": "一起构建",
   "landing.step3_text": "你们把有野心的项目做到底，有大家的反馈，也有全部的社区工具。",
-
   "landing.tools_eyebrow": "成员专属",
   "landing.tools_title": "面向所有人的免费工具。",
   "landing.tools_sub": "加入即解锁社区工具包。零费用，没有附加条款。",
@@ -235,7 +211,6 @@
   "landing.tag_design": "设计",
   "landing.tag_community": "社区",
   "landing.free_pill": "加入即包含 · €0",
-
   "landing.disc_eyebrow": "领域",
   "landing.disc_title": "技术与艺术交汇的一切，这里都装得下。",
   "landing.disc_sub": "X 的每一块都是一个世界。无论你从哪里来，总能落在其中一块（或几块之间）。",
@@ -243,22 +218,18 @@
   "landing.disc2": "Frontend 与 creative coding",
   "landing.disc3": "3D · WebGL · motion",
   "landing.disc4": "设计、UI 与插画",
-
   "landing.portfolio_eyebrow": "作品集",
   "landing.portfolio_title": "团队做出来的东西。",
   "landing.portfolio_sub": "由我们的团队和成员在 ZEROxWORK 构建的项目。",
   "landing.portfolio_all": "查看全部作品集",
-
   "landing.blog_eyebrow": "博客",
   "landing.blog_title": "我们构建与学到的东西。",
   "landing.blog_all": "查看全部博客",
-
   "landing.cta_title_a": "你的水平不重要。",
   "landing.cta_title_b": "重要的是动手",
   "landing.cta_title_accent": "构建。",
   "landing.cta_text": "申请加入 ZEROxWORK。我们组建团队、共享工具，一起打造有野心的项目。",
   "landing.cta_button": "申请加入",
-
   "account.discord.title": "Discord",
   "account.discord.description": "绑定你的 Discord 账号，即可在社区服务器获得 ZEROxWORK 身份组。",
   "account.discord.link_button": "绑定 Discord",
@@ -270,5 +241,32 @@
   "account.discord.status_denied": "你在 Discord 上取消了授权。",
   "account.discord.status_already_linked": "该 Discord 账号已绑定到另一个 ZEROxWORK 用户。",
   "account.discord.status_expired": "授权链接已过期，请重试。",
-  "account.discord.status_error": "绑定未能完成，请稍后再试。"
+  "account.discord.status_error": "绑定未能完成，请稍后再试。",
+  "project.gallery": "项目图库",
+  "project.screenshots": "截图",
+  "project.screenshots_need_more": "还需要更多",
+  "project.screenshots_enough": "可以发布了",
+  "project.screenshot_add": "添加截图",
+  "project.screenshots_full": "已达上限",
+  "project.screenshot_earlier": "往前移",
+  "project.screenshot_later": "往后移",
+  "project.screenshot_remove": "移除截图",
+  "project.cover_required": "封面图片（必填）：",
+  "project.video": "视频（可选）",
+  "project.video_hint": "链接来自",
+  "project.video_bad_host": "仅接受 YouTube 或 Vimeo 的 https 链接。",
+  "project.video_watch": "观看视频",
+  "project.error.cover_required": "项目需要一张封面图片。",
+  "project.error.screenshots_few": "项目至少需要 3 张截图。",
+  "project.error.video_host": "视频必须托管在 YouTube 或 Vimeo 上，并使用 https。",
+  "article.created_draft": "已存为草稿。准备好后再发布。",
+  "article.draft_notice": "这是草稿：其他人还看不到。",
+  "article.draft_go_publish": "去发布",
+  "article.state_draft": "草稿",
+  "article.state_published": "已发布",
+  "article.publish": "发布",
+  "article.unpublish": "取消发布",
+  "article.published_ok": "已发布。",
+  "article.unpublished_ok": "已回到草稿状态。",
+  "article.publish_failed": "无法更改发布状态。"
 }

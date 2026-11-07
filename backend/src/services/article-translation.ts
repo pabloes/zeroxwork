@@ -3,6 +3,18 @@ import { slugify, computeSourceHash, makeUniqueSlug } from '../utils/slug';
 import { translateArticle, getTargetLangs, SUPPORTED_LANGS } from './deepl';
 
 /**
+ * Per-article translation options.
+ *
+ * `keepTitle` leaves the title in its original language. A project is called
+ * what it is called: DeepL turns "Claim Bite" into "Resumen de la reclamación"
+ * and the slug follows the title, so without this a game ends up with a
+ * different, invented name and URL in every language.
+ */
+export interface TranslationOptions {
+    keepTitle?: boolean;
+}
+
+/**
  * Create translations for all target languages
  */
 export async function createArticleTranslations(
@@ -11,7 +23,8 @@ export async function createArticleTranslations(
     content: string,
     sourceLang: string,
     sourceHash: string,
-    redirectUrl?: string | null
+    redirectUrl?: string | null,
+    options?: TranslationOptions
 ): Promise<void> {
     const targetLangs = getTargetLangs(sourceLang);
 
@@ -19,9 +32,10 @@ export async function createArticleTranslations(
         try {
             // Translate content
             const translated = await translateArticle(title, content, targetLang);
+            const finalTitle = options?.keepTitle ? title : translated.title;
 
             // Generate unique slug for translation
-            const baseSlug = slugify(translated.title);
+            const baseSlug = slugify(finalTitle);
             const translatedSlug = await makeUniqueSlug(baseSlug);
 
             // Create translation record
@@ -30,7 +44,7 @@ export async function createArticleTranslations(
                     articleId,
                     targetLang: targetLang.toLowerCase(),
                     slug: translatedSlug,
-                    title: translated.title,
+                    title: finalTitle,
                     content: translated.content,
                     sourceHash,
                     provider: 'deepl',
@@ -64,7 +78,8 @@ export async function updateArticleTranslations(
     content: string,
     sourceLang: string,
     newHash: string,
-    redirectUrl?: string | null
+    redirectUrl?: string | null,
+    options?: TranslationOptions
 ): Promise<void> {
     const targetLangs = getTargetLangs(sourceLang);
 
@@ -86,9 +101,10 @@ export async function updateArticleTranslations(
 
             // Translate content
             const translated = await translateArticle(title, content, targetLang);
+            const finalTitle = options?.keepTitle ? title : translated.title;
 
             // Generate new slug for translation
-            const baseSlug = slugify(translated.title);
+            const baseSlug = slugify(finalTitle);
             const translatedSlug = await makeUniqueSlug(baseSlug);
 
             if (existingTranslation) {
@@ -102,7 +118,7 @@ export async function updateArticleTranslations(
                     },
                     data: {
                         slug: translatedSlug,
-                        title: translated.title,
+                        title: finalTitle,
                         content: translated.content,
                         sourceHash: newHash,
                         cachedAt: new Date(),
@@ -116,7 +132,7 @@ export async function updateArticleTranslations(
                         articleId,
                         targetLang: targetLang.toLowerCase(),
                         slug: translatedSlug,
-                        title: translated.title,
+                        title: finalTitle,
                         content: translated.content,
                         sourceHash: newHash,
                         provider: 'deepl',

@@ -11,6 +11,8 @@ import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
 import { apiErrorMessage } from '../../services/api-error';
 import CreditsField, { type CreditDraft } from '../../components/editor/CreditsField';
+import ProjectMediaField from '../../components/editor/ProjectMediaField';
+import { SCREENSHOTS_MIN, isAllowedVideoUrl, isProjectCategory } from '../../services/project-media';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -99,6 +101,8 @@ const EditArticle: React.FC = () => {
     const [credits, setCredits] = useState<CreditDraft[]>([]);
     const [articleType, setArticleType] = useState<'post' | 'link'>(article?.type || 'post');
     const [redirectUrl, setRedirectUrl] = useState<string>(article?.redirectUrl || '');
+    const [screenshots, setScreenshots] = useState<string[]>(article?.screenshots || []);
+    const [videoUrl, setVideoUrl] = useState<string>(article?.videoUrl || '');
 
     // UseEffect to populate the form when article data is available
     useEffect(() => {
@@ -114,6 +118,8 @@ const EditArticle: React.FC = () => {
             setSelectedTagIds(article.tags?.map((t: Tag) => t.id) || []);
             setArticleType(article.type || 'post');
             setRedirectUrl(article.redirectUrl || '');
+            setScreenshots(article.screenshots ?? []);
+            setVideoUrl(article.videoUrl ?? '');
             setCredits((article.credits ?? []).map((credit: any) => ({
                 name: credit.name,
                 role: credit.role || '',
@@ -162,6 +168,16 @@ const EditArticle: React.FC = () => {
         setNewTags(prev => prev.filter(t => t !== tagName));
     };
 
+    // Which category is selected, by name: only a project carries a gallery.
+    const categoryName = categories.find((cat) => cat.id === categoryId)?.name ?? null;
+    const isProject = isProjectCategory(categoryName);
+
+    /** Stop the save and say why, in the two places the author is looking. */
+    const reject = (key: string) => {
+        setFormError(t(key));
+        UIkit.notification(t(key), { status: 'warning', timeout: 7000 });
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -171,6 +187,14 @@ const EditArticle: React.FC = () => {
             setFormError(t('article.error.no_content'));
             UIkit.notification(t('article.error.no_content'), { status: 'warning', timeout: 7000 });
             return;
+        }
+
+        // Same media rules as creating one: an edit must not be able to strip a
+        // published project of its cover or its screenshots.
+        if (isProject) {
+            if (thumbnail.trim() === '') return reject('project.error.cover_required');
+            if (screenshots.length < SCREENSHOTS_MIN) return reject('project.error.screenshots_few');
+            if (!isAllowedVideoUrl(videoUrl)) return reject('project.error.video_host');
         }
 
         setFormError(null);
@@ -193,6 +217,8 @@ const EditArticle: React.FC = () => {
                 userId: credit.userId ?? undefined,
                 handle: credit.handle ?? undefined,
             })),
+            screenshots,
+            videoUrl: videoUrl.trim() || undefined,
         });
     };
 
@@ -264,7 +290,9 @@ const EditArticle: React.FC = () => {
                 </div>
 
                 <div className="uk-margin">
-                    <label className="uk-form-label" htmlFor="thumbnail">Thumbnail URL:</label>
+                    <label className="uk-form-label" htmlFor="thumbnail">
+                        {isProject ? t('project.cover_required') : 'Thumbnail URL:'}
+                    </label>
                     <div className="uk-form-controls zx-thumb-field">
                         <input
                             className="uk-input"
@@ -319,6 +347,16 @@ const EditArticle: React.FC = () => {
                         </select>
                     </div>
                 </div>
+
+                {/* A project has to show itself; a post or a tool does not. */}
+                {isProject && (
+                    <ProjectMediaField
+                        screenshots={screenshots}
+                        onScreenshotsChange={setScreenshots}
+                        videoUrl={videoUrl}
+                        onVideoUrlChange={setVideoUrl}
+                    />
+                )}
 
                 <div className="uk-margin">
                     <label className="uk-form-label">Article Type:</label>

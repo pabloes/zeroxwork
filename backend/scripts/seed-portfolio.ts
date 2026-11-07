@@ -145,7 +145,8 @@ async function seedProject(project: SeedProject, authorId: number, categoryId: n
 
     if (translate) {
         console.log('  translations: asking DeepL...');
-        await createArticleTranslations(articleId, project.title, project.content, project.lang, sourceHash, null);
+        // keepTitle: a project is called what it is called in every language.
+        await createArticleTranslations(articleId, project.title, project.content, project.lang, sourceHash, null, { keepTitle: true });
     }
 }
 

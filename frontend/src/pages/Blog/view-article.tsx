@@ -9,9 +9,11 @@ import {useQuery} from "@tanstack/react-query";
 import {getNameAvatarImage} from "../../services/get-name-avatar-image";
 import {authorLabel} from "../../services/use-articles";
 import CreditList from "../../components/CreditList";
+import ProjectGallery from "../../components/ProjectGallery";
 import DonateButton from "../../components/DonateButton";
 import { getIframeSandbox } from "../../utils/iframe-sandbox";
 import {ROLE} from "../../constants/roles";
+import {useTranslation} from "../../i18n";
 
 const LANG_NAMES: Record<string, string> = {
     'es': 'Español',
@@ -27,6 +29,7 @@ function getUserLang(): string {
 
 const ArticlePage: React.FC = () => {
     const {user} = useAuth();
+    const {t} = useTranslation();
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
     // Fetch the article using useQuery
@@ -59,6 +62,15 @@ const ArticlePage: React.FC = () => {
                 <button className="uk-button uk-button-primary" onClick={handleEditClick}>
                     Edit Article
                 </button>
+            )}
+
+            {/* Only its author and an admin can reach a draft at all, so this is
+                a reminder rather than a warning: the page looks live otherwise. */}
+            {article && article.published === false && (
+                <div className="uk-alert uk-alert-warning uk-margin-small-bottom" uk-alert="">
+                    {t('article.draft_notice')}{' '}
+                    <Link to="/my-articles">{t('article.draft_go_publish')}</Link>
+                </div>
             )}
 
             {/* Translation notices */}
@@ -100,6 +112,13 @@ const ArticlePage: React.FC = () => {
                     {/* Who worked on it, when the article credits anyone. */}
                     <CreditList credits={article.credits ?? []} withLabel />
                     <PageTitle title={article.title}/>
+                    {/* Before the write-up: someone deciding whether to read
+                        about a project wants to see it first. */}
+                    <ProjectGallery
+                        title={article.title}
+                        screenshots={article.screenshots}
+                        videoUrl={article.videoUrl}
+                    />
                     <div id="article-content">
                         {article.embedUrl && article.content.includes('[iframe]') ? (
                             <>

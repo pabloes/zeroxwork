@@ -27,7 +27,6 @@
   "editor.error.rejected": "L'image a été refusée par le contrôle de contenu.",
   "editor.error.unauthorized": "Votre session a expiré. Reconnectez-vous.",
   "editor.error.failed": "L'image n'a pas pu être téléversée.",
-
   "article.created": "Article créé.",
   "article.updated": "Article enregistré.",
   "article.error.no_content": "L'article est vide. Écrivez le texte avant de le publier.",
@@ -36,7 +35,6 @@
   "article.error.network": "Le serveur est injoignable.",
   "article.error.create_failed": "L'article n'a pas pu être créé.",
   "article.error.update_failed": "L'article n'a pas pu être enregistré.",
-
   "credits.label": "Crédits",
   "credits.hint": "Qui a travaillé dessus. Cherchez des membres par nom public ou par handle ; ajoutez par le nom ceux qui n'ont pas de compte.",
   "credits.linked": "membre",
@@ -49,7 +47,6 @@
   "credits.name_placeholder": "Nom de quelqu'un sans compte",
   "credits.add": "Ajouter",
   "credits.full": "Vous avez atteint le maximum de 20 crédits.",
-
   "nav.members": "Membres",
   "members.title": "Les gens de ZEROxWORK.",
   "members.sub": "Qui construit ici, et ce qu'ils ont livré. Ouvrez n'importe qui pour voir son portfolio.",
@@ -59,14 +56,12 @@
   "members.post_many": "articles",
   "members.nothing_yet": "Rien de publié pour le moment",
   "members.empty": "Aucun membre n'a encore de page publique. Elle se crée en choisissant un handle dans le compte.",
-
   "meta.title": "ZEROxWORK — Cowork en ligne où la technologie et l'art se croisent",
   "meta.description": "ZEROxWORK est une communauté-cowork en ligne. Nous formons des équipes de code et de design pour construire des projets ambitieux, avec des outils gratuits pour chaque membre.",
   "cookies.title": "Avis sur les cookies",
   "cookies.text": "Ce site utilise des cookies pour améliorer votre expérience. L'analytique et les publicités ne se chargent qu'après votre acceptation.",
   "cookies.link": "Politique de confidentialité",
   "cookies.accept": "Accepter",
-
   "nav.blog": "Blog",
   "nav.tools": "Outils",
   "nav.portfolio": "Portfolio",
@@ -77,7 +72,6 @@
   "nav.logout": "Se déconnecter",
   "nav.register": "Inscription",
   "nav.login": "Connexion",
-
   "login.title": "Connexion",
   "login.email": "Adresse e-mail",
   "login.password": "Mot de passe",
@@ -87,13 +81,11 @@
   "login.register_link": "Créer un compte",
   "login.error_default": "Erreur lors de la connexion.",
   "login.verified_notice": "Votre adresse e-mail a été vérifiée. Vous pouvez vous connecter.",
-
   "verify.title": "Vérification de l'e-mail",
   "verify.checking": "Vérification de votre adresse e-mail...",
   "verify.failed": "Échec de la vérification. Le lien est invalide ou a expiré.",
   "verify.no_token": "Demande de vérification invalide. Aucun jeton fourni.",
   "verify.login_link": "Aller à la connexion",
-
   "register.title": "Inscription",
   "register.email": "Adresse e-mail",
   "register.password": "Mot de passe",
@@ -106,14 +98,12 @@
   "register.accept_responsibility": "J'assume l'entière responsabilité du contenu que je publie et je reconnais pouvoir être tenu légalement responsable de tout préjudice causé. J'indemniserai ZEROxWORK en cas d'action en justice liée à mon contenu.",
   "register.success": "Merci pour votre inscription. Consultez votre boîte mail pour vérifier votre compte.",
   "register.error_default": "Erreur lors de l'inscription.",
-
   "socials.title": "Profils sociaux (facultatif)",
   "socials.hint": "Ajoutez ceux que vous utilisez. Vous pouvez tout laisser vide.",
   "socials.add": "Ajouter un autre réseau",
   "socials.search_placeholder": "Rechercher un réseau...",
   "socials.no_results": "Aucun réseau ne correspond",
   "socials.remove": "Retirer",
-
   "account.profile_title": "Profil public",
   "account.profile_hint": "C'est ce que les autres voient à côté de vos articles. Les deux champs sont facultatifs.",
   "account.display_name": "Nom public",
@@ -132,14 +122,11 @@
   "account.saving": "Enregistrement...",
   "account.saved": "Enregistré.",
   "account.save_error": "Votre profil n'a pas pu être enregistré.",
-
   "footer.follow_us": "Suivez-nous sur :",
   "footer.rights": "Tous droits réservés.",
   "footer.terms": "Conditions générales",
   "footer.privacy": "Politique de confidentialité",
-
   "auth.login_required": "Vous devez créer un compte et vous connecter pour accéder à cette page",
-
   "speedtest.title": "Test de débit Internet",
   "speedtest.subtitle": "Mesurez le débit entre votre appareil et ce serveur.",
   "speedtest.ping": "Ping",
@@ -152,32 +139,25 @@
   "speedtest.phase_download": "Test de téléchargement...",
   "speedtest.phase_upload": "Test d'envoi...",
   "speedtest.note": "Les résultats mesurent le débit entre votre appareil et ce serveur, pas la bande passante totale de votre fournisseur d'accès.",
-
   "nav.join": "Rejoindre",
   "nav.language": "Langue",
-
   "theme.to_light": "Passer au thème clair",
   "theme.to_dark": "Passer au thème sombre",
-
   "common.read": "Lire",
   "common.open": "Ouvrir",
   "common.live": "live",
   "common.loading": "Chargement...",
   "common.empty": "Il n'y a encore rien ici.",
-
   "blog.title": "Les notes de la communauté.",
   "blog.sub": "Ce que nous construisons, testons et apprenons entre code et design.",
-
   "tools.title": "Les outils de la communauté.",
   "tools.sub": "Des utilitaires gratuits conçus chez ZEROxWORK, ouverts à tout le monde.",
-
   "portfolio.title": "Ce que nous avons construit.",
   "portfolio.sub": "Les projets des équipes et des membres de ZEROxWORK : jeux, dapps, outils et expérimentations.",
   "portfolio.see_project": "Voir le projet",
   "portfolio.filter_all": "Tous",
   "portfolio.filter_label": "Filtrer les projets par étiquette",
   "portfolio.empty_tag": "Aucun projet avec cette étiquette pour le moment.",
-
   "portfolio.made_by": "Réalisé par",
   "member.projects": "Projets",
   "member.other_work": "Autres publications",
@@ -186,14 +166,12 @@
   "member.not_found": "Aucun membre ne porte cet identifiant.",
   "account.handle": "Identifiant public",
   "account.handle_hint": "Minuscules, chiffres et tirets. C'est l'adresse de ta page de membre :",
-
   "landing.eyebrow": "Cowork en ligne · tech + art",
   "landing.h1_lead": "Là où le code et l'art partagent la même",
   "landing.h1_accent": "table.",
   "landing.lede": "ZEROxWORK est une communauté-cowork en ligne. Nous formons des équipes de code et de design pour construire des projets ambitieux, et chaque membre dispose d'outils gratuits pour le faire.",
   "landing.cta_join": "Rejoindre la communauté",
   "landing.cta_tools": "Voir les outils",
-
   "landing.du_tech_kk": "Le nom · technique",
   "landing.du_tech_title": "Technologie",
   "landing.du_tech_text": "Code, logique et systèmes. La partie qui structure, automatise et fait fonctionner les choses.",
@@ -201,7 +179,6 @@
   "landing.du_art_title": "Art et design",
   "landing.du_art_text": "Couleur, forme, 3D et illustration. La partie qui donne de la personnalité, qui exprime et qui donne envie de regarder.",
   "landing.du_caption": "un nom technique · une âme créative · le point où ils se croisent",
-
   "landing.how_eyebrow": "Comment ça marche",
   "landing.how_title": "Nous formons des équipes. Nous voyons grand.",
   "landing.how_sub": "Ni une formation ni une agence. De vraies personnes qui travaillent côte à côte sur de vrais projets.",
@@ -211,7 +188,6 @@
   "landing.step2_text": "Nous vous associons à des profils complémentaires au vôtre : code, design, 3D ou Web3.",
   "landing.step3_title": "Construisez",
   "landing.step3_text": "Vous menez des projets ambitieux jusqu'au bout, avec les retours du groupe et tous les outils de la communauté.",
-
   "landing.tools_eyebrow": "Pour les membres",
   "landing.tools_title": "Des outils gratuits pour tout le monde.",
   "landing.tools_sub": "En entrant, vous débloquez le kit de la communauté. Sans frais, sans petits caractères.",
@@ -235,7 +211,6 @@
   "landing.tag_design": "design",
   "landing.tag_community": "communauté",
   "landing.free_pill": "Inclus dès votre arrivée · 0 €",
-
   "landing.disc_eyebrow": "Disciplines",
   "landing.disc_title": "De la place pour tout ce qui croise tech et art.",
   "landing.disc_sub": "Chaque quartier du X est un monde. D'où que vous veniez, vous entrez dans l'un d'eux (ou entre plusieurs).",
@@ -243,22 +218,18 @@
   "landing.disc2": "Frontend et creative coding",
   "landing.disc3": "3D · WebGL · motion",
   "landing.disc4": "Design, UI et illustration",
-
   "landing.portfolio_eyebrow": "Portfolio",
   "landing.portfolio_title": "Ce qui sort des équipes.",
   "landing.portfolio_sub": "Des projets construits chez ZEROxWORK par nos équipes et nos membres.",
   "landing.portfolio_all": "Voir tout le portfolio",
-
   "landing.blog_eyebrow": "Blog",
   "landing.blog_title": "Ce que nous construisons et apprenons.",
   "landing.blog_all": "Voir tout le blog",
-
   "landing.cta_title_a": "Votre niveau n'a pas d'importance.",
   "landing.cta_title_b": "Ce qui compte, c'est de",
   "landing.cta_title_accent": "construire.",
   "landing.cta_text": "Demandez votre place chez ZEROxWORK. Nous formons des équipes, partageons des outils et construisons des projets ambitieux.",
   "landing.cta_button": "Demander une place",
-
   "account.discord.title": "Discord",
   "account.discord.description": "Liez votre compte Discord pour obtenir le rôle ZEROxWORK sur le serveur de la communauté.",
   "account.discord.link_button": "Lier Discord",
@@ -270,5 +241,32 @@
   "account.discord.status_denied": "Vous avez annulé l'autorisation sur Discord.",
   "account.discord.status_already_linked": "Ce compte Discord est déjà lié à un autre utilisateur ZEROxWORK.",
   "account.discord.status_expired": "Le lien d'autorisation a expiré. Réessayez.",
-  "account.discord.status_error": "La liaison n'a pas pu être effectuée. Réessayez plus tard."
+  "account.discord.status_error": "La liaison n'a pas pu être effectuée. Réessayez plus tard.",
+  "project.gallery": "Galerie du projet",
+  "project.screenshots": "Captures d'écran",
+  "project.screenshots_need_more": "il en manque",
+  "project.screenshots_enough": "assez pour publier",
+  "project.screenshot_add": "Ajouter une capture",
+  "project.screenshots_full": "Maximum atteint",
+  "project.screenshot_earlier": "Déplacer avant",
+  "project.screenshot_later": "Déplacer après",
+  "project.screenshot_remove": "Retirer la capture",
+  "project.cover_required": "Image de couverture (obligatoire) :",
+  "project.video": "Vidéo (facultative)",
+  "project.video_hint": "Un lien de",
+  "project.video_bad_host": "Seuls les liens https vers YouTube ou Vimeo sont acceptés.",
+  "project.video_watch": "Voir la vidéo",
+  "project.error.cover_required": "Un projet a besoin d'une image de couverture.",
+  "project.error.screenshots_few": "Un projet a besoin d'au moins 3 captures d'écran.",
+  "project.error.video_host": "La vidéo doit être sur YouTube ou Vimeo, en https.",
+  "article.created_draft": "Enregistré comme brouillon. Publiez-le quand il est prêt.",
+  "article.draft_notice": "Ceci est un brouillon : personne d'autre ne le voit encore.",
+  "article.draft_go_publish": "Le publier",
+  "article.state_draft": "Brouillon",
+  "article.state_published": "Publié",
+  "article.publish": "Publier",
+  "article.unpublish": "Dépublier",
+  "article.published_ok": "Publié.",
+  "article.unpublished_ok": "De nouveau un brouillon.",
+  "article.publish_failed": "Impossible de changer l'état de publication."
 }

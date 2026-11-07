@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'; /
 import { api } from '../../services/axios-setup'; // Axios instance for API requests
 import UIkit from 'uikit'; // UIkit for notifications
 import ConfirmActionModal from '../../components/ConfirmActionModal'; // Import the confirmation modal
+import { useTranslation } from '../../i18n';
+import { apiErrorMessage } from '../../services/api-error';
 
 // Service function to fetch user's articles
 const fetchMyArticles = async () => {
@@ -16,16 +18,27 @@ const deleteArticle = async (articleId: number) => {
     await api.delete(`/blog/articles/${articleId}`);
 };
 
+/**
+ * Publishing is its own endpoint, not a full save: a PUT here would have to
+ * resend the whole article and would wipe whatever this list does not carry.
+ */
+const setPublished = async ({ id, published }: { id: number; published: boolean }) => {
+    const response = await api.patch(`/blog/articles/${id}/published`, { published });
+    return response.data;
+};
+
 interface Article {
     id: number;
     title: string;
     thumbnail: string | null;
     createdAt: string;
     updatedAt: string;
+    published: boolean;
 }
 
 const MyArticles: React.FC = () => {
     const queryClient = useQueryClient(); // Access the QueryClient to invalidate queries
+    const { t } = useTranslation();
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
@@ -47,6 +60,28 @@ const MyArticles: React.FC = () => {
         onError: () => {
             UIkit.notification('Error deleting article.', { status: 'danger' });
         }
+    });
+
+    // Publishing and unpublishing. The error matters here: a project without a
+    // cover or without three screenshots is refused, and the author needs to
+    // read why rather than watch the button do nothing.
+    const publishMutation = useMutation({
+        mutationFn: setPublished,
+        onSuccess: (_data, variables) => {
+            UIkit.notification(
+                t(variables.published ? 'article.published_ok' : 'article.unpublished_ok'),
+                { status: 'success' },
+            );
+            queryClient.invalidateQueries({ queryKey: ['my-articles'] });
+            queryClient.invalidateQueries({ queryKey: ['project'] });
+            queryClient.invalidateQueries({ queryKey: ['blog'] });
+        },
+        onError: (error) => {
+            UIkit.notification(apiErrorMessage(error, t, 'article.publish_failed'), {
+                status: 'danger',
+                timeout: 7000,
+            });
+        },
     });
 
     // Open the modal for deleting an article
@@ -101,6 +136,12 @@ const MyArticles: React.FC = () => {
                                     )}
                                     <canvas width="600" height="400"></canvas> {/* Placeholder for aspect ratio */}
 
+                                    {/* Draft or live, said on the card: this is the
+                                        only page where that difference is visible. */}
+                                    <span className={`zx-state ${article.published ? 'is-live' : 'is-draft'}`}>
+                                        {t(article.published ? 'article.state_published' : 'article.state_draft')}
+                                    </span>
+
                                     {/* Overlay with title and publication date */}
                                     <div className="uk-overlay uk-overlay-primary uk-position-bottom uk-light">
                                         <h3 className="uk-card-title">{article.title}</h3>
@@ -110,6 +151,13 @@ const MyArticles: React.FC = () => {
                             </div>
                         </Link>
                         <div className="uk-flex-column uk-margin-small-top">
+                            <button
+                                className={`uk-button uk-margin-small-bottom ${article.published ? 'uk-button-default' : 'uk-button-primary'}`}
+                                onClick={() => publishMutation.mutate({ id: article.id, published: !article.published })}
+                                disabled={publishMutation.isPending}
+                            >
+                                {t(article.published ? 'article.unpublish' : 'article.publish')}
+                            </button>
                             <Link to={`/edit-article/${article.id}`} className="uk-button uk-button-secondary uk-margin-small-bottom">
                                ✏️️  Edit
                             </Link>

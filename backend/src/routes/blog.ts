@@ -4,11 +4,20 @@ import { ROLE } from "../constants/roles";
 import {verifyToken} from "../middleware/authMiddleware";
 import { isEmbedUrlAllowed } from "../config/embed";
 import { requireAdmin } from "../middleware/requireAdmin";
+import { optionalAuth } from "../middleware/optionalAuth.js";
 import { slugify, computeSourceHash, makeUniqueSlug } from "../utils/slug";
-import { createArticleTranslations, updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
+import { updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
 import { notifyAdminNewArticle } from "../services/admin-notify";
 import { normaliseCredits, CreditError } from "../services/article-credits.js";
 import { resolvePublicName } from "../config/public-name.js";
+import { PORTFOLIO_CATEGORY } from "../constants/portfolio-seed.js";
+import {
+    validateCover,
+    normaliseScreenshots,
+    validateVideoUrl,
+    MEDIA_ERRORS,
+    MediaErrorCode,
+} from "../config/project-media.js";
 const router = Router();
 
 // Shown when the requested language has no articles yet
@@ -90,6 +99,49 @@ const publicFields = (article: any) => ({
     ...authorFields(article.user),
     credits: creditFields(article.credits),
 });
+
+/**
+ * Who may read an article. Everyone, once it is published; before that only its
+ * author and an admin. Without this an unpublished draft would be one guessed
+ * id away from anyone, which it never was while every article was published on
+ * creation.
+ */
+const mayRead = (req: any, article: { published: boolean; userId: number }) =>
+    article.published
+    || (req.user && (req.user.role === ROLE.ADMIN || req.user.id === article.userId));
+
+/** True when the article being saved goes in the portfolio. */
+async function isProjectCategory(categoryId: unknown): Promise<boolean> {
+    if (!categoryId) return false;
+    const category = await prisma.category.findUnique({
+        where: { id: Number(categoryId) },
+        select: { name: true },
+    });
+    return (category?.name ?? '').toLowerCase() === PORTFOLIO_CATEGORY.toLowerCase();
+}
+
+/**
+ * The cover, the screenshots and the video for one save, or the first thing
+ * wrong with them. A project has to carry all of it; everything else is let
+ * through untouched.
+ */
+async function validateMedia(body: any): Promise<
+    { ok: true; isProject: boolean; cover: string | null; screenshots: string[]; videoUrl: string | null }
+    | { ok: false; code: MediaErrorCode }
+> {
+    const isProject = await isProjectCategory(body.categoryId);
+
+    const cover = validateCover(body.thumbnail, isProject);
+    if (!cover.ok) return cover;
+
+    const screenshots = normaliseScreenshots(body.screenshots, isProject);
+    if (!screenshots.ok) return screenshots;
+
+    const videoUrl = validateVideoUrl(body.videoUrl);
+    if (!videoUrl.ok) return videoUrl;
+
+    return { ok: true, isProject, cover: cover.value, screenshots: screenshots.value, videoUrl: videoUrl.value };
+}
 
 // ==================== CATEGORIES ====================
 
@@ -195,6 +247,14 @@ router.post('/articles', verifyToken, async (req, res) => {
             return res.status(400).json({ error: 'Embed URL not allowed. Must match a whitelisted prefix (e.g. /embeds/ or approved external origins).' });
         }
 
+        // A project has to show itself: cover, screenshots, and a video if there
+        // is one. Checked before anything is written so a half-filled project
+        // never reaches the database.
+        const media = await validateMedia(req.body);
+        if (!media.ok) {
+            return res.status(400).json({ error: MEDIA_ERRORS[media.code], code: media.code });
+        }
+
         // Generate slug
         const baseSlug = customSlug ? slugify(customSlug) : slugify(title);
         const articleSlug = await makeUniqueSlug(baseSlug);
@@ -244,8 +304,13 @@ router.post('/articles', verifyToken, async (req, res) => {
                 sourceHash,
                 embedUrl: embedUrl || null,
                 embedHeight: embedHeight ? Number(embedHeight) : 600,
-                thumbnail: thumbnail || null,
-                published: true,
+                thumbnail: media.cover,
+                screenshots: media.screenshots,
+                videoUrl: media.videoUrl,
+                // A new article is a draft. Writing is not publishing: the author
+                // gets to read it on the site, fix the thumbnail and the typos,
+                // and press Publicar when it is ready.
+                published: false,
                 categoryId: categoryId ? Number(categoryId) : null,
                 tags: allTagIds.length > 0 ? {
                     connect: allTagIds.map((id: number) => ({ id })),
@@ -268,20 +333,11 @@ router.post('/articles', verifyToken, async (req, res) => {
             },
         });
 
-        // Create translations asynchronously (don't wait for response)
-        createArticleTranslations(article.id, title, content, article.lang, sourceHash, article.redirectUrl)
-            .catch(err => console.error('Translation error:', err));
+        // No translations and no admin notice yet: both belong to publishing.
+        // Translating a draft spends DeepL characters on text that is about to
+        // change, and the owner does not need a mail for every saved draft.
 
         const fields = publicFields(article);
-
-        // Admin notice, same fire-and-forget shape as the translations above.
-        notifyAdminNewArticle({
-            title: article.title,
-            author: fields.authorDisplayName || fields.author,
-            category: article.category?.name || null,
-            lang: article.lang,
-            slug: article.slug,
-        }).catch((err: any) => console.error('Admin notify error:', err));
 
         res.status(201).json({
             ...article,
@@ -298,7 +354,7 @@ router.post('/articles', verifyToken, async (req, res) => {
 // Actualizar un artículo
 router.put('/articles/:id', verifyToken, async (req, res) => {
     const { id } = req.params;
-    const { title, content, thumbnail, embedUrl, embedHeight, categoryId, tagIds, newTags, slug: customSlug, lang, type = 'post', redirectUrl, credits } = req.body;
+    const { title, content, thumbnail, embedUrl, embedHeight, categoryId, tagIds, newTags, slug: customSlug, lang, type = 'post', redirectUrl, credits, published } = req.body;
     const userId = (req as any).user.id;
     const userRole = (req as any).user.role;
 
@@ -318,6 +374,13 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
         // Validate embedUrl against whitelist
         if (embedUrl && !isEmbedUrlAllowed(embedUrl)) {
             return res.status(400).json({ error: 'Embed URL not allowed. Must match a whitelisted prefix (e.g. /embeds/ or approved external origins).' });
+        }
+
+        // Same media rules as creating: a project cannot lose its cover or drop
+        // below three screenshots on the way through the edit form either.
+        const media = await validateMedia(req.body);
+        if (!media.ok) {
+            return res.status(400).json({ error: MEDIA_ERRORS[media.code], code: media.code });
         }
 
         // Verificar que el artículo existe
@@ -417,7 +480,13 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
                 sourceHash: newHash,
                 embedUrl: embedUrl || null,
                 embedHeight: embedHeight ? Number(embedHeight) : 600,
-                thumbnail: thumbnail || null,
+                thumbnail: media.cover,
+                screenshots: media.screenshots,
+                videoUrl: media.videoUrl,
+                // Only moved when the form actually sent it, so an ordinary save
+                // from a client that knows nothing about drafts cannot publish
+                // or unpublish behind the author's back.
+                published: typeof published === 'boolean' ? published : undefined,
                 categoryId: categoryId ? Number(categoryId) : null,
                 tags: {
                     set: [], // Disconnect all existing tags
@@ -435,16 +504,36 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
             include
         });
 
-        // Update translations if content or language changed
+        // Translate what is published, and only that. A draft is still being
+        // written, so translating it spends DeepL characters on text that is
+        // about to change; the moment it goes live it gets its translations,
+        // even if the text itself did not change in this save.
         const langChanged = newLang !== existingArticle.lang;
-        if (contentChanged || langChanged) {
-            updateArticleTranslations(updatedArticle.id, title, content, updatedArticle.lang, newHash, updatedArticle.redirectUrl)
-                .catch(err => console.error('Translation update error:', err));
+        const justPublished = updatedArticle.published && !existingArticle.published;
+        if (updatedArticle.published && (contentChanged || langChanged || justPublished)) {
+            updateArticleTranslations(
+                updatedArticle.id, title, content, updatedArticle.lang, newHash, updatedArticle.redirectUrl,
+                { keepTitle: media.isProject },
+            ).catch(err => console.error('Translation update error:', err));
+        }
+
+        const fields = publicFields(updatedArticle);
+
+        // The owner hears about an article once: when it is published, not when
+        // it was first saved as a draft.
+        if (justPublished) {
+            notifyAdminNewArticle({
+                title: updatedArticle.title,
+                author: fields.authorDisplayName || fields.author,
+                category: updatedArticle.category?.name || null,
+                lang: updatedArticle.lang,
+                slug: updatedArticle.slug,
+            }).catch((err: any) => console.error('Admin notify error:', err));
         }
 
         res.status(200).json({
             ...updatedArticle,
-            ...publicFields(updatedArticle),
+            ...fields,
         });
     } catch (error:any) {
         if (error instanceof CreditError) {
@@ -658,7 +747,7 @@ router.get('/articles', async (req, res) => {
 });
 
 // Obtener artículo por slug (con soporte para redirects 301)
-router.get('/articles/by-slug/:slug', async (req, res) => {
+router.get('/articles/by-slug/:slug', optionalAuth, async (req, res) => {
     const { slug } = req.params;
 
     try {
@@ -695,6 +784,10 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
         });
 
         if (!article) {
+            return res.status(404).json({ message: 'Article not found' });
+        }
+
+        if (!mayRead(req, article)) {
             return res.status(404).json({ message: 'Article not found' });
         }
 
@@ -752,6 +845,10 @@ router.get('/articles/by-slug/:slug', async (req, res) => {
                 embedUrl: article.embedUrl,
                 embedHeight: article.embedHeight,
                 thumbnail: article.thumbnail,
+                // The gallery is the same work in any language.
+                screenshots: article.screenshots,
+                videoUrl: article.videoUrl,
+                published: article.published,
                 createdAt: article.createdAt,
                 updatedAt: translation.cachedAt,
                 ...publicFields(article),
@@ -813,7 +910,7 @@ router.get('/my-articles', verifyToken, async (req, res) => {
 });
 // Obtener un artículo por ID
 // Obtener un artículo por ID
-router.get('/articles/:id', async (req, res) => {
+router.get('/articles/:id', optionalAuth, async (req, res) => {
     const { id } = req.params;
     try {
         // Accepts an id or a slug. The editor redirects here with whichever it
@@ -827,6 +924,11 @@ router.get('/articles/:id', async (req, res) => {
         if (!article) {
             return res.status(404).json({ message: 'Article not found' });
         }
+        // 404, not 403: a draft nobody is allowed to read should not even
+        // confirm that the id exists.
+        if (!mayRead(req, article)) {
+            return res.status(404).json({ message: 'Article not found' });
+        }
         res.status(200).json({
             ...article,
             ...publicFields(article),
@@ -836,6 +938,94 @@ router.get('/articles/:id', async (req, res) => {
     }
 });
 
+
+/**
+ * PATCH /api/blog/articles/:id/published
+ * Publishes or unpublishes an article, and nothing else.
+ *
+ * Deliberately not the PUT: that one replaces the whole article, so flipping a
+ * flag through it means resending the title, body, tags and credits, and any
+ * field the caller forgets is a field that gets wiped. This takes one boolean.
+ *
+ * A project is checked against what is actually stored before it goes out:
+ * the gallery rules cannot be dodged by saving a draft and publishing it later.
+ */
+router.patch('/articles/:id/published', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const { published } = req.body ?? {};
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+
+    if (typeof published !== 'boolean') {
+        return res.status(400).json({ error: 'published must be true or false' });
+    }
+
+    try {
+        const article = await prisma.article.findUnique({
+            where: { id: Number(id) },
+            select: {
+                id: true, userId: true, published: true, title: true, content: true,
+                lang: true, sourceHash: true, redirectUrl: true, categoryId: true,
+                thumbnail: true, screenshots: true, videoUrl: true,
+            },
+        });
+
+        if (!article) {
+            return res.status(404).json({ error: 'Article not found' });
+        }
+        if (userRole !== ROLE.ADMIN && article.userId !== userId) {
+            return res.status(403).json({ error: 'Not authorized to publish this article' });
+        }
+
+        const isProject = await isProjectCategory(article.categoryId);
+
+        if (published) {
+            const cover = validateCover(article.thumbnail, isProject);
+            if (!cover.ok) return res.status(400).json({ error: MEDIA_ERRORS[cover.code], code: cover.code });
+            const shots = normaliseScreenshots(article.screenshots, isProject);
+            if (!shots.ok) return res.status(400).json({ error: MEDIA_ERRORS[shots.code], code: shots.code });
+        }
+
+        if (article.published === published) {
+            return res.status(200).json({ id: article.id, published });
+        }
+
+        const updated = await prisma.article.update({
+            where: { id: article.id },
+            data: { published },
+            include,
+        });
+
+        // Translating and telling the owner both belong to going live, so they
+        // happen here and not when the draft was written.
+        if (published) {
+            updateArticleTranslations(
+                updated.id, updated.title, updated.content, updated.lang,
+                updated.sourceHash ?? computeSourceHash(updated.title, updated.content),
+                updated.redirectUrl,
+                // A project keeps its name in every language; a post gets a
+                // translated title like it always did.
+                { keepTitle: isProject },
+            ).catch((err: any) => console.error('Translation error on publish:', err));
+
+            const fields = publicFields(updated);
+            notifyAdminNewArticle({
+                title: updated.title,
+                author: fields.authorDisplayName || fields.author,
+                category: updated.category?.name || null,
+                lang: updated.lang,
+                slug: updated.slug,
+            }).catch((err: any) => console.error('Admin notify error:', err));
+        }
+
+        return res.status(200).json({
+            ...updated,
+            ...publicFields(updated),
+        });
+    } catch (error: any) {
+        return res.status(500).json({ message: 'Error changing publication state', error: error.message });
+    }
+});
 
 /**
  * DELETE /api/blog/articles/:id/credits/me
