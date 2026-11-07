@@ -5,6 +5,7 @@ import {prisma} from "../db";
 import { SOCIAL_NETWORKS } from '../constants/social-networks';
 import { PORTFOLIO_CATEGORY } from '../constants/portfolio-seed.js';
 import NodeCache from 'node-cache';
+import { effectiveMaxQuota } from '../services/quota.js';
 import axios from "axios";
 import sharp from "sharp";
 import {
@@ -402,8 +403,10 @@ export async function getUserQuota(userId){
 
     return {
         ...user,
+        // DEFAULT_MAX_QUOTA_MB is the floor for everyone; the column only wins
+        // when an admin raised it for this account. See services/quota.ts.
+        maxQuota: effectiveMaxQuota(user.maxQuota),
         usedQuota: totalUsedQuota,
-
     }
 }
 
