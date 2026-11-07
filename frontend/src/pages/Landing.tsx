@@ -154,6 +154,33 @@ const Landing: React.FC = () => {
 
             <div className="zx-wrap"><div className="zx-diag-rule" /></div>
 
+            {/* portfolio: what the teams have shipped, right after the pitch of how
+                it works, so the proof comes before the perks. Hidden until there
+                is something to show */}
+            {projects.length > 0 && (
+                <>
+                    <section className="zx-section" id="portfolio">
+                        <div className="zx-wrap">
+                            <div className="zx-row-head zx-reveal">
+                                <div style={{ maxWidth: '32em' }}>
+                                    <div className="zx-eyebrow" style={{ color: 'var(--zx-orange)' }}>{t('landing.portfolio_eyebrow')}</div>
+                                    <h2 className="zx-sec-title">{t('landing.portfolio_title')}</h2>
+                                    <p className="zx-sec-sub">{t('landing.portfolio_sub')}</p>
+                                </div>
+                                <Link className="zx-more-link" to="/portfolio">{t('landing.portfolio_all')} →</Link>
+                            </div>
+                            <div className="zx-card-grid zx-reveal">
+                                {projects.slice(0, PROJECTS_IN_ROW).map((project) => (
+                                    <ProjectCard key={project.id} project={project} />
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    <div className="zx-wrap"><div className="zx-diag-rule" /></div>
+                </>
+            )}
+
             {/* tools: one row of what is live, plus the member kit */}
             <section className="zx-section" id="tools">
                 <div className="zx-wrap">
@@ -215,31 +242,6 @@ const Landing: React.FC = () => {
             </section>
 
             <div className="zx-wrap"><div className="zx-diag-rule" /></div>
-
-            {/* portfolio: one row of what the teams have shipped. Hidden until there is something to show */}
-            {projects.length > 0 && (
-                <>
-                    <section className="zx-section" id="portfolio">
-                        <div className="zx-wrap">
-                            <div className="zx-row-head zx-reveal">
-                                <div style={{ maxWidth: '32em' }}>
-                                    <div className="zx-eyebrow" style={{ color: 'var(--zx-orange)' }}>{t('landing.portfolio_eyebrow')}</div>
-                                    <h2 className="zx-sec-title">{t('landing.portfolio_title')}</h2>
-                                    <p className="zx-sec-sub">{t('landing.portfolio_sub')}</p>
-                                </div>
-                                <Link className="zx-more-link" to="/portfolio">{t('landing.portfolio_all')} →</Link>
-                            </div>
-                            <div className="zx-card-grid zx-reveal">
-                                {projects.slice(0, PROJECTS_IN_ROW).map((project) => (
-                                    <ProjectCard key={project.id} project={project} />
-                                ))}
-                            </div>
-                        </div>
-                    </section>
-
-                    <div className="zx-wrap"><div className="zx-diag-rule" /></div>
-                </>
-            )}
 
             {/* blog: one row of the latest articles */}
             <section className="zx-section" id="blog">
