@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import { env } from '../config/env';
 import { prisma } from '../db';
+import { ensureHandle } from '../services/public-handle.js';
 
 const router = Router();
 import {updateUserExtraSpace, updateWalletNames} from "../services/decentraland-names";
@@ -60,6 +61,14 @@ router.post('/register', authLimiter, async (req, res) => {
                 socials: socialRows.length ? { create: socialRows } : undefined,
             },
         });
+
+        // Give the account its public handle straight away, so /member/<handle>
+        // works from the first day and nothing ever has to fall back to showing
+        // an email address. There is no Discord link or on-chain name yet, so
+        // this is the automatic `member-<id>`; it is upgraded to a real name the
+        // first time they load their account with one. Never fatal: ensureHandle
+        // swallows its own errors and an account without a handle still works.
+        await ensureHandle(newUser.id);
 
         // Tell the owner the account exists. Not awaited (the response must not
         // wait on SMTP) and it never rejects, but keep the catch anyway so a

@@ -8,6 +8,7 @@ import { slugify, computeSourceHash, makeUniqueSlug } from "../utils/slug";
 import { createArticleTranslations, updateArticleTranslations, updateBaseSlugHistory } from "../services/article-translation";
 import { notifyAdminNewArticle } from "../services/admin-notify";
 import { normaliseCredits, CreditError } from "../services/article-credits.js";
+import { resolvePublicName } from "../config/public-name.js";
 const router = Router();
 
 // Shown when the requested language has no articles yet
@@ -16,8 +17,11 @@ const FALLBACK_LANG = 'en';
 const include = {
         user: {
             select: {
+                id: true,          // Only ever used to build the automatic name
+                handle: true,
                 displayName: true, // Optional public name, preferred over the wallet name
                 avatarUrl: true,   // Optional uploaded avatar
+                discordLink: { select: { globalName: true, username: true } },
                 defaultName: {
                     select: {
                         wallet: {
@@ -38,7 +42,13 @@ const include = {
                 name: true,
                 role: true,
                 userId: true,
-                user: { select: { handle: true, displayName: true, avatarUrl: true } },
+                user: {
+                    select: {
+                        id: true, handle: true, displayName: true, avatarUrl: true,
+                        discordLink: { select: { globalName: true, username: true } },
+                        defaultName: { select: { name: true } },
+                    },
+                },
             },
         },
 };
@@ -52,7 +62,9 @@ const include = {
 const authorFields = (user: any) => ({
     author: user?.defaultName?.name || 'Anonymous',
     authorAddress: user?.defaultName?.wallet?.address || null,
-    authorDisplayName: user?.displayName || null,
+    // Resolved, not raw: an author who never typed a name still gets their
+    // Discord or on-chain one, so no byline has to read "Anonymous".
+    authorDisplayName: user ? resolvePublicName(user) : null,
     authorAvatar: user?.avatarUrl || null,
 });
 
@@ -64,7 +76,7 @@ const authorFields = (user: any) => ({
  */
 const creditFields = (credits: any[] | undefined) =>
     (credits ?? []).map((credit) => ({
-        name: credit.user?.displayName || credit.name,
+        name: credit.user ? resolvePublicName(credit.user) : credit.name,
         role: credit.role ?? null,
         // Carried so the edit form can save again without dropping the link to
         // the account. No new exposure: article.userId is already public here.
@@ -489,14 +501,19 @@ router.get('/articles', async (req, res) => {
                         c.name as "categoryName",
                         wn.name as author,
                         w.address as "authorAddress",
+                        u.id as "authorUserId",
+                        u.handle as "authorHandle",
                         u."displayName" as "authorDisplayName",
                         u."avatarUrl" as "authorAvatar",
+                        dl."globalName" as "authorDiscordGlobalName",
+                        dl.username as "authorDiscordUsername",
                         FALSE as "isTranslation"
                     FROM articles a
                     LEFT JOIN categories c ON a."categoryId" = c.id
                     LEFT JOIN users u ON a."userId" = u.id
                     LEFT JOIN "WalletDecentralandNames" wn ON u."defaultNameId" = wn.id
                     LEFT JOIN "Wallet" w ON wn."walletId" = w.id
+                    LEFT JOIN discord_links dl ON dl."userId" = u.id
                     WHERE a.published = TRUE
                     AND a.lang = $1
                     ${categoryCondition}
@@ -518,8 +535,12 @@ router.get('/articles', async (req, res) => {
                         c.name as "categoryName",
                         wn.name as author,
                         w.address as "authorAddress",
+                        u.id as "authorUserId",
+                        u.handle as "authorHandle",
                         u."displayName" as "authorDisplayName",
                         u."avatarUrl" as "authorAvatar",
+                        dl."globalName" as "authorDiscordGlobalName",
+                        dl.username as "authorDiscordUsername",
                         TRUE as "isTranslation"
                     FROM article_translations t
                     JOIN articles a ON t."articleId" = a.id
@@ -527,6 +548,7 @@ router.get('/articles', async (req, res) => {
                     LEFT JOIN users u ON a."userId" = u.id
                     LEFT JOIN "WalletDecentralandNames" wn ON u."defaultNameId" = wn.id
                     LEFT JOIN "Wallet" w ON wn."walletId" = w.id
+                    LEFT JOIN discord_links dl ON dl."userId" = u.id
                     WHERE t."targetLang" = $1
                     AND a.lang != $1
                     ${categoryCondition}
@@ -553,7 +575,13 @@ router.get('/articles', async (req, res) => {
                         name: true,
                         role: true,
                         userId: true,
-                        user: { select: { handle: true, displayName: true, avatarUrl: true } },
+                        user: {
+                            select: {
+                                id: true, handle: true, displayName: true, avatarUrl: true,
+                                discordLink: { select: { globalName: true, username: true } },
+                                defaultName: { select: { name: true } },
+                            },
+                        },
                     },
                 });
                 const creditsMap = new Map<number, typeof rawCredits>();
@@ -576,7 +604,18 @@ router.get('/articles', async (req, res) => {
                     featured: article.featured,
                     author: article.author || 'Anonymous',
                     authorAddress: article.authorAddress,
-                    authorDisplayName: article.authorDisplayName || null,
+                    // Same chain as every other article response, rebuilt from the
+                    // flat row: their name, else Discord, else the on-chain name,
+                    // else the automatic handle.
+                    authorDisplayName: article.authorUserId ? resolvePublicName({
+                        id: article.authorUserId,
+                        handle: article.authorHandle,
+                        displayName: article.authorDisplayName,
+                        discordLink: article.authorDiscordUsername
+                            ? { globalName: article.authorDiscordGlobalName, username: article.authorDiscordUsername }
+                            : null,
+                        defaultName: article.author ? { name: article.author } : null,
+                    }) : null,
                     authorAvatar: article.authorAvatar || null,
                     category: article.categoryId ? { id: article.categoryId, name: article.categoryName } : null,
                     tags: tagsMap.get(article.id) || [],

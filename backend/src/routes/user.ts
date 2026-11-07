@@ -18,6 +18,8 @@ import {
     HANDLE_MIN,
     HANDLE_MAX,
 } from "../config/profile.js";
+import { resolvePublicName, isAutoHandle } from "../config/public-name.js";
+import { ensureHandle } from "../services/public-handle.js";
 
 const cache = new NodeCache({ stdTTL: 60 * 60 * 24 }); // Cache expires in 24 hours
 const DECENTRALAND_API_URL = 'https://peer.decentraland.org/lambdas/profiles';
@@ -60,9 +62,16 @@ router.get('/social-networks', (_req: Request, res: Response) => {
 router.get('/me', verifyToken, async (req: Request, res: Response) => {
     try {
         // Fetch the authenticated user's information
+        // Accounts that predate automatic handles, and accounts that have since
+        // linked Discord or bought a name, get their handle here: this runs on
+        // every visit to the account page and does nothing once the handle is a
+        // real one. Cheaper than a one-off backfill that has to be remembered.
+        await ensureHandle(req.user.id);
+
         const user = await prisma.user.findUnique({
             where: { id: req.user.id },  // `req.user.id` is set by `verifyToken` middleware
             include: {
+                discordLink: { select: { globalName: true, username: true } },
                 defaultName: { // This refers to the relation in the Prisma schema
                     select: {
                         id: true,
@@ -85,7 +94,12 @@ router.get('/me', verifyToken, async (req: Request, res: Response) => {
         const response = {
             id: user.id,
             email: user.email,
+            // `displayName` is what they typed, so the form shows an empty field
+            // when they never set one. `publicName` is what the site actually
+            // shows: their name, else Discord, else their on-chain name, else
+            // the automatic handle. The email is never either of them.
             displayName: user.displayName ?? null,
+            publicName: resolvePublicName(user),
             avatarUrl: user.avatarUrl ?? null,
             handle: user.handle ?? null,
             defaultName: user.defaultName ? {
@@ -261,6 +275,7 @@ router.get('/members', async (req: Request, res: Response) => {
         displayName: string | null;
         avatarUrl: string | null;
         createdAt: Date;
+        discordLink: { globalName: string | null; username: string } | null;
         defaultName: { name: string; wallet: { address: string } | null } | null;
     }
 
@@ -268,6 +283,9 @@ router.get('/members', async (req: Request, res: Response) => {
         const members: MemberRow[] = await prisma.user.findMany({
             where: {
                 handle: { not: null },
+                // An unverified signup is not a member yet. Without this, anyone
+                // who types an email into the form lands on the public page.
+                verified: true,
                 ...(q !== '' ? {
                     OR: [
                         { handle: { contains: q, mode: 'insensitive' as const } },
@@ -281,6 +299,7 @@ router.get('/members', async (req: Request, res: Response) => {
                 displayName: true,
                 avatarUrl: true,
                 createdAt: true,
+                discordLink: { select: { globalName: true, username: true } },
                 defaultName: { select: { name: true, wallet: { select: { address: true } } } },
             },
             take: limit,
@@ -325,7 +344,7 @@ router.get('/members', async (req: Request, res: Response) => {
         const listed = members
             .map((member) => ({
                 handle: member.handle,
-                displayName: member.displayName,
+                displayName: resolvePublicName(member),
                 avatarUrl: member.avatarUrl,
                 memberSince: member.createdAt,
                 walletName: member.defaultName?.name ?? null,
@@ -333,6 +352,15 @@ router.get('/members', async (req: Request, res: Response) => {
                 projects: projectsBy.get(member.id) ?? 0,
                 posts: postsBy.get(member.id) ?? 0,
             }))
+            // An account with no name of its own and nothing published has
+            // nothing to show here, so it would list as a bare "member-12".
+            // Its page still exists and it appears as soon as either arrives.
+            .filter((member) => !(
+                isAutoHandle(member.handle)
+                && member.displayName === member.handle
+                && member.projects === 0
+                && member.posts === 0
+            ))
             // Whoever has shipped the most goes first; the handle only breaks ties.
             .sort((a, b) =>
                 (b.projects - a.projects)
@@ -367,6 +395,7 @@ router.get('/members/:handle', async (req: Request, res: Response) => {
                 avatarUrl: true,
                 createdAt: true,
                 socials: { select: { network: true, handle: true } },
+                discordLink: { select: { globalName: true, username: true } },
                 defaultName: { select: { name: true, wallet: { select: { address: true } } } },
             },
         });
@@ -417,7 +446,7 @@ router.get('/members/:handle', async (req: Request, res: Response) => {
 
         return res.json({
             handle: member.handle,
-            displayName: member.displayName,
+            displayName: resolvePublicName(member),
             avatarUrl: member.avatarUrl,
             memberSince: member.createdAt,
             walletName: member.defaultName?.name ?? null,
