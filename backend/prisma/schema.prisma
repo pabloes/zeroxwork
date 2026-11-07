@@ -164,6 +164,12 @@ model Article {
   userId       Int
   user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   thumbnail    String?
+  /// Project gallery. `screenshots` holds image paths served by our own image
+  /// service, in display order; `videoUrl` is an external embed (YouTube or
+  /// Vimeo), validated in code so the allowed hosts can change without a
+  /// migration. Both are empty for posts: only `project` articles require them.
+  screenshots  String[]
+  videoUrl     String?
   published    Boolean              @default(false)
   featured     Boolean              @default(false)
   categoryId   Int?
