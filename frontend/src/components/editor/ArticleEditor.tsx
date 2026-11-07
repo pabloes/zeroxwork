@@ -64,12 +64,89 @@ const ToolbarButton: React.FC<{
     </button>
 );
 
+interface ToolbarProps {
+    editor: Editor;
+    t: (key: string) => string;
+    uploading: number;
+    onPickFile: () => void;
+    onOpenLibrary: () => void;
+    onToggleLink: () => void;
+}
+
+/** The buttons themselves. Rendered twice: on top, and in the floating bar. */
+const Toolbar: React.FC<ToolbarProps> = ({ editor, t, uploading, onPickFile, onOpenLibrary, onToggleLink }) => (
+    <div className="zx-editor-tools" role="toolbar" aria-label={t('editor.toolbar')}>
+        <ToolbarButton label={t('editor.bold')} active={editor.isActive('bold')}
+            onClick={() => editor.chain().focus().toggleBold().run()}><b>B</b></ToolbarButton>
+        <ToolbarButton label={t('editor.italic')} active={editor.isActive('italic')}
+            onClick={() => editor.chain().focus().toggleItalic().run()}><i>I</i></ToolbarButton>
+
+        <span className="zx-tb-sep" />
+
+        <ToolbarButton label={t('editor.heading2')} active={editor.isActive('heading', { level: 2 })}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>H2</ToolbarButton>
+        <ToolbarButton label={t('editor.heading3')} active={editor.isActive('heading', { level: 3 })}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>H3</ToolbarButton>
+
+        <span className="zx-tb-sep" />
+
+        <ToolbarButton label={t('editor.bullet_list')} active={editor.isActive('bulletList')}
+            onClick={() => editor.chain().focus().toggleBulletList().run()}>•</ToolbarButton>
+        <ToolbarButton label={t('editor.ordered_list')} active={editor.isActive('orderedList')}
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}>1.</ToolbarButton>
+        <ToolbarButton label={t('editor.quote')} active={editor.isActive('blockquote')}
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}>❝</ToolbarButton>
+        <ToolbarButton label={t('editor.code')} active={editor.isActive('codeBlock')}
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}>&lt;/&gt;</ToolbarButton>
+
+        <span className="zx-tb-sep" />
+
+        <ToolbarButton label={t('editor.link')} active={editor.isActive('link')}
+            onClick={onToggleLink}>🔗</ToolbarButton>
+        <ToolbarButton label={t('editor.image_from_device')}
+            onClick={onPickFile}>🖼</ToolbarButton>
+        <button type="button" className="zx-tb-text" onClick={onOpenLibrary}>
+            {t('editor.image_from_library')}
+        </button>
+
+        {uploading > 0 && <span className="zx-tb-status">{t('editor.uploading')}</span>}
+    </div>
+);
+
+/** Layout controls for the selected image. Also shown in both bars. */
+const ImageBar: React.FC<{ editor: Editor; t: (key: string) => string }> = ({ editor, t }) => {
+    const current = editor.getAttributes('image').title ?? null;
+
+    return (
+        <div className="zx-editor-subbar">
+            <span>{t('editor.image_layout')}</span>
+            {IMAGE_LAYOUTS.map(layout => (
+                <button
+                    key={layout.key}
+                    type="button"
+                    className={`zx-tb-text${current === layout.title ? ' is-active' : ''}`}
+                    onClick={() => {
+                        const attrs = editor.getAttributes('image');
+                        editor.chain().focus().updateAttributes('image', { ...attrs, title: layout.title }).run();
+                    }}
+                >
+                    {t(layout.label)}
+                </button>
+            ))}
+        </div>
+    );
+};
+
 const ArticleEditor: React.FC<Props> = ({ value, onChange }) => {
     const { t } = useTranslation();
     const [pickerOpen, setPickerOpen] = useState(false);
     const [uploading, setUploading] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const fileInput = useRef<HTMLInputElement>(null);
+    const rootRef = useRef<HTMLDivElement>(null);
+    const topBarRef = useRef<HTMLDivElement>(null);
+    // the top bar has scrolled away while we are still inside the editor
+    const [floating, setFloating] = useState(false);
     // what the parent last received from us, to tell our own edits from outside ones
     const emitted = useRef(value);
 
@@ -151,13 +228,50 @@ const ArticleEditor: React.FC<Props> = ({ value, onChange }) => {
         };
     }, [editor, handleFiles]);
 
+    // On a long article the top toolbar scrolls off. Mirror it at the bottom of
+    // the window while the author is still inside the editor: once the end of
+    // the editor rises past the strip the bar occupies, it goes away instead of
+    // covering whatever comes next (the embed field, the submit button).
+    useEffect(() => {
+        if (!editor) return;
+
+        const BAR = 84;
+        let frame = 0;
+
+        const measure = () => {
+            frame = 0;
+            const top = topBarRef.current;
+            const root = rootRef.current;
+            if (!top || !root) return;
+
+            const topGone = top.getBoundingClientRect().bottom <= 0;
+            const end = root.getBoundingClientRect().bottom;
+            setFloating(topGone && end > window.innerHeight - BAR);
+        };
+
+        const onScroll = () => {
+            if (frame === 0) frame = requestAnimationFrame(measure);
+        };
+
+        measure();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll);
+
+        // typing makes the editor taller without scrolling the page
+        const sizes = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onScroll) : null;
+        if (sizes && rootRef.current) sizes.observe(rootRef.current);
+
+        return () => {
+            if (frame) cancelAnimationFrame(frame);
+            window.removeEventListener('scroll', onScroll);
+            window.removeEventListener('resize', onScroll);
+            sizes?.disconnect();
+        };
+    }, [editor]);
+
     if (!editor) return null;
 
     const imageSelected = editor.isActive('image');
-    const setLayout = (title: string | null) => {
-        const attrs = editor.getAttributes('image');
-        editor.chain().focus().updateAttributes('image', { ...attrs, title }).run();
-    };
 
     const toggleLink = () => {
         if (editor.isActive('link')) {
@@ -168,60 +282,23 @@ const ArticleEditor: React.FC<Props> = ({ value, onChange }) => {
         if (url) editor.chain().focus().setLink({ href: url }).run();
     };
 
+    const toolbar = (
+        <Toolbar
+            editor={editor}
+            t={t}
+            uploading={uploading}
+            onPickFile={() => fileInput.current?.click()}
+            onOpenLibrary={() => setPickerOpen(true)}
+            onToggleLink={toggleLink}
+        />
+    );
+
     return (
-        <div className="zx-editor">
-            <div className="zx-editor-toolbar">
-                <ToolbarButton label={t('editor.bold')} active={editor.isActive('bold')}
-                    onClick={() => editor.chain().focus().toggleBold().run()}><b>B</b></ToolbarButton>
-                <ToolbarButton label={t('editor.italic')} active={editor.isActive('italic')}
-                    onClick={() => editor.chain().focus().toggleItalic().run()}><i>I</i></ToolbarButton>
+        <>
+        <div className="zx-editor" ref={rootRef}>
+            <div className="zx-editor-toolbar" ref={topBarRef}>{toolbar}</div>
 
-                <span className="zx-tb-sep" />
-
-                <ToolbarButton label={t('editor.heading2')} active={editor.isActive('heading', { level: 2 })}
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>H2</ToolbarButton>
-                <ToolbarButton label={t('editor.heading3')} active={editor.isActive('heading', { level: 3 })}
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>H3</ToolbarButton>
-
-                <span className="zx-tb-sep" />
-
-                <ToolbarButton label={t('editor.bullet_list')} active={editor.isActive('bulletList')}
-                    onClick={() => editor.chain().focus().toggleBulletList().run()}>•</ToolbarButton>
-                <ToolbarButton label={t('editor.ordered_list')} active={editor.isActive('orderedList')}
-                    onClick={() => editor.chain().focus().toggleOrderedList().run()}>1.</ToolbarButton>
-                <ToolbarButton label={t('editor.quote')} active={editor.isActive('blockquote')}
-                    onClick={() => editor.chain().focus().toggleBlockquote().run()}>❝</ToolbarButton>
-                <ToolbarButton label={t('editor.code')} active={editor.isActive('codeBlock')}
-                    onClick={() => editor.chain().focus().toggleCodeBlock().run()}>&lt;/&gt;</ToolbarButton>
-
-                <span className="zx-tb-sep" />
-
-                <ToolbarButton label={t('editor.link')} active={editor.isActive('link')}
-                    onClick={toggleLink}>🔗</ToolbarButton>
-                <ToolbarButton label={t('editor.image_from_device')}
-                    onClick={() => fileInput.current?.click()}>🖼</ToolbarButton>
-                <button type="button" className="zx-tb-text" onClick={() => setPickerOpen(true)}>
-                    {t('editor.image_from_library')}
-                </button>
-
-                {uploading > 0 && <span className="zx-tb-status">{t('editor.uploading')}</span>}
-            </div>
-
-            {imageSelected && (
-                <div className="zx-editor-subbar">
-                    <span>{t('editor.image_layout')}</span>
-                    {IMAGE_LAYOUTS.map(layout => (
-                        <button
-                            key={layout.key}
-                            type="button"
-                            className={`zx-tb-text${(editor.getAttributes('image').title ?? null) === layout.title ? ' is-active' : ''}`}
-                            onClick={() => setLayout(layout.title)}
-                        >
-                            {t(layout.label)}
-                        </button>
-                    ))}
-                </div>
-            )}
+            {imageSelected && <ImageBar editor={editor} t={t} />}
 
             <EditorContent editor={editor} className="zx-editor-surface markdown-body" />
 
@@ -240,17 +317,29 @@ const ArticleEditor: React.FC<Props> = ({ value, onChange }) => {
                     handleFiles(files);
                 }}
             />
-
-            {pickerOpen && (
-                <ImagePicker
-                    onClose={() => setPickerOpen(false)}
-                    onSelect={(url) => {
-                        insertImage(url);
-                        setPickerOpen(false);
-                    }}
-                />
-            )}
         </div>
+
+        {/* Same bar pinned to the bottom of the window once the top one is gone.
+            Outside .zx-editor so its overflow and stacking cannot touch it. */}
+        {floating && !pickerOpen && (
+            <div className="zx-editor-float">
+                <div className="zx-editor-float-inner">
+                    {imageSelected && <ImageBar editor={editor} t={t} />}
+                    {toolbar}
+                </div>
+            </div>
+        )}
+
+        {pickerOpen && (
+            <ImagePicker
+                onClose={() => setPickerOpen(false)}
+                onSelect={(url) => {
+                    insertImage(url);
+                    setPickerOpen(false);
+                }}
+            />
+        )}
+        </>
     );
 };
 

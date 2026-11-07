@@ -1,5 +1,6 @@
 {
   "editor.placeholder": "Écrivez votre article. Glissez une image ou collez-la.",
+  "editor.toolbar": "Barre de mise en forme",
   "editor.bold": "Gras",
   "editor.italic": "Italique",
   "editor.heading2": "Titre",

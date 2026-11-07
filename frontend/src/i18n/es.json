@@ -1,5 +1,6 @@
 {
   "editor.placeholder": "Escribe tu artículo. Arrastra una imagen o pégala.",
+  "editor.toolbar": "Barra de formato",
   "editor.bold": "Negrita",
   "editor.italic": "Cursiva",
   "editor.heading2": "Título",

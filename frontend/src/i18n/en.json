@@ -1,5 +1,6 @@
 {
   "editor.placeholder": "Write your article. Drag an image in, or paste one.",
+  "editor.toolbar": "Formatting toolbar",
   "editor.bold": "Bold",
   "editor.italic": "Italic",
   "editor.heading2": "Heading",

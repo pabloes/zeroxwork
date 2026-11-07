@@ -7,14 +7,64 @@
   overflow: hidden;
 }
 
-.zx-editor-toolbar {
+// The buttons. Shared by the top bar and the floating one.
+.zx-editor-tools {
   display: flex;
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
+}
+
+.zx-editor-toolbar {
   padding: 8px 10px;
   border-bottom: 1px solid var(--zx-line);
   background: var(--zx-bg-2);
+}
+
+/* ---------- floating bar for long articles ---------- */
+
+.zx-editor-float {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  border-top: 1px solid var(--zx-line-2);
+  background: var(--zx-bg-2);
+  box-shadow: 0 -14px 34px -22px rgba(0, 0, 0, .7);
+  animation: zx-editor-float-in .16s ease-out;
+
+  .zx-editor-float-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 7px 14px calc(7px + env(safe-area-inset-bottom));
+  }
+
+  .zx-editor-subbar {
+    padding: 0 0 7px;
+    border-bottom: 0;
+  }
+
+  // One row, scrolled sideways, instead of a bar that eats the screen.
+  @media (max-width: 720px) {
+    .zx-editor-tools {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar { display: none; }
+    }
+
+    .zx-editor-subbar {
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }
+}
+
+@keyframes zx-editor-float-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 .zx-editor-subbar {

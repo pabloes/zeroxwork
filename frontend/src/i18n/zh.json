@@ -1,5 +1,6 @@
 {
   "editor.placeholder": "撰写你的文章。可以拖入或粘贴图片。",
+  "editor.toolbar": "格式工具栏",
   "editor.bold": "加粗",
   "editor.italic": "斜体",
   "editor.heading2": "标题",
