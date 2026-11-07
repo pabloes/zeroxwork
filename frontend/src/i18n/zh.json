@@ -28,6 +28,15 @@
   "editor.error.unauthorized": "登录已过期，请重新登录。",
   "editor.error.failed": "图片上传失败。",
 
+  "article.created": "文章已创建。",
+  "article.updated": "文章已保存。",
+  "article.error.no_content": "文章内容为空。请先写正文再发布。",
+  "article.error.too_large": "文章太大，无法提交。如果你把图片直接粘贴进正文，请改用图片按钮上传。",
+  "article.error.unauthorized": "登录已过期。请重新登录后再试。",
+  "article.error.network": "无法连接服务器。",
+  "article.error.create_failed": "文章创建失败。",
+  "article.error.update_failed": "文章保存失败。",
+
   "meta.title": "ZEROxWORK — 技术与艺术交汇的在线共创空间",
   "meta.description": "ZEROxWORK 是一个在线社区共创空间。我们把代码与设计的团队组合起来，打造有野心的项目，每位成员都能免费使用我们的工具。",
   "cookies.title": "Cookie 提示",

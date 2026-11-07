@@ -28,6 +28,15 @@
   "editor.error.unauthorized": "Tu sesión ha caducado. Vuelve a iniciar sesión.",
   "editor.error.failed": "No se ha podido subir la imagen.",
 
+  "article.created": "Artículo creado.",
+  "article.updated": "Artículo guardado.",
+  "article.error.no_content": "El artículo está vacío. Escribe el texto antes de publicarlo.",
+  "article.error.too_large": "El artículo es demasiado grande para enviarlo. Si has pegado imágenes dentro del texto, súbelas con el botón de imagen.",
+  "article.error.unauthorized": "Tu sesión ha caducado. Vuelve a iniciar sesión y reinténtalo.",
+  "article.error.network": "No se ha podido contactar con el servidor.",
+  "article.error.create_failed": "No se ha podido crear el artículo.",
+  "article.error.update_failed": "No se ha podido guardar el artículo.",
+
   "meta.title": "ZEROxWORK — Cowork online donde la tecnología y el arte se cruzan",
   "meta.description": "ZEROxWORK es una comunidad-cowork online. Juntamos equipos de código y diseño para construir proyectos ambiciosos, con herramientas gratuitas para todos los miembros.",
   "cookies.title": "Aviso de cookies",

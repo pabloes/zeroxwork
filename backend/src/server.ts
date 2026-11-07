@@ -32,7 +32,24 @@ const run = async () => {
     const app = express();
     app.set('trust proxy', 1);
     app.use(requestLogger);
-    app.use(express.json());
+    // body-parser defaults to 100 kb, which a long article overruns: the author
+    // then gets an HTML stack trace with a 413 and no idea why saving failed.
+    const jsonBodyLimit = process.env.JSON_BODY_LIMIT || '2mb';
+    app.use(express.json({ limit: jsonBodyLimit }));
+
+    // Parsing fails before any route runs, so the route's own error handling
+    // never sees it. Answer in JSON, which is what the frontend can read.
+    // Registered here on purpose: Express only looks forward from the layer that
+    // failed, so this catches express.json() and nothing further down.
+    app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+        if (err?.type === 'entity.too.large') {
+            return res.status(413).json({ error: `Request body too large (limit ${jsonBodyLimit}).` });
+        }
+        if (err?.type === 'entity.parse.failed') {
+            return res.status(400).json({ error: 'Malformed JSON body' });
+        }
+        return next(err);
+    });
     const allowedOrigins = process.env.NODE_ENV === 'production'
         ? ['https://zeroxwork.com', 'https://www.zeroxwork.com', 'https://zerox3.zeroxwork.com']
         : ['http://localhost:5173', 'http://localhost:3000'];

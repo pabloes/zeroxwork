@@ -8,6 +8,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../../services/axios-setup';
 import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
+import { apiErrorMessage } from '../../services/api-error';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -73,6 +74,9 @@ const CreateArticle: React.FC = () => {
     const [newTags, setNewTags] = useState<string[]>([]);
     const [articleType, setArticleType] = useState<'post' | 'link'>('post');
     const [redirectUrl, setRedirectUrl] = useState<string>('');
+    // Why the last attempt did not go through, kept next to the submit button so
+    // it is still on screen after the notification fades.
+    const [formError, setFormError] = useState<string | null>(null);
     const navigate = useNavigate();
     useAuth(); // ensure authenticated
 
@@ -105,12 +109,14 @@ const CreateArticle: React.FC = () => {
     const mutation = useMutation({
         mutationFn: createArticle,
         onSuccess: (data) => {
-            UIkit.notification('Article created successfully!', { status: 'success' });
+            setFormError(null);
+            UIkit.notification(t('article.created'), { status: 'success' });
             navigate(`/view-article/${data.id}`);
         },
         onError: (error) => {
-            console.log("error", error);
-            UIkit.notification('Error creating article.', { status: 'danger' });
+            const message = apiErrorMessage(error, t, 'article.error.create_failed');
+            setFormError(message);
+            UIkit.notification(message, { status: 'danger', timeout: 7000 });
         },
     });
 
@@ -142,6 +148,17 @@ const CreateArticle: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // The editor starts empty and the API rejects a body-less post, so say so
+        // here rather than send a request that cannot succeed. Pressing Enter in
+        // the title field submits the form, which is how this happens by accident.
+        if (articleType === 'post' && content.trim() === '') {
+            setFormError(t('article.error.no_content'));
+            UIkit.notification(t('article.error.no_content'), { status: 'warning', timeout: 7000 });
+            return;
+        }
+
+        setFormError(null);
         mutation.mutate({
             title,
             content: articleType === 'post' ? content : '',
@@ -434,6 +451,7 @@ const CreateArticle: React.FC = () => {
                 )}
 
                 <div className="uk-margin">
+                    {formError && <p className="zx-form-error">{formError}</p>}
                     <button className="uk-button uk-button-primary" type="submit" disabled={isLoading}>
                         {isLoading ? 'Submitting...' : 'Submit'}
                     </button>

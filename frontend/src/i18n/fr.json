@@ -28,6 +28,15 @@
   "editor.error.unauthorized": "Votre session a expiré. Reconnectez-vous.",
   "editor.error.failed": "L'image n'a pas pu être téléversée.",
 
+  "article.created": "Article créé.",
+  "article.updated": "Article enregistré.",
+  "article.error.no_content": "L'article est vide. Écrivez le texte avant de le publier.",
+  "article.error.too_large": "L'article est trop volumineux pour être envoyé. Si vous avez collé des images dans le texte, téléversez-les avec le bouton image.",
+  "article.error.unauthorized": "Votre session a expiré. Reconnectez-vous et réessayez.",
+  "article.error.network": "Le serveur est injoignable.",
+  "article.error.create_failed": "L'article n'a pas pu être créé.",
+  "article.error.update_failed": "L'article n'a pas pu être enregistré.",
+
   "meta.title": "ZEROxWORK — Cowork en ligne où la technologie et l'art se croisent",
   "meta.description": "ZEROxWORK est une communauté-cowork en ligne. Nous formons des équipes de code et de design pour construire des projets ambitieux, avec des outils gratuits pour chaque membre.",
   "cookies.title": "Avis sur les cookies",

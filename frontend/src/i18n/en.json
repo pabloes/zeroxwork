@@ -28,6 +28,15 @@
   "editor.error.unauthorized": "Your session expired. Log in again.",
   "editor.error.failed": "The image could not be uploaded.",
 
+  "article.created": "Article created.",
+  "article.updated": "Article saved.",
+  "article.error.no_content": "The article is empty. Write the text before publishing it.",
+  "article.error.too_large": "The article is too large to send. If you pasted images into the text, upload them with the image button instead.",
+  "article.error.unauthorized": "Your session has expired. Log in again and retry.",
+  "article.error.network": "The server could not be reached.",
+  "article.error.create_failed": "The article could not be created.",
+  "article.error.update_failed": "The article could not be saved.",
+
   "meta.title": "ZEROxWORK — Online cowork where technology and art cross",
   "meta.description": "ZEROxWORK is an online community-cowork. We put together teams of code and design to build ambitious projects, with free tools for every member.",
   "cookies.title": "Cookie notice",

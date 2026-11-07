@@ -9,6 +9,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import UIkit from "uikit";
 import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
+import { apiErrorMessage } from '../../services/api-error';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -59,20 +60,26 @@ const EditArticle: React.FC = () => {
         queryFn: fetchTags,
     });
 
+    const { t } = useTranslation();
+    // Why the last save did not go through, kept next to the submit button.
+    const [formError, setFormError] = useState<string | null>(null);
+
     // Mutation for updating the article
     const mutation = useMutation({
         mutationFn: (updatedArticle: any) => updateArticleById(String(article?.id), updatedArticle),
         onSuccess: () => {
-            UIkit.notification('Article updated successfully!', "success");
-            navigate(`/view-article/${article?.slug || article?.id}`);
+            setFormError(null);
+            UIkit.notification(t('article.updated'), "success");
+            navigate(`/view-article/${article?.id}`);
         },
-        onError: () => {
-            UIkit.notification('Error updating article.', "error");
+        onError: (error) => {
+            const message = apiErrorMessage(error, t, 'article.error.update_failed');
+            setFormError(message);
+            UIkit.notification(message, { status: 'danger', timeout: 7000 });
         }
     });
 
     // Local state for the form inputs
-    const { t } = useTranslation();
     const [title, setTitle] = useState<string>(article?.title || '');
     const [content, setContent] = useState<string>(article?.content || '');
     const [thumbnail, setThumbnail] = useState<string>(article?.thumbnail || '');
@@ -149,6 +156,16 @@ const EditArticle: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Same guard as the create form: the API rejects a body-less post, and
+        // Enter in the title field is enough to submit by accident.
+        if (articleType === 'post' && content.trim() === '') {
+            setFormError(t('article.error.no_content'));
+            UIkit.notification(t('article.error.no_content'), { status: 'warning', timeout: 7000 });
+            return;
+        }
+
+        setFormError(null);
         mutation.mutate({
             title,
             content: articleType === 'post' ? content : '',
@@ -445,6 +462,7 @@ const EditArticle: React.FC = () => {
                 )}
 
                 <div className="uk-margin">
+                    {formError && <p className="zx-form-error">{formError}</p>}
                     <button className="uk-button uk-button-primary" type="submit">
                         Update
                     </button>

@@ -744,10 +744,13 @@ router.get('/my-articles', verifyToken, async (req, res) => {
 router.get('/articles/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const article = await prisma.article.findUnique({
-            where: { id: Number(id) },
-            include
-        });
+        // Accepts an id or a slug. The editor redirects here with whichever it
+        // has after saving, and a slug used to reach Prisma as NaN and 500.
+        const numericId = /^\d+$/.test(id) ? Number(id) : null;
+
+        const article = numericId !== null
+            ? await prisma.article.findUnique({ where: { id: numericId }, include })
+            : await prisma.article.findFirst({ where: { slug: id }, include });
 
         if (!article) {
             return res.status(404).json({ message: 'Article not found' });
