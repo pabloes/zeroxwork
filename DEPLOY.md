@@ -118,6 +118,38 @@ docker exec <container_id> npx tsx scripts/backfill-embed-from-script.ts        
 docker exec <container_id> npx tsx scripts/backfill-embed-from-script.ts --apply # apply
 ```
 
+## Publishing the portfolio projects
+
+The projects live in `backend/src/constants/portfolio-seed.ts`. The script only
+creates and updates, matching by slug, so running it again is how you publish an
+edit to that file. Without `--apply` it writes nothing and prints what it would
+do, including which database it is pointing at.
+
+```bash
+# SSH into server, then:
+docker exec <container_id> npx tsx scripts/seed-portfolio.ts            # dry-run
+docker exec <container_id> npx tsx scripts/seed-portfolio.ts --apply    # publish
+```
+
+The articles are published by the oldest ADMIN account unless you pass
+`--author <email>` or set `PORTFOLIO_AUTHOR_EMAIL`. Add `--translate` to have
+DeepL fill in the other languages (it costs quota, so it is off by default).
+
+### Credits and member pages
+
+A project credits several people, which the single `userId` on an article cannot
+express, so credits are rows in `article_credits`. A credit always stores the
+name; linking it to an account is what turns that name into a link to
+`/member/<handle>`.
+
+The link is made by handle. Until somebody sets theirs — on `/account`, or from
+`/admin` → Users → handle — their credit shows as plain text, and the script
+reports it as "name only". Re-run the script after the handle exists and it
+links itself. Credits can also be edited by hand in `/admin` → ArticleCredit.
+
+Covers are served from `frontend/public/portfolio/`, not hotlinked from anyone
+else's server. Add the file there and point `thumbnail` at `/portfolio/<name>`.
+
 ## Running tests locally
 
 ```bash
