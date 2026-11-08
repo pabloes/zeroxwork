@@ -1,18 +1,19 @@
 import { Link } from 'react-router-dom';
-import { articleExcerpt, articlePath, type Article } from "../services/use-articles";
+import { projectExcerpt, projectPath, type Project } from "../services/use-projects";
 import { useTranslation } from "../i18n";
 import CreditList from "./CreditList";
 
 const TAGS_ON_CARD = 4;
 
-const ProjectCard: React.FC<{ project: Article }> = ({ project }) => {
+const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
     const { t } = useTranslation();
-    const summary = articleExcerpt(project);
-    const tags = (project.tags ?? []).slice(0, TAGS_ON_CARD);
-    const credits = project.credits ?? [];
+    const summary = projectExcerpt(project);
+    const tags = project.tags.slice(0, TAGS_ON_CARD);
+    // Members, not credits: a project has no author to tell them apart from.
+    const credits = project.members;
 
     return (
-        <Link to={articlePath(project)} className="zx-post zx-proj">
+        <Link to={projectPath(project)} className="zx-post zx-proj">
             <div className={`zx-post-thumb${project.thumbnail ? '' : ' zx-post-thumb-empty'}`}>
                 {project.thumbnail
                     ? <img src={project.thumbnail} alt="" loading="lazy" />

@@ -14,6 +14,7 @@ import imageRoutes from './routes/image';
 import userRoutes from "./routes/user";
 import walletRoutes from "./routes/wallet";
 import blogRoutes from "./routes/blog";
+import projectRoutes from './routes/project.js';
 import discordRoutes from "./routes/discord";
 import speedtestRoutes from "./routes/speedtest";
 import logsRoutes from "./routes/logs";
@@ -92,6 +93,7 @@ const run = async () => {
     app.use('/api/user', userRoutes);
     app.use('/api/wallet', walletRoutes);
     app.use('/api/blog', blogRoutes);
+    app.use('/api/projects', projectRoutes);
     app.use('/api/speedtest', speedtestRoutes);
     app.use('/api/logs', logsRoutes);
     app.use('/api/discord', discordRoutes);

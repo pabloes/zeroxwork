@@ -2,6 +2,7 @@ import Landing from "../pages/Landing";
 import BlogList from "../pages/Blog/blog-list";
 import Tools from "../pages/Tools";
 import Portfolio from "../pages/Portfolio";
+import ProjectPage from "../pages/Project";
 import Member from "../pages/Member";
 import Members from "../pages/Members";
 import Register from "../pages/Register";
@@ -26,6 +27,7 @@ export const pageRoutes = [
     {RouteElement:BlogList, title:`Blog`, path:`/blog`, props:{}},
     {RouteElement:Tools, title:`Tools`, path:`/tools`, props:{}},
     {RouteElement:Portfolio, title:`Portfolio`, path:`/portfolio`, props:{}},
+    {RouteElement:ProjectPage, title:``, path:`/portfolio/:idOrSlug`, props:{}},
     {RouteElement:Members, title:`Members`, path:`/members`, props:{}},
     {RouteElement:Member, title:``, path:`/member/:idOrHandle`, props:{}},
     {RouteElement:Register, title:`Register new account`, path:`/register`, props:{}},

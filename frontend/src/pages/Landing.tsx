@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from "../i18n";
 import { useAuth } from "../context/AuthContext";
 import { useArticles } from "../services/use-articles";
+import { useProjects } from "../services/use-projects";
 import ArticleCard from "../components/ArticleCard";
 import ToolCard from "../components/ToolCard";
 import ProjectCard from "../components/ProjectCard";
@@ -36,7 +37,7 @@ const Landing: React.FC = () => {
     // stored token is read, and without it a member sees the sign-up CTA flash.
     const showJoinCta = isAuthResolved && !isAuthenticated;
     const { data: tools = [] } = useArticles('tool');
-    const { data: projects = [] } = useArticles('project');
+    const { data: projects = [] } = useProjects();
     const { data: articles = [] } = useArticles('blog');
 
     const latestArticles = [...articles]

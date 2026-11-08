@@ -311,16 +311,13 @@ router.get('/members', async (req: Request, res: Response) => {
         const ids = members.map((member) => member.id);
 
         // Counted the same way the member page splits its two sections:
-        // projects are what you are credited on, posts are what you wrote.
+        // projects are what you are a member of, posts are what you wrote.
         const [projectRows, postRows] = ids.length > 0 ? await Promise.all([
-            prisma.articleCredit.groupBy({
+            prisma.projectMember.groupBy({
                 by: ['userId'],
                 where: {
                     userId: { in: ids },
-                    article: {
-                        published: true,
-                        category: { name: { equals: PORTFOLIO_CATEGORY, mode: 'insensitive' } },
-                    },
+                    project: { published: true },
                 },
                 _count: { _all: true },
             }),
@@ -423,17 +420,20 @@ router.get('/members/:idOrHandle', async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Member not found' });
         }
 
-        // Everything they are credited on, plus what they wrote themselves.
+        // Every project they are a member of, plus what they wrote themselves.
         //
-        // Projects are deliberately credit-only: one account publishes them all,
-        // and being the account that pressed the button is not the same as
-        // having worked on the project. Posts keep working the obvious way,
-        // where whoever wrote it is its author.
-        const [credited, authored] = await Promise.all([
-            prisma.article.findMany({
-                where: { published: true, credits: { some: { userId: member.id } } },
-                select: WORK_SELECT,
-                orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+        // The two come from different tables now, and that is the point: a
+        // project has no author to be, only members, while a post is written by
+        // whoever wrote it.
+        const [projects, authored] = await Promise.all([
+            prisma.project.findMany({
+                where: { published: true, members: { some: { userId: member.id } } },
+                select: {
+                    id: true, title: true, slug: true, lang: true, thumbnail: true,
+                    createdAt: true, featured: true,
+                    tags: { select: { id: true, name: true } },
+                },
+                orderBy: [{ featured: 'desc' }, { startedAt: 'desc' }, { createdAt: 'desc' }],
             }),
             prisma.article.findMany({
                 where: {
@@ -446,14 +446,10 @@ router.get('/members/:idOrHandle', async (req: Request, res: Response) => {
             }),
         ]);
 
-        // A member is usually both author and credit of their own project; show
-        // it once.
-        const works = [...credited, ...authored.filter((a) => !credited.some((c) => c.id === a.id))];
-
         // Show each work in the language the page is being read in, when a
         // translation exists; otherwise in the language it was written.
         const wanted = typeof req.query.lang === 'string' ? req.query.lang.toLowerCase() : null;
-        const inReadersLanguage = (work: typeof works[number]) => {
+        const inReadersLanguage = (work: typeof authored[number]) => {
             const translation = wanted && work.lang !== wanted
                 ? work.translations.find((t) => t.targetLang.toLowerCase() === wanted)
                 : null;
@@ -462,6 +458,33 @@ router.get('/members/:idOrHandle', async (req: Request, res: Response) => {
                 ? { ...rest, title: translation.title, slug: translation.slug }
                 : rest;
         };
+
+        // `kind` is how the card knows where to link: a project lives at
+        // /portfolio/<slug> and a post at /view-article/<slug>. A project's
+        // title is never translated and its slug does not change with the
+        // language, so it needs none of the swapping above.
+        const works = [
+            ...projects.map((project) => ({
+                kind: 'project' as const,
+                id: project.id,
+                title: project.title,
+                slug: project.slug,
+                thumbnail: project.thumbnail,
+                createdAt: project.createdAt,
+                tags: project.tags,
+                category: PORTFOLIO_CATEGORY,
+            })),
+            ...authored.map(inReadersLanguage).map((work) => ({
+                kind: 'post' as const,
+                id: work.id,
+                title: work.title,
+                slug: work.slug,
+                thumbnail: work.thumbnail,
+                createdAt: work.createdAt,
+                tags: work.tags,
+                category: work.category?.name ?? null,
+            })),
+        ];
 
         return res.json({
             // The id is what the page should build its own links from: it is the
@@ -474,10 +497,7 @@ router.get('/members/:idOrHandle', async (req: Request, res: Response) => {
             walletName: member.defaultName?.name ?? null,
             walletAddress: member.defaultName?.wallet?.address ?? null,
             socials: member.socials,
-            works: works.map(inReadersLanguage).map((work) => ({
-                ...work,
-                category: work.category?.name ?? null,
-            })),
+            works,
         });
     } catch (error) {
         console.error('Error fetching member profile:', error);

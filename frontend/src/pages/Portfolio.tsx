@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from "../i18n";
-import { collectTagNames, useArticles } from "../services/use-articles";
+import { collectTagNames } from "../services/use-articles";
+import { useProjects } from "../services/use-projects";
 import ProjectCard from "../components/ProjectCard";
 
 // below this there is nothing to filter, so the tag row stays hidden
@@ -8,13 +9,13 @@ const MIN_TAGS_TO_FILTER = 2;
 
 const Portfolio: React.FC = () => {
     const { t } = useTranslation();
-    const { data: projects = [], isLoading } = useArticles('project');
+    const { data: projects = [], isLoading } = useProjects();
     const [activeTag, setActiveTag] = useState<string | null>(null);
 
     const tagNames = useMemo(() => collectTagNames(projects), [projects]);
 
     const visible = activeTag
-        ? projects.filter((project) => (project.tags ?? []).some((tag) => tag.name === activeTag))
+        ? projects.filter((project) => project.tags.some((tag) => tag.name === activeTag))
         : projects;
 
     return (

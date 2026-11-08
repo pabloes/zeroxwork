@@ -3,6 +3,8 @@ import { useTranslation } from "../i18n";
 
 /** One piece of work as the member endpoint returns it. */
 export interface MemberWork {
+    /** Which table it came from, and so where it lives. */
+    kind: 'project' | 'post';
     id: number;
     title: string;
     slug: string;
@@ -19,7 +21,10 @@ const MemberWorkCard: React.FC<{ work: MemberWork }> = ({ work }) => {
     const tags = work.tags.slice(0, TAGS_ON_CARD);
 
     return (
-        <Link to={`/view-article/${work.slug}`} className="zx-post zx-proj">
+        <Link
+            to={work.kind === 'project' ? `/portfolio/${work.slug}` : `/view-article/${work.slug}`}
+            className="zx-post zx-proj"
+        >
             <div className={`zx-post-thumb${work.thumbnail ? '' : ' zx-post-thumb-empty'}`}>
                 {work.thumbnail
                     ? <img src={work.thumbnail} alt="" loading="lazy" />
