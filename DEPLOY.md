@@ -151,9 +151,11 @@ npx tsx scripts/seed-portfolio.ts && npx tsx scripts/seed-handles.ts && npx tsx 
 npx tsx scripts/seed-portfolio.ts --apply && npx tsx scripts/seed-handles.ts --apply && npx tsx scripts/backfill-handles.ts --apply && npx tsx scripts/backfill-translations.ts --apply
 ```
 
-`backfill-translations.ts` takes `--category <name>` to limit it, and `--force`
-to redo articles that already have translations (it deletes the stored ones for
-those articles first, because a matching `sourceHash` is otherwise skipped).
+`backfill-translations.ts` takes `--category <name>` or `--id 2,10` to limit it,
+and `--force` to redo articles that already have translations (it deletes the
+stored ones for those articles first, because a matching `sourceHash` is
+otherwise skipped). Use `--id` to repair a single article: `--force` on a whole
+category re-translates every article in it and bills DeepL for all of them.
 
 What these scripts write goes to the database, which is a separate volume: it
 survives deploys, so they are one-time, not something to repeat on every push.

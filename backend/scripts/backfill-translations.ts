@@ -13,7 +13,12 @@
  *
  *   npx tsx scripts/backfill-translations.ts
  *   npx tsx scripts/backfill-translations.ts --category project
+ *   npx tsx scripts/backfill-translations.ts --id 2 --force
  *   npx tsx scripts/backfill-translations.ts --apply
+ *
+ * --id narrows it to one or more articles, comma-separated. Repairing a single
+ * article that came out damaged is the point: without it, --force on a category
+ * re-translates everything in that category and bills DeepL for all of it.
  *
  * --force also redoes translations that are already up to date, for when the
  * rule changed rather than the article -- keeping a project's title untranslated
@@ -32,6 +37,15 @@ const apply = process.argv.includes('--apply');
 const force = process.argv.includes('--force');
 const categoryAt = process.argv.indexOf('--category');
 const onlyCategory = categoryAt !== -1 ? process.argv[categoryAt + 1] : null;
+const idAt = process.argv.indexOf('--id');
+const onlyIds = idAt !== -1
+    ? (process.argv[idAt + 1] ?? '').split(',').map((part) => Number(part.trim())).filter(Number.isInteger)
+    : null;
+
+if (onlyIds !== null && onlyIds.length === 0) {
+    console.error('--id needs at least one article id, for example --id 2 or --id 2,10');
+    process.exit(1);
+}
 
 const TARGETS = ['es', 'en', 'fr', 'pt-br', 'zh'];
 
@@ -39,6 +53,7 @@ async function main() {
     const articles = await prisma.article.findMany({
         where: {
             published: true,
+            ...(onlyIds ? { id: { in: onlyIds } } : {}),
             ...(onlyCategory ? { category: { name: { equals: onlyCategory, mode: 'insensitive' } } } : {}),
         },
         select: {
@@ -73,7 +88,10 @@ async function main() {
     }
 
     if (pending.length === 0) {
-        console.log(onlyCategory ? `Nothing missing in "${onlyCategory}".` : 'Nothing missing.');
+        const scope = onlyIds
+            ? `for id ${onlyIds.join(', ')}`
+            : onlyCategory ? `in "${onlyCategory}"` : '';
+        console.log(scope ? `Nothing missing ${scope}.` : 'Nothing missing.');
         return;
     }
 
