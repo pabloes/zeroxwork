@@ -68,3 +68,50 @@ describe('missingTokens', () => {
         expect(missingTokens(text, tokens)).toEqual([]);
     });
 });
+
+/**
+ * A link whose visible text is the url itself. The bare-url pass runs last, over
+ * text that already holds tokens, and used to eat the `]` and the token behind
+ * it — so the article shipped a literal `%%ZX1%%` to every reader and the dropped
+ * -fragment warning fired for tokens that had never left.
+ */
+describe('a link written as [url](url)', () => {
+    const SELF_LINKED = 'Regístrate en **[https://zeroxwork.com/register](https://zeroxwork.com/register)**.';
+
+    it('does not bury one token inside another', () => {
+        const { tokens } = protect(SELF_LINKED);
+
+        for (const original of tokens) {
+            expect(original).not.toContain('%%ZX');
+        }
+    });
+
+    it('survives the round trip untouched', () => {
+        const { text, tokens } = protect(SELF_LINKED);
+        expect(restore(text, tokens)).toBe(SELF_LINKED);
+    });
+
+    it('leaves no token residue after a translation', () => {
+        const { text, tokens } = protect(SELF_LINKED);
+        const translated = text.replace('Regístrate en', 'Start by creating an account at');
+        const restored = restore(translated, tokens);
+
+        expect(restored).not.toContain('%%ZX');
+        expect(restored).toBe(
+            'Start by creating an account at **[https://zeroxwork.com/register](https://zeroxwork.com/register)**.',
+        );
+        expect(missingTokens(translated, tokens)).toEqual([]);
+    });
+
+    it('still protects a bare url in prose', () => {
+        const { text, tokens } = protect('Visita https://zeroxwork.com y mira.');
+
+        expect(text).not.toContain('zeroxwork.com');
+        expect(restore(text, tokens)).toBe('Visita https://zeroxwork.com y mira.');
+    });
+
+    it('restores a container before the tokens hidden in it', () => {
+        // Hand-built nesting: whatever produces it, restore must cope.
+        expect(restore('%%ZX1%%', ['/img/a.png', '![gato](%%ZX0%%)'])).toBe('![gato](/img/a.png)');
+    });
+});
