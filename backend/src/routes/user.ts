@@ -18,7 +18,7 @@ import {
     HANDLE_MIN,
     HANDLE_MAX,
 } from "../config/profile.js";
-import { resolvePublicName, isAutoHandle } from "../config/public-name.js";
+import { resolvePublicName, autoHandle } from "../config/public-name.js";
 import { ensureHandle } from "../services/public-handle.js";
 
 const cache = new NodeCache({ stdTTL: 60 * 60 * 24 }); // Cache expires in 24 hours
@@ -32,7 +32,7 @@ const DISPLAY_NAME_ERRORS = {
 
 const HANDLE_ERRORS = {
     HANDLE_LENGTH: `The handle must be between ${HANDLE_MIN} and ${HANDLE_MAX} characters.`,
-    HANDLE_INVALID: 'The handle can only use lowercase letters, numbers and single hyphens.',
+    HANDLE_INVALID: 'The handle can only use lowercase letters, numbers and single hyphens, and must contain at least one letter.',
     HANDLE_RESERVED: 'That handle is reserved.',
 };
 
@@ -282,7 +282,10 @@ router.get('/members', async (req: Request, res: Response) => {
     try {
         const members: MemberRow[] = await prisma.user.findMany({
             where: {
-                handle: { not: null },
+                // No handle required. A handle is an alias somebody picked for a
+                // nicer URL, not what makes them a member: the account id is the
+                // identity, and the name shown is resolved on read.
+                //
                 // An unverified signup is not a member yet. Without this, anyone
                 // who types an email into the form lands on the public page.
                 verified: true,
@@ -343,6 +346,7 @@ router.get('/members', async (req: Request, res: Response) => {
 
         const listed = members
             .map((member) => ({
+                id: member.id,
                 handle: member.handle,
                 displayName: resolvePublicName(member),
                 avatarUrl: member.avatarUrl,
@@ -355,17 +359,20 @@ router.get('/members', async (req: Request, res: Response) => {
             // An account with no name of its own and nothing published has
             // nothing to show here, so it would list as a bare "member-12".
             // Its page still exists and it appears as soon as either arrives.
+            //
+            // The test is the resolved name: falling all the way through to
+            // member-<id> means nothing identifies this person yet -- no typed
+            // name, no Discord, no on-chain name and no handle of their own.
             .filter((member) => !(
-                isAutoHandle(member.handle)
-                && member.displayName === member.handle
+                member.displayName === autoHandle(member.id)
                 && member.projects === 0
                 && member.posts === 0
             ))
-            // Whoever has shipped the most goes first; the handle only breaks ties.
+            // Whoever has shipped the most goes first; the name only breaks ties.
             .sort((a, b) =>
                 (b.projects - a.projects)
                 || (b.posts - a.posts)
-                || (a.handle ?? '').localeCompare(b.handle ?? ''));
+                || a.displayName.localeCompare(b.displayName));
 
         res.status(200).json(listed);
     } catch (error: any) {
@@ -379,15 +386,27 @@ router.get('/members', async (req: Request, res: Response) => {
  * worked on. Only fields the member chose to publish; the email is never part
  * of this response.
  */
-router.get('/members/:handle', async (req: Request, res: Response) => {
-    const asked = validateHandle(req.params.handle);
-    if (!asked.ok || !asked.value) {
-        return res.status(404).json({ message: 'Member not found' });
+router.get('/members/:idOrHandle', async (req: Request, res: Response) => {
+    // Two ways in, on purpose. The id is the permanent address of a member and
+    // always works; the handle is an alias they chose for a readable URL and can
+    // change or be cleared. A handle must contain a letter, so the two can never
+    // be confused. Articles already answer to a slug or an id this same way.
+    const asked = req.params.idOrHandle;
+    let where: { id: number } | { handle: string };
+
+    if (/^\d+$/.test(asked)) {
+        where = { id: Number(asked) };
+    } else {
+        const handle = validateHandle(asked);
+        if (!handle.ok || !handle.value) {
+            return res.status(404).json({ message: 'Member not found' });
+        }
+        where = { handle: handle.value };
     }
 
     try {
         const member = await prisma.user.findUnique({
-            where: { handle: asked.value },
+            where,
             select: {
                 id: true,
                 handle: true,
@@ -445,6 +464,9 @@ router.get('/members/:handle', async (req: Request, res: Response) => {
         };
 
         return res.json({
+            // The id is what the page should build its own links from: it is the
+            // address that never moves.
+            id: member.id,
             handle: member.handle,
             displayName: resolvePublicName(member),
             avatarUrl: member.avatarUrl,

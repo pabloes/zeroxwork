@@ -32,6 +32,24 @@ describe('member handle validation', () => {
         }
     });
 
+    // /member/<id> is the permanent address of a member and /member/<handle> an
+    // alias. A handle made only of digits would make the two collide, so every
+    // handle has to carry a letter.
+    it('rejects a handle that could be read as an account id', () => {
+        // The short ones are already out on length; these reach the pattern.
+        for (const bad of ['007', '1-2', '123456']) {
+            expect(validateHandle(bad)).toEqual({ ok: false, code: 'HANDLE_INVALID' });
+        }
+        for (const bad of ['3', '42']) {
+            expect(validateHandle(bad).ok).toBe(false);
+        }
+    });
+
+    it('still takes digits alongside a letter', () => {
+        expect(validateHandle('zerox3')).toEqual({ ok: true, value: 'zerox3' });
+        expect(validateHandle('web3-dev')).toEqual({ ok: true, value: 'web3-dev' });
+    });
+
     it('rejects reserved handles, whatever the casing', () => {
         for (const reserved of ['admin', 'ADMIN', 'api', 'zeroxwork', 'portfolio', 'members', 'anonymous']) {
             expect(validateHandle(reserved)).toEqual({ ok: false, code: 'HANDLE_RESERVED' });

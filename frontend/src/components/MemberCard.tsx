@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom';
 import { getNameAvatarImage } from "../services/get-name-avatar-image";
 import { useTranslation } from "../i18n";
 
-/** One member as the directory endpoint returns them. No account id: the
- *  handle is the public address of the person. */
+/** One member as the directory endpoint returns them. The id is the address of
+ *  the person; the handle is an alias they may or may not have picked. */
 export interface MemberSummary {
-    handle: string;
+    id: number;
+    handle: string | null;
     displayName: string | null;
     avatarUrl: string | null;
     memberSince: string;
@@ -18,12 +19,13 @@ export interface MemberSummary {
 const MemberCard: React.FC<{ member: MemberSummary }> = ({ member }) => {
     const { t } = useTranslation();
 
-    const name = member.displayName || member.walletName || member.handle;
+    const name = member.displayName || member.walletName || member.handle || `member-${member.id}`;
     const avatar = getNameAvatarImage({
         name: member.walletName,
         address: member.walletAddress,
         avatarUrl: member.avatarUrl,
-        seed: member.handle,
+        // The id, so the face does not change the day they pick a handle.
+        seed: member.id,
     });
 
     // The dictionaries take no arguments, so the count and its word are put
@@ -37,11 +39,11 @@ const MemberCard: React.FC<{ member: MemberSummary }> = ({ member }) => {
     }
 
     return (
-        <Link to={`/member/${member.handle}`} className="zx-member-card">
+        <Link to={`/member/${member.handle ?? member.id}`} className="zx-member-card">
             <img className="zx-member-card-avatar" src={avatar} alt="" width={72} height={72} loading="lazy" />
             <div className="zx-member-card-body">
                 <h3>{name}</h3>
-                <p className="zx-member-card-handle">@{member.handle}</p>
+                {member.handle && <p className="zx-member-card-handle">@{member.handle}</p>}
                 <p className="zx-member-card-meta">
                     {counts.length > 0 ? counts.join(' · ') : t('members.nothing_yet')}
                 </p>

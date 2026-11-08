@@ -6,7 +6,9 @@ import { useTranslation } from "../i18n";
 import MemberWorkCard, { type MemberWork } from "../components/MemberWorkCard";
 
 interface MemberProfile {
-    handle: string;
+    /** The address that never moves. The handle is an alias and may be absent. */
+    id: number;
+    handle: string | null;
     displayName: string | null;
     avatarUrl: string | null;
     memberSince: string;
@@ -18,12 +20,14 @@ interface MemberProfile {
 
 /** Public page of one member: who they are and everything they are credited on. */
 const Member: React.FC = () => {
-    const { handle = '' } = useParams();
+    // Either an id or a handle: the backend answers to both and the route does
+    // not need to know which one it was given.
+    const { idOrHandle = '' } = useParams();
     const { t, lang } = useTranslation();
 
     const { data: member, isLoading, isError } = useQuery<MemberProfile>({
-        queryKey: ['member', handle, lang],
-        queryFn: async () => (await api.get(`/user/members/${handle}?lang=${lang}`)).data,
+        queryKey: ['member', idOrHandle, lang],
+        queryFn: async () => (await api.get(`/user/members/${idOrHandle}?lang=${lang}`)).data,
         retry: false,
     });
 
@@ -42,12 +46,14 @@ const Member: React.FC = () => {
         );
     }
 
-    const name = member.displayName || member.walletName || member.handle;
+    const name = member.displayName || member.walletName || member.handle || `member-${member.id}`;
     const avatar = getNameAvatarImage({
         name: member.walletName,
         address: member.walletAddress,
         avatarUrl: member.avatarUrl,
-        seed: member.handle,
+        // The id, so the generated avatar stays the same face if they later
+        // pick a handle or change the one they have.
+        seed: member.id,
     });
 
     // Projects first, then anything else they have written.
@@ -60,7 +66,7 @@ const Member: React.FC = () => {
                 <img className="zx-member-avatar" src={avatar} alt="" width={112} height={112} />
                 <div>
                     <h1 className="zx-member-name">{name}</h1>
-                    <p className="zx-member-handle">@{member.handle}</p>
+                    {member.handle && <p className="zx-member-handle">@{member.handle}</p>}
                     {member.walletName && member.walletName !== name && (
                         <p className="zx-member-meta">{member.walletName}</p>
                     )}

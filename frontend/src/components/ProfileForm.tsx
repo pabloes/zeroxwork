@@ -47,6 +47,10 @@ const ProfileForm: React.FC<{ onSaved?: () => void }> = ({ onSaved }) => {
         setAvatarUrl(me.avatarUrl ?? null);
     }, [me]);
 
+    // What the handle will actually be once saved, which is what the address
+    // below has to show: the backend lowercases and trims it.
+    const typedHandle = handle.trim().toLowerCase();
+
     const preview = getNameAvatarImage({
         name: me?.defaultName?.name,
         address: me?.defaultName?.walletAddress,
@@ -183,17 +187,23 @@ const ProfileForm: React.FC<{ onSaved?: () => void }> = ({ onSaved }) => {
                         onChange={(e) => { setHandle(e.target.value); setSaved(false); }}
                         disabled={saving}
                     />
+                    <p className="zx-profile-hint">{t('account.handle_hint')}</p>
+
+                    {/* The address itself, spelled out whole. With no handle it
+                        shows the one built from the account id, which already
+                        works and always will: the handle only ever shortens it. */}
                     <p className="zx-profile-hint">
-                        {t('account.handle_hint')}
-                        {handle.trim() !== '' && (
-                            <>
-                                {' '}
-                                <Link className="zx-profile-link" to={`/member/${handle.trim().toLowerCase()}`}>
-                                    /member/{handle.trim().toLowerCase()}
-                                </Link>
-                            </>
-                        )}
+                        <Link className="zx-profile-link" to={`/member/${typedHandle || me?.id}`}>
+                            {`${window.location.host}/member/${typedHandle || (me?.id ?? '')}`}
+                        </Link>
+                        {typedHandle === '' && <>{' '}{t('account.handle_url_default')}</>}
                     </p>
+
+                    {/* Only once they have actually edited a handle they already
+                        had: that is the moment a link somebody saved breaks. */}
+                    {me?.handle && typedHandle !== me.handle && (
+                        <p className="zx-profile-hint uk-text-warning">{t('account.handle_change_warning')}</p>
+                    )}
 
                     <p className="zx-profile-hint">{t('account.avatar_hint')}</p>
 

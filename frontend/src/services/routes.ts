@@ -27,7 +27,7 @@ export const pageRoutes = [
     {RouteElement:Tools, title:`Tools`, path:`/tools`, props:{}},
     {RouteElement:Portfolio, title:`Portfolio`, path:`/portfolio`, props:{}},
     {RouteElement:Members, title:`Members`, path:`/members`, props:{}},
-    {RouteElement:Member, title:``, path:`/member/:handle`, props:{}},
+    {RouteElement:Member, title:``, path:`/member/:idOrHandle`, props:{}},
     {RouteElement:Register, title:`Register new account`, path:`/register`, props:{}},
     {RouteElement:ImageUploadPage, title:`Image upload`, path:`/image-upload`, props:{}, auth:true},
     {RouteElement:Login, title:`Login account`, path:`/login`, props:{}},

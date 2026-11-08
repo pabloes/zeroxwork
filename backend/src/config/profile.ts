@@ -79,7 +79,11 @@ export function validateHandle(input: unknown): HandleResult {
     }
     // Letters, digits and single inner hyphens. No dots or underscores: those
     // read badly in a URL and invite look-alike handles.
-    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(handle)) {
+    //
+    // At least one letter, so a handle can never be mistaken for an account id:
+    // /member/<id> is the permanent address of a member and /member/<handle> is
+    // an alias they chose, and a handle of "3" would make the two collide.
+    if (!/^(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*$/.test(handle)) {
         return { ok: false, code: 'HANDLE_INVALID' };
     }
     if (RESERVED_HANDLES.has(handle)) {
