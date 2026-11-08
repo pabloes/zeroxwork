@@ -31,6 +31,8 @@ model User {
   wallets          Wallet[]
   articles         Article[]
   credits          ArticleCredit[]
+  projects         Project[]          @relation("ProjectCreator")
+  projectRoles     ProjectMember[]
   socials          UserSocial[]
   discordLink      DiscordLink?
   discordRoles     DiscordRoleGrant[]
@@ -261,6 +263,116 @@ model Tag {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   articles  Article[]
+  projects  Project[]
 
   @@map("tags")
+}
+
+/// A portfolio item, which is not an article wearing a category.
+///
+/// The difference that forces its own table is authorship: an article has one
+/// author and `Article.userId` is NOT NULL, while a project has no author at
+/// all -- it has members, and it needs at least one. That minimum cannot be a
+/// database constraint (Postgres will not require a row to have children), so
+/// it is enforced in code when creating and when publishing.
+///
+/// Address: /portfolio/<slug>, with /portfolio/<id> always working, the same
+/// rule as a member page. There is deliberately no slug history: these URLs are
+/// days old, the id is a permanent fallback, and carrying a redirect table for
+/// three rows is not worth it. One slug per project, not one per language --
+/// the title is never translated, so five addresses for the same name is what
+/// produced "golfcraft-4" in the first place. The reader's language picks the
+/// translation, as it already does everywhere else.
+model Project {
+  id           Int                  @id @default(autoincrement())
+  slug         String               @unique
+  title        String
+  /// One line for the card. Today the card has to cut one out of the body.
+  summary      String?
+  content      String
+  lang         String               @default("en")
+  sourceHash   String?
+
+  /// A project always shows itself, so the cover is required here and not only
+  /// in code. `screenshots` is in display order.
+  thumbnail    String
+  screenshots  String[]
+  /// External embed (YouTube or Vimeo) and where to see the thing itself.
+  /// `repoUrl` is a GitHub or GitLab repository. All three are validated in
+  /// code so the allowed hosts can change without a migration.
+  videoUrl     String?
+  siteUrl      String?
+  repoUrl      String?
+
+  /// A portfolio reads in order, and "when" is part of what a project says.
+  startedAt    DateTime?
+  endedAt      DateTime?
+  /// Free text validated in code: live, archived, wip.
+  status       String?
+
+  /// Nothing is published by its author's hand but their own: a project is a
+  /// draft until whoever created it says otherwise, exactly like an article.
+  published    Boolean              @default(false)
+  featured     Boolean              @default(false)
+
+  /// Who made the entry, which is not the same as who made the project: that
+  /// is `members`. Kept so writing stays with them, and nullable so deleting
+  /// an account never takes a project down with it.
+  createdById  Int?
+  createdBy    User?                @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  tags         Tag[]
+  members      ProjectMember[]
+  translations ProjectTranslation[]
+
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([slug])
+  @@index([published])
+  @@index([createdById])
+  @@map("projects")
+}
+
+/// Somebody who worked on a project. `userId` is the link to their account and
+/// the only thing that makes the name a link to /member/<...>; `name` is what
+/// to show, and stands alone for people who have no account yet.
+model ProjectMember {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  /// Free text: "code", "art", "3D"... shown next to the name.
+  role      String?
+  /// Display order inside the project.
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+/// A project in one other language. No slug of its own, unlike an article
+/// translation: a project has a single address and the reader's language picks
+/// which of these rows fills it. The title is carried even though it is never
+/// translated, so the shape matches and changing that rule later costs nothing.
+model ProjectTranslation {
+  id         Int      @id @default(autoincrement())
+  projectId  Int
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  targetLang String
+  title      String
+  summary    String?
+  content    String
+  sourceHash String?
+  provider   String?
+  cachedAt   DateTime @default(now())
+
+  @@unique([projectId, targetLang])
+  @@index([projectId])
+  @@map("project_translations")
 }
