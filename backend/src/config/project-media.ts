@@ -52,7 +52,14 @@ function isRenderableImage(value: string): boolean {
  * order the author arranged it. Returns the list untouched when the article is
  * not a project, so nothing is dropped from a post that happens to carry one.
  */
-export function normaliseScreenshots(input: unknown, isProject: boolean): MediaResult<string[]> {
+/**
+ * `required` is the gallery rule, not the category: a project is held to the
+ * three-shot minimum when it is being created, and not when it is being edited
+ * or published. The projects that predate the rule were written straight into
+ * the database by the portfolio seed, which never went through this check, and
+ * refusing their edits would leave them unfixable.
+ */
+export function normaliseScreenshots(input: unknown, required: boolean): MediaResult<string[]> {
     if (input === undefined || input === null) return { ok: true, value: [] };
     if (!Array.isArray(input)) return { ok: false, code: 'SCREENSHOT_INVALID' };
 
@@ -66,7 +73,7 @@ export function normaliseScreenshots(input: unknown, isProject: boolean): MediaR
     }
 
     if (shots.length > SCREENSHOTS_MAX) return { ok: false, code: 'SCREENSHOTS_MANY' };
-    if (isProject && shots.length < SCREENSHOTS_MIN) return { ok: false, code: 'SCREENSHOTS_FEW' };
+    if (required && shots.length < SCREENSHOTS_MIN) return { ok: false, code: 'SCREENSHOTS_FEW' };
 
     return { ok: true, value: shots };
 }
@@ -99,14 +106,15 @@ export function validateVideoUrl(input: unknown): MediaResult<string | null> {
 }
 
 /** The cover. Required for a project, optional for everything else. */
-export function validateCover(input: unknown, isProject: boolean): MediaResult<string | null> {
+/** `required` as in normaliseScreenshots: the rule binds the alta, not the edit. */
+export function validateCover(input: unknown, required: boolean): MediaResult<string | null> {
     const value = input === undefined || input === null ? '' : String(input).trim();
 
     if (value === '') {
-        return isProject ? { ok: false, code: 'COVER_REQUIRED' } : { ok: true, value: null };
+        return required ? { ok: false, code: 'COVER_REQUIRED' } : { ok: true, value: null };
     }
     if (!isRenderableImage(value)) {
-        return isProject ? { ok: false, code: 'COVER_REQUIRED' } : { ok: true, value: null };
+        return required ? { ok: false, code: 'COVER_REQUIRED' } : { ok: true, value: null };
     }
 
     return { ok: true, value };

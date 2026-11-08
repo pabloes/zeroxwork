@@ -12,7 +12,7 @@ import { slugify } from '../../utils/slug';
 import { apiErrorMessage } from '../../services/api-error';
 import CreditsField, { type CreditDraft } from '../../components/editor/CreditsField';
 import ProjectMediaField from '../../components/editor/ProjectMediaField';
-import { SCREENSHOTS_MIN, isAllowedVideoUrl, isProjectCategory } from '../../services/project-media';
+import { isAllowedVideoUrl, isProjectCategory } from '../../services/project-media';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -189,13 +189,11 @@ const EditArticle: React.FC = () => {
             return;
         }
 
-        // Same media rules as creating one: an edit must not be able to strip a
-        // published project of its cover or its screenshots.
-        if (isProject) {
-            if (thumbnail.trim() === '') return reject('project.error.cover_required');
-            if (screenshots.length < SCREENSHOTS_MIN) return reject('project.error.screenshots_few');
-            if (!isAllowedVideoUrl(videoUrl)) return reject('project.error.video_host');
-        }
+        // The gallery is asked for when the project is created, not on every
+        // edit: the projects the portfolio seed wrote have none, and an edit is
+        // how they get one. What an edit does have to be is well formed, so the
+        // video host is still checked.
+        if (isProject && !isAllowedVideoUrl(videoUrl)) return reject('project.error.video_host');
 
         setFormError(null);
         mutation.mutate({
@@ -291,7 +289,7 @@ const EditArticle: React.FC = () => {
 
                 <div className="uk-margin">
                     <label className="uk-form-label" htmlFor="thumbnail">
-                        {isProject ? t('project.cover_required') : 'Thumbnail URL:'}
+                        {isProject ? t('project.cover') : 'Thumbnail URL:'}
                     </label>
                     <div className="uk-form-controls zx-thumb-field">
                         <input

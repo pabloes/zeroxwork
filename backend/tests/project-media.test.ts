@@ -104,3 +104,32 @@ describe('validateVideoUrl', () => {
         expect(validateVideoUrl('https://rutube.ru/video/abc/')).toEqual({ ok: false, code: 'VIDEO_HOST_NOT_ALLOWED' });
     });
 });
+
+/**
+ * The gallery is demanded once, when a project is created. An edit and a publish
+ * pass `required: false`, because the projects the portfolio seed wrote have no
+ * gallery at all and refusing their edits would leave them unfixable -- an edit
+ * is how they get one. What never relaxes is the shape of what is sent.
+ */
+describe('the rule binds the alta, not the edit', () => {
+    it('lets a project through with no gallery at all', () => {
+        expect(validateCover('', false)).toEqual({ ok: true, value: null });
+        expect(normaliseScreenshots([], false)).toEqual({ ok: true, value: [] });
+        expect(normaliseScreenshots(shots(2), false)).toEqual({ ok: true, value: shots(2) });
+    });
+
+    it('still refuses a shot that would not render', () => {
+        expect(normaliseScreenshots(['javascript:alert(1)'], false)).toEqual({ ok: false, code: 'SCREENSHOT_INVALID' });
+        expect(normaliseScreenshots(['//evil.example.com/a.png'], false)).toEqual({ ok: false, code: 'SCREENSHOT_INVALID' });
+        expect(normaliseScreenshots([42], false)).toEqual({ ok: false, code: 'SCREENSHOT_INVALID' });
+    });
+
+    it('still refuses more shots than the grid takes', () => {
+        expect(normaliseScreenshots(shots(SCREENSHOTS_MAX + 1), false)).toEqual({ ok: false, code: 'SCREENSHOTS_MANY' });
+    });
+
+    it('keeps demanding both when the project is being created', () => {
+        expect(validateCover('', true)).toEqual({ ok: false, code: 'COVER_REQUIRED' });
+        expect(normaliseScreenshots(shots(2), true)).toEqual({ ok: false, code: 'SCREENSHOTS_FEW' });
+    });
+});

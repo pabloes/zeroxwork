@@ -125,16 +125,23 @@ async function isProjectCategory(categoryId: unknown): Promise<boolean> {
  * wrong with them. A project has to carry all of it; everything else is let
  * through untouched.
  */
-async function validateMedia(body: any): Promise<
+/**
+ * `require` is what separates the alta from the edit. A new project must show a
+ * cover and three screenshots; an existing one is only checked for the shape of
+ * what it sends, because the projects the portfolio seed wrote have no gallery
+ * at all and blocking their edits would leave them stuck that way forever.
+ */
+async function validateMedia(body: any, { require = false }: { require?: boolean } = {}): Promise<
     { ok: true; isProject: boolean; cover: string | null; screenshots: string[]; videoUrl: string | null }
     | { ok: false; code: MediaErrorCode }
 > {
     const isProject = await isProjectCategory(body.categoryId);
+    const demand = require && isProject;
 
-    const cover = validateCover(body.thumbnail, isProject);
+    const cover = validateCover(body.thumbnail, demand);
     if (!cover.ok) return cover;
 
-    const screenshots = normaliseScreenshots(body.screenshots, isProject);
+    const screenshots = normaliseScreenshots(body.screenshots, demand);
     if (!screenshots.ok) return screenshots;
 
     const videoUrl = validateVideoUrl(body.videoUrl);
@@ -250,7 +257,7 @@ router.post('/articles', verifyToken, async (req, res) => {
         // A project has to show itself: cover, screenshots, and a video if there
         // is one. Checked before anything is written so a half-filled project
         // never reaches the database.
-        const media = await validateMedia(req.body);
+        const media = await validateMedia(req.body, { require: true });
         if (!media.ok) {
             return res.status(400).json({ error: MEDIA_ERRORS[media.code], code: media.code });
         }
@@ -376,8 +383,10 @@ router.put('/articles/:id', verifyToken, async (req, res) => {
             return res.status(400).json({ error: 'Embed URL not allowed. Must match a whitelisted prefix (e.g. /embeds/ or approved external origins).' });
         }
 
-        // Same media rules as creating: a project cannot lose its cover or drop
-        // below three screenshots on the way through the edit form either.
+        // The gallery is demanded when a project is created, not here: an edit is
+        // checked for the shape of what it sends -- paths that render, at most
+        // eight shots, an allowed video host -- and nothing more. The seeded
+        // projects carry no gallery, and an edit is how they get one.
         const media = await validateMedia(req.body);
         if (!media.ok) {
             return res.status(400).json({ error: MEDIA_ERRORS[media.code], code: media.code });
@@ -979,10 +988,13 @@ router.patch('/articles/:id/published', verifyToken, async (req, res) => {
 
         const isProject = await isProjectCategory(article.categoryId);
 
+        // Publishing checks the stored media is still coherent -- a path that
+        // stopped rendering, more than eight shots -- but does not demand a
+        // gallery: that is asked for once, when the project is created.
         if (published) {
-            const cover = validateCover(article.thumbnail, isProject);
+            const cover = validateCover(article.thumbnail, false);
             if (!cover.ok) return res.status(400).json({ error: MEDIA_ERRORS[cover.code], code: cover.code });
-            const shots = normaliseScreenshots(article.screenshots, isProject);
+            const shots = normaliseScreenshots(article.screenshots, false);
             if (!shots.ok) return res.status(400).json({ error: MEDIA_ERRORS[shots.code], code: shots.code });
         }
 
