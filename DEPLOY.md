@@ -110,13 +110,56 @@ redacted before being stored.
 
 For anything older than the current process, use `docker logs` (see above).
 
-## Running the backfill script (one-time migration tasks)
+## Running the maintenance scripts in production
+
+The scripts live in `backend/scripts/` and ship inside the image (`COPY . .`),
+with `tsx` and the production `DATABASE_URL` already in the container. So they
+run **inside** the container, not from a laptop: the Postgres service is on
+CapRover's internal Docker network and is not reachable from outside.
+
+The CapRover app is `zerox3`, so the Swarm container is named
+`srv-captain--zerox3.<n>.<taskid>`. The task id changes on every deploy, which
+is why the commands below resolve it instead of hardcoding it.
 
 ```bash
-# SSH into server, then:
-docker exec <container_id> npx tsx scripts/backfill-embed-from-script.ts        # dry-run
-docker exec <container_id> npx tsx scripts/backfill-embed-from-script.ts --apply # apply
+# SSH into the server, then confirm the container is there:
+docker ps --filter name=srv-captain--zerox3
+
+# Open a shell in it. It lands in /usr/src/app/backend, where the scripts are.
+docker exec -it $(docker ps -qf name=srv-captain--zerox3) sh
 ```
+
+Every script is a **dry-run by default**: it writes nothing and prints what it
+would do, including which database it is pointing at. `--apply` is what writes.
+
+| Script | What it does |
+|--------|--------------|
+| `seed-portfolio.ts` | Creates/updates the portfolio projects from `src/constants/portfolio-seed.ts` |
+| `seed-handles.ts` | Gives handles to the accounts that have an on-chain name |
+| `backfill-handles.ts` | Gives every remaining account a handle (Discord -> eth name -> `member-<id>`) |
+| `backfill-translations.ts` | Translates articles that have no translations yet (costs DeepL quota) |
+
+Order matters between `seed-handles.ts` and `backfill-handles.ts`: the first
+claims the real names, the second only fills the gaps, so running them the other
+way round leaves people as `member-<id>` forever.
+
+```bash
+# Inside the container — all four in seco first:
+npx tsx scripts/seed-portfolio.ts && npx tsx scripts/seed-handles.ts && npx tsx scripts/backfill-handles.ts && npx tsx scripts/backfill-translations.ts
+
+# Then, if the output looks right:
+npx tsx scripts/seed-portfolio.ts --apply && npx tsx scripts/seed-handles.ts --apply && npx tsx scripts/backfill-handles.ts --apply && npx tsx scripts/backfill-translations.ts --apply
+```
+
+`backfill-translations.ts` takes `--category <name>` to limit it, and `--force`
+to redo articles that already have translations (it deletes the stored ones for
+those articles first, because a matching `sourceHash` is otherwise skipped).
+
+What these scripts write goes to the database, which is a separate volume: it
+survives deploys, so they are one-time, not something to repeat on every push.
+
+`/members` is empty until the handles exist: the route lists accounts with a
+handle, and refuses to fall back to showing an email address.
 
 ## Publishing the portfolio projects
 
