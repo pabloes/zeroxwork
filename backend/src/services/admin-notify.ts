@@ -94,3 +94,23 @@ export function notifyAdminNewArticle(article: {
         { event: 'article', slug: article.slug, lang: article.lang }
     );
 }
+
+/** A project was published. */
+export function notifyAdminNewProject(project: {
+    title: string;
+    by: string;
+    lang: string;
+    slug: string;
+}): Promise<void> {
+    const url = `${SITE_URL}/portfolio/${project.slug}`;
+
+    return notifyAdmin(
+        `[ZEROxWORK] Nuevo proyecto: ${oneLine(project.title)}`,
+        `<p>Nuevo proyecto publicado en el portfolio de ZEROxWORK.</p>
+         <p><strong>Proyecto:</strong> ${escapeHtml(project.title)}<br>
+         <strong>Lo ha dado de alta:</strong> ${escapeHtml(project.by)}<br>
+         <strong>Idioma:</strong> ${escapeHtml(project.lang)}</p>
+         <p><a href="${escapeHtml(url)}">${escapeHtml(url)}</a></p>`,
+        { event: 'project', slug: project.slug, lang: project.lang }
+    );
+}

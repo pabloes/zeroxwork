@@ -3,6 +3,9 @@ import BlogList from "../pages/Blog/blog-list";
 import Tools from "../pages/Tools";
 import Portfolio from "../pages/Portfolio";
 import ProjectPage from "../pages/Project";
+import CreateProject from "../pages/CreateProject";
+import EditProject from "../pages/EditProject";
+import MyProjects from "../pages/MyProjects";
 import Member from "../pages/Member";
 import Members from "../pages/Members";
 import Register from "../pages/Register";
@@ -48,6 +51,10 @@ export const pageRoutes = [
     {RouteElement:ViewArticle, title:"", path:"/view-article/:id", props:{}, auth:false},
     {RouteElement:EditArticle, title:"", path:"/edit-article/:id", props:{}, auth:true},
     {RouteElement:MyArticles, title:"My articles", path:"/my-articles", props:{}, auth:true},
+
+    {RouteElement:CreateProject, title:"Create a project", path:"/create-project", props:{}, auth:true},
+    {RouteElement:EditProject, title:"", path:"/edit-project/:id", props:{}, auth:true},
+    {RouteElement:MyProjects, title:"My projects", path:"/my-projects", props:{}, auth:true},
 
     {RouteElement:SpeedTest, title:"Speed Test", path:"/speed-test", props:{}},
 ]

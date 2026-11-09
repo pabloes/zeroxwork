@@ -62,22 +62,21 @@ export async function translateText(
 }
 
 /**
- * Translate title and content
+ * Translate a markdown body, leaving the things that must not be translated
+ * where they were: image and link targets, code, embed markers.
+ *
+ * Separate from translateArticle because a project keeps its title in every
+ * language, so translating one would spend DeepL characters on a string that is
+ * thrown away.
  */
-export async function translateArticle(
-    title: string,
+export async function translateMarkdown(
     content: string,
     targetLang: string
-): Promise<{ title: string; content: string }> {
-    // image/link targets, code and embed markers must survive untouched
+): Promise<string> {
     const protectedContent = protect(content);
+    const translated = await translateText(protectedContent.text, targetLang);
 
-    const [translatedTitle, translatedContent] = await Promise.all([
-        translateText(title, targetLang),
-        translateText(protectedContent.text, targetLang),
-    ]);
-
-    const lost = missingTokens(translatedContent, protectedContent.tokens);
+    const lost = missingTokens(translated, protectedContent.tokens);
     if (lost.length > 0) {
         console.warn(
             `Translation to ${targetLang} dropped ${lost.length} protected fragment(s); ` +
@@ -85,9 +84,25 @@ export async function translateArticle(
         );
     }
 
+    return restore(translated, protectedContent.tokens);
+}
+
+/**
+ * Translate title and content
+ */
+export async function translateArticle(
+    title: string,
+    content: string,
+    targetLang: string
+): Promise<{ title: string; content: string }> {
+    const [translatedTitle, translatedContent] = await Promise.all([
+        translateText(title, targetLang),
+        translateMarkdown(content, targetLang),
+    ]);
+
     return {
         title: translatedTitle,
-        content: restore(translatedContent, protectedContent.tokens),
+        content: translatedContent,
     };
 }
 

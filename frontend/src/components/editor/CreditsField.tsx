@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { api } from '../../services/axios-setup';
+import { useState } from 'react';
 import { useTranslation } from '../../i18n';
+import { useMemberSearch, memberLabel, type DirectoryMember } from '../../services/use-member-search';
 
 /** What the form holds. `name` is what gets stored and shown; `userId` is what
  *  turns it into a link to that member's page. */
@@ -11,51 +11,12 @@ export interface CreditDraft {
     handle?: string | null;
 }
 
-interface Member {
-    handle: string;
-    displayName: string | null;
-    avatarUrl: string | null;
-}
-
-const SEARCH_MIN = 2;
-const SEARCH_WAIT = 300;
 export const MAX_CREDITS = 20;
-
-const memberLabel = (member: Member) => member.displayName || member.handle;
 
 const CreditsField: React.FC<{ value: CreditDraft[]; onChange: (credits: CreditDraft[]) => void }> = ({ value, onChange }) => {
     const { t } = useTranslation();
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState<Member[]>([]);
-    const [searching, setSearching] = useState(false);
+    const { query, setQuery, results, setResults, searching, enoughTyped } = useMemberSearch();
     const [freeName, setFreeName] = useState('');
-    const latest = useRef(0);
-
-    // Debounced, and the stale-response guard matters here: typing fast enough
-    // would otherwise let an earlier, slower answer overwrite a later one.
-    useEffect(() => {
-        const term = query.trim();
-        if (term.length < SEARCH_MIN) {
-            setResults([]);
-            setSearching(false);
-            return;
-        }
-
-        setSearching(true);
-        const ticket = ++latest.current;
-        const timer = setTimeout(async () => {
-            try {
-                const response = await api.get('/user/members', { params: { q: term } });
-                if (ticket === latest.current) setResults(response.data);
-            } catch {
-                if (ticket === latest.current) setResults([]);
-            } finally {
-                if (ticket === latest.current) setSearching(false);
-            }
-        }, SEARCH_WAIT);
-
-        return () => clearTimeout(timer);
-    }, [query]);
 
     const alreadyThere = (name: string) =>
         value.some((credit) => credit.name.trim().toLowerCase() === name.trim().toLowerCase());
@@ -65,10 +26,11 @@ const CreditsField: React.FC<{ value: CreditDraft[]; onChange: (credits: CreditD
         onChange([...value, { ...credit, name: credit.name.trim() }]);
     };
 
-    const addMember = (member: Member) => {
-        // Only the handle: the directory is public and carries no account ids,
-        // and the server resolves the handle back to the account on save.
-        add({ name: memberLabel(member), role: '', handle: member.handle });
+    const addMember = (member: DirectoryMember) => {
+        // Both the id and the handle. The handle makes the nicer link, but a
+        // member who never picked one has none, and sending only the handle is
+        // what used to leave those credits as plain unlinked text.
+        add({ name: memberLabel(member), role: '', userId: member.id, handle: member.handle });
         setQuery('');
         setResults([]);
     };
@@ -98,7 +60,7 @@ const CreditsField: React.FC<{ value: CreditDraft[]; onChange: (credits: CreditD
                                 <div className="uk-width-auto">
                                     <span className="zx-chip">
                                         {credit.name}
-                                        {credit.userId ? ` · ${t('credits.linked')}` : ''}
+                                        {credit.userId || credit.handle ? ` · ${t('credits.linked')}` : ''}
                                     </span>
                                 </div>
                                 <div className="uk-width-expand">
@@ -143,17 +105,17 @@ const CreditsField: React.FC<{ value: CreditDraft[]; onChange: (credits: CreditD
                         {!searching && results.length > 0 && (
                             <ul className="zx-credit-results uk-list uk-margin-small-bottom">
                                 {results.map((member) => (
-                                    <li key={member.handle}>
+                                    <li key={member.id}>
                                         <button type="button" className="zx-tb-text" onClick={() => addMember(member)}>
                                             {memberLabel(member)}
-                                            {member.displayName ? ` (@${member.handle})` : ''}
+                                            {member.displayName && member.handle ? ` (@${member.handle})` : ''}
                                         </button>
                                     </li>
                                 ))}
                             </ul>
                         )}
 
-                        {!searching && query.trim().length >= SEARCH_MIN && results.length === 0 && (
+                        {!searching && enoughTyped && results.length === 0 && (
                             <p className="uk-text-meta">{t('credits.no_results')}</p>
                         )}
 

@@ -38,6 +38,8 @@ export interface Project {
     /** The language this copy actually came back in. */
     readingLang: string;
     availableLangs: string[];
+    /** Whether the viewer may edit and publish this one. Only on a single read. */
+    canEdit?: boolean;
 }
 
 /** Where a project lives. The slug when it has one, the id as the fallback. */
@@ -72,5 +74,80 @@ export function useProject(idOrSlug: string) {
         queryKey: ['project', idOrSlug, lang],
         queryFn: async () => (await api.get(`/projects/${idOrSlug}?lang=${lang}`)).data,
         retry: false,
+    });
+}
+
+/** What a project page listed under "my projects" needs, and nothing more. */
+export interface MyProject {
+    id: number;
+    slug: string;
+    title: string;
+    thumbnail: string | null;
+    published: boolean;
+    createdAt: string;
+    updatedAt: string;
+    /** How many people are on it. */
+    members: number;
+}
+
+/** What the create and edit forms send. The server has the last word on all of it. */
+export interface ProjectPayload {
+    title: string;
+    summary?: string;
+    content: string;
+    lang: string;
+    slug?: string;
+    thumbnail: string;
+    screenshots: string[];
+    videoUrl?: string;
+    siteUrl?: string;
+    repoUrl?: string;
+    startedAt?: string;
+    endedAt?: string;
+    status?: string;
+    tagIds?: number[];
+    newTags?: string[];
+    members: { name: string; role?: string; userId?: number | null; handle?: string | null }[];
+}
+
+export async function createProject(payload: ProjectPayload): Promise<Project> {
+    return (await api.post('/projects', payload)).data;
+}
+
+export async function updateProject({ id, ...payload }: ProjectPayload & { id: number }): Promise<Project> {
+    return (await api.put(`/projects/${id}`, payload)).data;
+}
+
+/**
+ * Publishing is its own endpoint, not a full save: a PUT from a list would have
+ * to resend the whole project and would wipe whatever the list does not carry.
+ */
+export async function setProjectPublished({ id, published }: { id: number; published: boolean }) {
+    return (await api.patch(`/projects/${id}/published`, { published })).data;
+}
+
+export async function deleteProject(id: number) {
+    return (await api.delete(`/projects/${id}`)).data;
+}
+
+/** The caller's own projects, drafts included. */
+export function useMyProjects() {
+    return useQuery<MyProject[]>({
+        queryKey: ['my-projects'],
+        queryFn: async () => (await api.get('/projects/mine')).data,
+    });
+}
+
+/**
+ * One project for editing: always the original language, never a translation,
+ * because saving a translated copy back over the source would overwrite the
+ * text it was translated from.
+ */
+export function useProjectForEdit(id: string) {
+    return useQuery<Project>({
+        queryKey: ['project-edit', id],
+        queryFn: async () => (await api.get(`/projects/${id}`)).data,
+        retry: false,
+        staleTime: 0,
     });
 }

@@ -29,11 +29,15 @@ export class CreditError extends Error {}
  *
  * Names are deduplicated case-insensitively because article_credits is unique
  * on (articleId, name): two "Carlos" would otherwise fail the whole save.
+ *
+ * Project members go through here too: project_members has the same shape and
+ * the same unique rule, and the one difference -- a project needs at least one
+ * -- is the route's business, not this function's.
  */
 export async function normaliseCredits(input: unknown): Promise<CleanCredit[]> {
     if (input === undefined || input === null) return [];
     if (!Array.isArray(input)) throw new CreditError('credits must be a list');
-    if (input.length > MAX_CREDITS) throw new CreditError(`At most ${MAX_CREDITS} credits per article`);
+    if (input.length > MAX_CREDITS) throw new CreditError(`At most ${MAX_CREDITS} people on one entry`);
 
     const wanted: { name: string; role: string | null; userId: number | null; handle: string | null }[] = [];
     const seen = new Set<string>();

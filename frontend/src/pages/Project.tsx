@@ -5,6 +5,7 @@ import { useProject } from "../services/use-projects";
 import PageTitle from "../components/PageTitle";
 import ProjectGallery from "../components/ProjectGallery";
 import CreditList from "../components/CreditList";
+import { statusKey } from "../services/project-fields";
 
 /** The year range a project ran for, or nothing when neither date is set. */
 function years(startedAt: string | null, endedAt: string | null): string | null {
@@ -46,8 +47,18 @@ const ProjectPage: React.FC = () => {
         <div className="zx-wrap zx-page">
             {!project.published && (
                 <div className="uk-alert uk-alert-warning uk-margin-small-bottom" uk-alert="">
-                    {t('project.draft_notice')}
+                    {t('project.draft_notice')}{' '}
+                    <Link to="/my-projects">{t('project.draft_go_publish')}</Link>
                 </div>
+            )}
+
+            {/* Only whoever entered it, and an admin, are told it can be edited. */}
+            {project.canEdit && (
+                <p>
+                    <Link className="uk-button uk-button-secondary" to={`/edit-project/${project.id}`}>
+                        {t('project.edit_cta')}
+                    </Link>
+                </p>
             )}
 
             <div className="zx-page-head">
@@ -71,7 +82,9 @@ const ProjectPage: React.FC = () => {
 
                 <div className="zx-proj-facts">
                     {ran && <span className="zx-chip">{ran}</span>}
-                    {project.status && <span className="zx-chip">{project.status}</span>}
+                    {statusKey(project.status) && (
+                        <span className="zx-chip">{t(statusKey(project.status) as string)}</span>
+                    )}
                     {project.tags.map((tag) => (
                         <span className="zx-chip" key={tag.id}>{tag.name}</span>
                     ))}

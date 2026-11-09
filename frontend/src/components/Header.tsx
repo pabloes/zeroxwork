@@ -96,6 +96,7 @@ const Header: React.FC = () => {
                             </summary>
                             <div className="zx-menu-panel" onClick={() => setMenuOpen(false)}>
                                 <Link to="/my-articles">{t('nav.my_articles')}</Link>
+                                <Link to="/my-projects">{t('nav.my_projects')}</Link>
                                 <Link to="/my-images">{t('nav.my_images')}</Link>
                                 <hr />
                                 <Link to="/account">{t('nav.settings')}</Link>
