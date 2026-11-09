@@ -341,5 +341,6 @@
   "project.delete_warning": "Isso apaga o projeto, seus membros e suas traduções. Não dá para desfazer:",
   "project.delete_cta": "🗑️ Apagar",
   "project.delete_cancel": "Cancelar",
-  "project.draft_go_publish": "Publicar"
+  "project.draft_go_publish": "Publicar",
+  "article.not_a_project": "Os projetos do portfólio não são mais cadastrados aqui:"
 }

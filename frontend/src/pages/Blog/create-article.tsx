@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ArticleEditor from '../../components/editor/ArticleEditor';
 import ImagePicker from '../../components/editor/ImagePicker';
 import { useTranslation } from '../../i18n';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import UIkit from 'uikit';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../../services/axios-setup';
@@ -10,8 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
 import { apiErrorMessage } from '../../services/api-error';
 import CreditsField, { type CreditDraft } from '../../components/editor/CreditsField';
-import ProjectMediaField from '../../components/editor/ProjectMediaField';
-import { SCREENSHOTS_MIN, isAllowedVideoUrl, isProjectCategory } from '../../services/project-media';
+import { isProjectCategory } from '../../services/project-media';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -46,8 +45,6 @@ const createArticle = async (newArticle: {
     type?: string;
     redirectUrl?: string;
     credits?: { name: string; role?: string; userId?: number | null; handle?: string | null }[];
-    screenshots?: string[];
-    videoUrl?: string;
 }) => {
     const response = await api.post('/blog/articles', newArticle);
     return response.data;
@@ -81,8 +78,6 @@ const CreateArticle: React.FC = () => {
     const [articleType, setArticleType] = useState<'post' | 'link'>('post');
     const [redirectUrl, setRedirectUrl] = useState<string>('');
     const [credits, setCredits] = useState<CreditDraft[]>([]);
-    const [screenshots, setScreenshots] = useState<string[]>([]);
-    const [videoUrl, setVideoUrl] = useState<string>('');
     // Why the last attempt did not go through, kept next to the submit button so
     // it is still on screen after the notification fades.
     const [formError, setFormError] = useState<string | null>(null);
@@ -157,15 +152,10 @@ const CreateArticle: React.FC = () => {
         setNewTags(prev => prev.filter(t => t !== tagName));
     };
 
-    // Which category was picked, by name: only a project has to carry a gallery.
-    const categoryName = categories.find((cat) => cat.id === categoryId)?.name ?? null;
-    const isProject = isProjectCategory(categoryName);
-
-    /** Stop the save and say why, in the two places the author is looking. */
-    const reject = (key: string) => {
-        setFormError(t(key));
-        UIkit.notification(t(key), { status: 'warning', timeout: 7000 });
-    };
+    // Everything but the portfolio. A project is not an article any more: it
+    // has its own table, its own page and its own form, and leaving the
+    // category here would only let someone write one that nothing ever shows.
+    const pickable = categories.filter((cat) => !isProjectCategory(cat.name));
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -177,15 +167,6 @@ const CreateArticle: React.FC = () => {
             setFormError(t('article.error.no_content'));
             UIkit.notification(t('article.error.no_content'), { status: 'warning', timeout: 7000 });
             return;
-        }
-
-        // A project is judged on what it shows, so the API will not take one
-        // without a cover and three screenshots. Say which of the two is
-        // missing here, where the fields are, instead of after a round trip.
-        if (isProject) {
-            if (thumbnail.trim() === '') return reject('project.error.cover_required');
-            if (screenshots.length < SCREENSHOTS_MIN) return reject('project.error.screenshots_few');
-            if (!isAllowedVideoUrl(videoUrl)) return reject('project.error.video_host');
         }
 
         setFormError(null);
@@ -208,8 +189,6 @@ const CreateArticle: React.FC = () => {
                 userId: credit.userId ?? undefined,
                 handle: credit.handle ?? undefined,
             })),
-            screenshots,
-            videoUrl: videoUrl.trim() || undefined,
         });
     };
 
@@ -278,7 +257,7 @@ const CreateArticle: React.FC = () => {
 
                 <div className="uk-margin">
                     <label className="uk-form-label" htmlFor="thumbnail">
-                        {isProject ? t('project.cover_required') : 'Thumbnail URL:'}
+                        Thumbnail URL:
                     </label>
                     <div className="uk-form-controls zx-thumb-field">
                         <input
@@ -328,22 +307,16 @@ const CreateArticle: React.FC = () => {
                             onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
                         >
                             <option value="">No category</option>
-                            {categories.map((cat) => (
+                            {pickable.map((cat) => (
                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                             ))}
                         </select>
                     </div>
+                    <p className="uk-text-meta">
+                        {t('article.not_a_project')}{' '}
+                        <Link to="/create-project">{t('project.create_title')}</Link>
+                    </p>
                 </div>
-
-                {/* A project has to show itself; a post or a tool does not. */}
-                {isProject && (
-                    <ProjectMediaField
-                        screenshots={screenshots}
-                        onScreenshotsChange={setScreenshots}
-                        videoUrl={videoUrl}
-                        onVideoUrlChange={setVideoUrl}
-                    />
-                )}
 
                 <div className="uk-margin">
                     <label className="uk-form-label">Article Type:</label>

@@ -172,6 +172,13 @@ const EditArticle: React.FC = () => {
     const categoryName = categories.find((cat) => cat.id === categoryId)?.name ?? null;
     const isProject = isProjectCategory(categoryName);
 
+    // The portfolio category is no longer on offer: projects have their own
+    // table and their own form. The articles that still carry it keep it
+    // listed, though -- dropping the option would quietly move them out of
+    // their own category the next time somebody saved one. Switching away is a
+    // one-way door, which is what we want.
+    const pickable = categories.filter((cat) => !isProjectCategory(cat.name) || cat.id === categoryId);
+
     /** Stop the save and say why, in the two places the author is looking. */
     const reject = (key: string) => {
         setFormError(t(key));
@@ -339,7 +346,7 @@ const EditArticle: React.FC = () => {
                             onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
                         >
                             <option value="">No category</option>
-                            {categories.map((cat) => (
+                            {pickable.map((cat) => (
                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                             ))}
                         </select>

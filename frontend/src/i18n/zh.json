@@ -341,5 +341,6 @@
   "project.delete_warning": "这会删除项目、它的成员和它的译文。无法撤销：",
   "project.delete_cta": "🗑️ 删除",
   "project.delete_cancel": "取消",
-  "project.draft_go_publish": "去发布"
+  "project.draft_go_publish": "去发布",
+  "article.not_a_project": "作品集里的项目不再从这里登记："
 }

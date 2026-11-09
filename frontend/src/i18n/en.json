@@ -341,5 +341,6 @@
   "project.delete_warning": "This deletes the project, its members and its translations. It cannot be undone:",
   "project.delete_cta": "🗑️ Delete",
   "project.delete_cancel": "Cancel",
-  "project.draft_go_publish": "Publish it"
+  "project.draft_go_publish": "Publish it",
+  "article.not_a_project": "Portfolio projects are no longer entered here:"
 }

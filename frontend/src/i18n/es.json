@@ -341,5 +341,6 @@
   "project.delete_warning": "Se borran el proyecto, sus miembros y sus traducciones. No se puede deshacer:",
   "project.delete_cta": "🗑️ Borrar",
   "project.delete_cancel": "Cancelar",
-  "project.draft_go_publish": "Publicarlo"
+  "project.draft_go_publish": "Publicarlo",
+  "article.not_a_project": "Los proyectos del portfolio ya no se dan de alta aquí:"
 }

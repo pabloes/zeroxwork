@@ -341,5 +341,6 @@
   "project.delete_warning": "Cela supprime le projet, ses membres et ses traductions. C'est irréversible :",
   "project.delete_cta": "🗑️ Supprimer",
   "project.delete_cancel": "Annuler",
-  "project.draft_go_publish": "Le publier"
+  "project.draft_go_publish": "Le publier",
+  "article.not_a_project": "Les projets du portfolio ne se saisissent plus ici :"
 }
