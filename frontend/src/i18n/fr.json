@@ -91,6 +91,8 @@
   "register.password": "Mot de passe",
   "register.password_repeat": "Répétez le mot de passe",
   "register.password_mismatch": "Les mots de passe ne correspondent pas.",
+  "register.password_hint": "Au moins {min} caractères.",
+  "register.password_short": "Le mot de passe doit faire au moins {min} caractères.",
   "register.profile_hint": "Votre nom public et l'adresse de votre page. Les deux apparaissent à côté de votre travail ; votre e-mail, jamais.",
   "register.avatar_choose": "Choisir une image",
   "register.avatar_remove": "Retirer l'image",

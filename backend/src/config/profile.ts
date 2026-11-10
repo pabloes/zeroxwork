@@ -10,6 +10,14 @@ export const HANDLE_MIN = 3;
 export const HANDLE_MAX = 30;
 
 /**
+ * Shortest password we will store. Low on purpose: a longer floor pushes
+ * people towards one password they already use everywhere, and the account
+ * guards nothing worth a dictionary attack. Only /register sets a password,
+ * so this is the only place it has to hold.
+ */
+export const PASSWORD_MIN = 6;
+
+/**
  * Handles that would collide with a route or impersonate the site. The member
  * page lives at /member/<handle>, so a collision is not possible today, but a
  * handle is also what shows up in credits and @-mentions and these should not

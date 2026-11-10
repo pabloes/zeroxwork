@@ -8,7 +8,7 @@ import rateLimit from 'express-rate-limit';
 import { env } from '../config/env';
 import { prisma } from '../db';
 import { freeHandle } from '../services/public-handle.js';
-import { validateDisplayName, validateHandle } from '../config/profile.js';
+import { PASSWORD_MIN, validateDisplayName, validateHandle } from '../config/profile.js';
 import { ImageRejected, storeImageBuffer } from './image.js';
 import { avatarBuffer } from '../config/avatar-data-url.js';
 
@@ -28,6 +28,12 @@ router.post('/register', authLimiter, async (req, res) => {
     // `error`, while older clients read `message`.
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required.', message: 'Email and password are required.' });
+    }
+
+    // The form says so too, but the form is not what protects the account.
+    if (typeof password !== 'string' || password.length < PASSWORD_MIN) {
+        const text = `The password must be at least ${PASSWORD_MIN} characters.`;
+        return res.status(400).json({ error: text, message: text, code: 'PASSWORD_SHORT' });
     }
 
     const fail = (text: string, code?: string) =>

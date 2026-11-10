@@ -8,6 +8,7 @@ import { getNameAvatarImage } from "../services/get-name-avatar-image";
 import {
     DISPLAY_NAME_MAX,
     HANDLE_MAX,
+    PASSWORD_MIN,
     checkHandle,
     fileToAvatarDataUrl,
     handleShapeError,
@@ -114,16 +115,25 @@ const Register: React.FC = () => {
         }
     };
 
+    // El diccionario no sabe interpolar, asi que el numero se mete aqui y no
+    // escrito a mano en cinco idiomas, donde se quedaria viejo a la primera.
+    const minText = (key: string) => t(key).replace('{min}', String(PASSWORD_MIN));
+
     const typedHandle = handle.trim().toLowerCase();
     const nameOk = displayName.trim().length >= 2;
     const handleOk = typedHandle !== '' && (check.status === 'free' || check.status === 'checking');
     // Mientras el segundo campo esta vacio no hay nada que avisar: lo estan
     // escribiendo. Que falte lo caza el `required` del navegador.
     const passwordsDiffer = passwordRepeat !== '' && passwordRepeat !== password;
-    const canSubmit = nameOk && handleOk && !passwordsDiffer && !isSubmitting;
+    const passwordShort = password !== '' && password.length < PASSWORD_MIN;
+    const canSubmit = nameOk && handleOk && !passwordsDiffer && !passwordShort && !isSubmitting;
 
     const handleRegisterSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
+        if (password.length < PASSWORD_MIN) {
+            setMessage(minText('register.password_short'));
+            return;
+        }
         if (password !== passwordRepeat) {
             setMessage(t('register.password_mismatch'));
             return;
@@ -219,7 +229,6 @@ const Register: React.FC = () => {
                                 type="text"
                                 value={handle}
                                 maxLength={HANDLE_MAX}
-                                placeholder="carlosmu"
                                 autoCapitalize="none"
                                 spellCheck={false}
                                 onChange={(e) => { setHandleEdited(true); setHandle(e.target.value); }}
@@ -278,9 +287,13 @@ const Register: React.FC = () => {
                                 type="password"
                                 value={password}
                                 autoComplete="new-password"
+                                minLength={PASSWORD_MIN}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                             />
+                            {passwordShort
+                                ? <p className="uk-text-danger">{minText('register.password_short')}</p>
+                                : <p className="uk-text-meta">{minText('register.password_hint')}</p>}
                         </div>
                         {/* Se escribe dos veces porque no se ve lo que se teclea
                             y un dedo torcido deja fuera de su propia cuenta a
@@ -293,6 +306,7 @@ const Register: React.FC = () => {
                                 type="password"
                                 value={passwordRepeat}
                                 autoComplete="new-password"
+                                minLength={PASSWORD_MIN}
                                 onChange={(e) => setPasswordRepeat(e.target.value)}
                                 required
                             />

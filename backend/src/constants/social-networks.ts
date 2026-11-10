@@ -19,45 +19,69 @@ export interface SocialNetwork {
     featured?: boolean;
 }
 
-export const SOCIAL_NETWORKS: SocialNetwork[] = [
+/** The stand-in username every placeholder is built around. */
+const PLACEHOLDER_HANDLE = 'tu_usuario';
+
+/**
+ * Same thing, without the placeholder: most are the profile link with the
+ * username swapped in, so writing them out one by one only invites them to
+ * drift. A network states its own placeholder when the rule does not fit it:
+ * the ones that store a whole address (there is no template to fill), and
+ * Bluesky, whose username carries its server.
+ */
+type CatalogueEntry = Omit<SocialNetwork, 'placeholder'> & { placeholder?: string };
+
+const CATALOGUE: CatalogueEntry[] = [
     // --- featured: the ones most people fill in ---
-    { key: 'x', label: 'X (Twitter)', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://x.com/{handle}', featured: true },
-    { key: 'instagram', label: 'Instagram', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://instagram.com/{handle}', featured: true },
+    { key: 'x', label: 'X (Twitter)', type: 'handle', urlTemplate: 'https://x.com/{handle}', featured: true },
+    { key: 'instagram', label: 'Instagram', type: 'handle', urlTemplate: 'https://instagram.com/{handle}', featured: true },
     { key: 'youtube', label: 'YouTube', type: 'url', placeholder: 'https://youtube.com/@tu_canal', urlTemplate: '{handle}', featured: true },
-    { key: 'reddit', label: 'Reddit', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://reddit.com/user/{handle}', featured: true },
+    { key: 'reddit', label: 'Reddit', type: 'handle', urlTemplate: 'https://reddit.com/user/{handle}', featured: true },
 
     // --- code ---
-    { key: 'github', label: 'GitHub', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://github.com/{handle}' },
-    { key: 'gitlab', label: 'GitLab', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://gitlab.com/{handle}' },
-    { key: 'codepen', label: 'CodePen', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://codepen.io/{handle}' },
+    { key: 'github', label: 'GitHub', type: 'handle', urlTemplate: 'https://github.com/{handle}' },
+    { key: 'gitlab', label: 'GitLab', type: 'handle', urlTemplate: 'https://gitlab.com/{handle}' },
+    { key: 'codepen', label: 'CodePen', type: 'handle', urlTemplate: 'https://codepen.io/{handle}' },
 
     // --- chat ---
     // Discord has no public profile URL, so the handle is shown as plain text.
-    { key: 'discord', label: 'Discord', type: 'handle', placeholder: 'tu_usuario', urlTemplate: null },
-    { key: 'telegram', label: 'Telegram', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://t.me/{handle}' },
+    { key: 'discord', label: 'Discord', type: 'handle', urlTemplate: null },
+    { key: 'telegram', label: 'Telegram', type: 'handle', urlTemplate: 'https://t.me/{handle}' },
 
     // --- web3 ---
-    { key: 'farcaster', label: 'Farcaster', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://warpcast.com/{handle}' },
-    { key: 'lens', label: 'Lens', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://hey.xyz/u/{handle}' },
+    { key: 'farcaster', label: 'Farcaster', type: 'handle', urlTemplate: 'https://warpcast.com/{handle}' },
+    { key: 'lens', label: 'Lens', type: 'handle', urlTemplate: 'https://hey.xyz/u/{handle}' },
 
     // --- design and 3d ---
-    { key: 'behance', label: 'Behance', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://behance.net/{handle}' },
-    { key: 'dribbble', label: 'Dribbble', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://dribbble.com/{handle}' },
-    { key: 'artstation', label: 'ArtStation', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://artstation.com/{handle}' },
-    { key: 'sketchfab', label: 'Sketchfab', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://sketchfab.com/{handle}' },
-    { key: 'itch', label: 'itch.io', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://{handle}.itch.io' },
+    { key: 'behance', label: 'Behance', type: 'handle', urlTemplate: 'https://behance.net/{handle}' },
+    { key: 'dribbble', label: 'Dribbble', type: 'handle', urlTemplate: 'https://dribbble.com/{handle}' },
+    { key: 'artstation', label: 'ArtStation', type: 'handle', urlTemplate: 'https://artstation.com/{handle}' },
+    { key: 'sketchfab', label: 'Sketchfab', type: 'handle', urlTemplate: 'https://sketchfab.com/{handle}' },
+    { key: 'itch', label: 'itch.io', type: 'handle', urlTemplate: 'https://{handle}.itch.io' },
 
     // --- other social ---
-    { key: 'tiktok', label: 'TikTok', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://tiktok.com/@{handle}' },
-    { key: 'twitch', label: 'Twitch', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://twitch.tv/{handle}' },
-    { key: 'linkedin', label: 'LinkedIn', type: 'handle', placeholder: 'tu_usuario', urlTemplate: 'https://linkedin.com/in/{handle}' },
+    { key: 'tiktok', label: 'TikTok', type: 'handle', urlTemplate: 'https://tiktok.com/@{handle}' },
+    { key: 'twitch', label: 'Twitch', type: 'handle', urlTemplate: 'https://twitch.tv/{handle}' },
+    { key: 'linkedin', label: 'LinkedIn', type: 'handle', urlTemplate: 'https://linkedin.com/in/{handle}' },
     // Mastodon and Bluesky handles carry their server, so a template cannot build them.
     { key: 'mastodon', label: 'Mastodon', type: 'url', placeholder: 'https://mastodon.social/@tu_usuario', urlTemplate: '{handle}' },
-    { key: 'bluesky', label: 'Bluesky', type: 'handle', placeholder: 'tu_usuario.bsky.social', urlTemplate: 'https://bsky.app/profile/{handle}' },
+    { key: 'bluesky', label: 'Bluesky', type: 'handle', placeholder: 'https://bsky.app/profile/tu_usuario.bsky.social', urlTemplate: 'https://bsky.app/profile/{handle}' },
 
     // --- free form ---
     { key: 'website', label: 'Web', type: 'url', placeholder: 'https://tu-web.com', urlTemplate: '{handle}' },
 ];
+
+/**
+ * The whole address rather than a bare username, because "tu_usuario" leaves
+ * people guessing whether the field wants the name, the @name or the link. The
+ * link answers all three at once, and a pasted one is understood anyway.
+ */
+export const SOCIAL_NETWORKS: SocialNetwork[] = CATALOGUE.map((network) => ({
+    ...network,
+    placeholder: network.placeholder
+        ?? network.urlTemplate?.replace('{handle}', PLACEHOLDER_HANDLE)
+        ?? PLACEHOLDER_HANDLE,
+}));
 
 export const SOCIAL_NETWORKS_BY_KEY = new Map(SOCIAL_NETWORKS.map((n) => [n.key, n]));
 
@@ -112,7 +136,11 @@ export function normalizeSocial(network: string, rawHandle: string): NormalizedS
     if (handle.includes('://')) {
         try {
             const parsed = new URL(handle);
-            handle = parsed.pathname.split('/').filter(Boolean).pop() ?? '';
+            // A few networks put the username in the subdomain rather than the
+            // path (pablo.itch.io), and the path of those links is empty.
+            handle = definition.urlTemplate?.startsWith('https://{handle}.')
+                ? parsed.hostname.split('.')[0]
+                : parsed.pathname.split('/').filter(Boolean).pop() ?? '';
         } catch {
             // fall through to the pattern check below
         }

@@ -14,6 +14,8 @@ export const HANDLE_MIN = 3;
 export const HANDLE_MAX = 30;
 export const DISPLAY_NAME_MIN = 2;
 export const DISPLAY_NAME_MAX = 40;
+/** Mirrors PASSWORD_MIN on the server, which rejects anything shorter. */
+export const PASSWORD_MIN = 6;
 
 /** `Pablo Estornut` -> `pablo-estornut`. Empty when nothing usable is left. */
 export function slugifyHandle(name: string): string {

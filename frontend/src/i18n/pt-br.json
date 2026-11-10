@@ -91,6 +91,8 @@
   "register.password": "Senha",
   "register.password_repeat": "Repita a senha",
   "register.password_mismatch": "As senhas não coincidem.",
+  "register.password_hint": "Pelo menos {min} caracteres.",
+  "register.password_short": "A senha precisa de pelo menos {min} caracteres.",
   "register.profile_hint": "Seu nome público e o endereço da sua página. Os dois aparecem junto ao seu trabalho; seu e-mail nunca.",
   "register.avatar_choose": "Escolher imagem",
   "register.avatar_remove": "Remover imagem",

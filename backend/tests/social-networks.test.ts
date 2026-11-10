@@ -22,6 +22,23 @@ describe('catalogue', () => {
             expect(network.urlTemplate).toBe('{handle}');
         }
     });
+
+    // A bare "tu_usuario" leaves people guessing whether the field wants the
+    // name, the @name or the link, so every placeholder is the whole address.
+    it('shows the whole address in every placeholder', () => {
+        for (const network of SOCIAL_NETWORKS) {
+            // Discord is the exception: there is no public profile page to show.
+            if (network.key === 'discord') continue;
+            expect(network.placeholder, network.key).toMatch(/^https:\/\//);
+        }
+    });
+
+    it('builds the placeholder from the profile link, so a new network cannot forget it', () => {
+        expect(SOCIAL_NETWORKS.find((n) => n.key === 'x')?.placeholder).toBe('https://x.com/tu_usuario');
+        expect(SOCIAL_NETWORKS.find((n) => n.key === 'tiktok')?.placeholder).toBe('https://tiktok.com/@tu_usuario');
+        expect(SOCIAL_NETWORKS.find((n) => n.key === 'itch')?.placeholder).toBe('https://tu_usuario.itch.io');
+        expect(SOCIAL_NETWORKS.find((n) => n.key === 'discord')?.placeholder).toBe('tu_usuario');
+    });
 });
 
 describe('normalizeSocial', () => {
@@ -38,6 +55,31 @@ describe('normalizeSocial', () => {
     it('accepts a pasted profile link and keeps the handle', () => {
         expect(normalizeSocial('x', 'https://x.com/pablo')?.handle).toBe('pablo');
         expect(normalizeSocial('github', 'https://github.com/pabloes')?.handle).toBe('pabloes');
+        expect(normalizeSocial('tiktok', 'https://tiktok.com/@pablo')?.handle).toBe('pablo');
+        expect(normalizeSocial('linkedin', 'https://linkedin.com/in/pablo')?.handle).toBe('pablo');
+        expect(normalizeSocial('bluesky', 'https://bsky.app/profile/pablo.bsky.social')?.handle)
+            .toBe('pablo.bsky.social');
+    });
+
+    // itch.io puts the username in the subdomain, so there is no last path
+    // segment to take: now that the placeholder shows the whole address,
+    // somebody will paste exactly that.
+    it('takes the handle from the subdomain when that is where it lives', () => {
+        expect(normalizeSocial('itch', 'https://pablo.itch.io')?.handle).toBe('pablo');
+        expect(normalizeSocial('itch', 'https://pablo.itch.io/mi-juego')?.handle).toBe('pablo');
+        expect(normalizeSocial('itch', 'pablo')?.handle).toBe('pablo');
+    });
+
+    // Every placeholder is now a link, so every placeholder has to survive
+    // being left in the field and sent as it is.
+    it('understands its own placeholder for every network', () => {
+        for (const network of SOCIAL_NETWORKS) {
+            const stored = normalizeSocial(network.key, network.placeholder);
+            expect(stored, network.key).not.toBeNull();
+            if (network.type === 'handle') {
+                expect(stored?.handle, network.key).not.toContain('://');
+            }
+        }
     });
 
     it('treats blank as "not provided" rather than an error', () => {
