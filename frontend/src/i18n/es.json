@@ -89,6 +89,8 @@
   "register.title": "Registro",
   "register.email": "Correo electrónico",
   "register.password": "Contraseña",
+  "register.password_repeat": "Repite la contraseña",
+  "register.password_mismatch": "Las contraseñas no coinciden.",
   "register.profile_hint": "Tu nombre público y la dirección de tu página. Los ven los demás junto a tu trabajo; tu correo no se muestra nunca.",
   "register.avatar_choose": "Elegir imagen",
   "register.avatar_remove": "Quitar imagen",

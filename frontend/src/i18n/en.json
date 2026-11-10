@@ -89,6 +89,8 @@
   "register.title": "Register",
   "register.email": "Email",
   "register.password": "Password",
+  "register.password_repeat": "Repeat the password",
+  "register.password_mismatch": "The passwords do not match.",
   "register.profile_hint": "Your public name and the address of your page. Both are shown next to your work; your email never is.",
   "register.avatar_choose": "Choose image",
   "register.avatar_remove": "Remove image",

@@ -89,6 +89,8 @@
   "register.title": "注册",
   "register.email": "电子邮箱",
   "register.password": "密码",
+  "register.password_repeat": "再次输入密码",
+  "register.password_mismatch": "两次输入的密码不一致。",
   "register.profile_hint": "你的公开名称和页面地址。两者都会显示在你的作品旁边；你的邮箱永远不会显示。",
   "register.avatar_choose": "选择图片",
   "register.avatar_remove": "移除图片",

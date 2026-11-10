@@ -28,6 +28,7 @@ const Register: React.FC = () => {
     const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [passwordRepeat, setPasswordRepeat] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRegistered, setIsRegistered] = useState(false);
     const [message, setMessage] = useState('');
@@ -116,10 +117,17 @@ const Register: React.FC = () => {
     const typedHandle = handle.trim().toLowerCase();
     const nameOk = displayName.trim().length >= 2;
     const handleOk = typedHandle !== '' && (check.status === 'free' || check.status === 'checking');
-    const canSubmit = nameOk && handleOk && !isSubmitting;
+    // Mientras el segundo campo esta vacio no hay nada que avisar: lo estan
+    // escribiendo. Que falte lo caza el `required` del navegador.
+    const passwordsDiffer = passwordRepeat !== '' && passwordRepeat !== password;
+    const canSubmit = nameOk && handleOk && !passwordsDiffer && !isSubmitting;
 
     const handleRegisterSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
+        if (password !== passwordRepeat) {
+            setMessage(t('register.password_mismatch'));
+            return;
+        }
         setIsSubmitting(true);
 
         try {
@@ -269,9 +277,26 @@ const Register: React.FC = () => {
                                 className="uk-input"
                                 type="password"
                                 value={password}
+                                autoComplete="new-password"
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                             />
+                        </div>
+                        {/* Se escribe dos veces porque no se ve lo que se teclea
+                            y un dedo torcido deja fuera de su propia cuenta a
+                            quien se acaba de registrar. */}
+                        <div className="uk-margin">
+                            <label className="uk-form-label" htmlFor="passwordRepeat">{t('register.password_repeat')}</label>
+                            <input
+                                id="passwordRepeat"
+                                className="uk-input"
+                                type="password"
+                                value={passwordRepeat}
+                                autoComplete="new-password"
+                                onChange={(e) => setPasswordRepeat(e.target.value)}
+                                required
+                            />
+                            {passwordsDiffer && <p className="uk-text-danger">{t('register.password_mismatch')}</p>}
                         </div>
                         <SocialLinksFields value={socials} onChange={setSocials} />
                         <div className="uk-margin">
