@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n';
+import { api } from '../../services/axios-setup';
 import { useMemberSearch, memberLabel, type DirectoryMember } from '../../services/use-member-search';
 
 /** One person on a project. `userId` is what makes the name a link to them. */
@@ -23,9 +25,24 @@ interface Props {
  * the save to be refused, and the order can be changed -- on a project page the
  * first name is the one that reads as "this is mostly theirs".
  */
+/** Only what the "add myself" button needs out of the account. */
+interface Me {
+    id: number;
+    /** What the site shows for them: their name, else Discord, else their
+     *  on-chain name, else the automatic handle. Resolved by the server. */
+    publicName: string;
+    handle: string | null;
+}
+
 const ProjectMembersField: React.FC<Props> = ({ value, onChange }) => {
     const { t } = useTranslation();
     const { query, setQuery, results, setResults, searching, enoughTyped } = useMemberSearch();
+
+    // Same cache key as the account page, so this costs nothing once loaded.
+    const { data: me } = useQuery<Me>({
+        queryKey: ['userInfo'],
+        queryFn: async () => (await api.get('/user/me')).data,
+    });
 
     const alreadyThere = (name: string) =>
         value.some((member) => member.name.trim().toLowerCase() === name.trim().toLowerCase());
@@ -43,6 +60,10 @@ const ProjectMembersField: React.FC<Props> = ({ value, onChange }) => {
         setResults([]);
     };
 
+    /** The account filling the form, under the name the site shows for them. */
+    const addMe = (account: Me) =>
+        add({ name: account.publicName, role: '', userId: account.id, handle: account.handle });
+
     const setRole = (index: number, role: string) =>
         onChange(value.map((member, i) => (i === index ? { ...member, role } : member)));
 
@@ -58,11 +79,29 @@ const ProjectMembersField: React.FC<Props> = ({ value, onChange }) => {
 
     const full = value.length >= MAX_MEMBERS;
 
+    // Whoever is filling this form is nearly always on the project, and making
+    // them search for their own name is silly: they have to know what the site
+    // decided to call them before they can find it. Gone once they are in.
+    const meAlready = me !== undefined && value.some((member) => member.userId === me.id);
+    const canAddMe = me !== undefined && !meAlready && !full;
+
     return (
         <div className="uk-margin">
             <label className="uk-form-label">{t('project.members')}</label>
             <div className="uk-form-controls">
                 <p className="uk-text-meta uk-margin-remove-top">{t('project.members_hint')}</p>
+
+                {canAddMe && (
+                    <p className="uk-margin-small-bottom">
+                        <button
+                            type="button"
+                            className="uk-button uk-button-default uk-button-small"
+                            onClick={() => addMe(me)}
+                        >
+                            + {t('project.add_myself')}
+                        </button>
+                    </p>
+                )}
 
                 {value.length === 0 && (
                     <p className="zx-form-error">{t('project.members_required')}</p>

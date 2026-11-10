@@ -345,6 +345,7 @@
   "nav.my_projects": "Meus Projetos",
   "project.members": "Quem fez",
   "project.members_hint": "Um projeto precisa de pelo menos um membro. Procure quem tem conta; os demais, adicione pelo nome. A ordem é a que será exibida.",
+  "project.add_myself": "Adicionar a mim mesmo",
   "project.members_required": "Falta pelo menos um membro.",
   "project.member_earlier": "Subir",
   "project.member_later": "Descer",

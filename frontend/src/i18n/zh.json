@@ -345,6 +345,7 @@
   "nav.my_projects": "我的项目",
   "project.members": "谁做的",
   "project.members_hint": "一个项目至少需要一位成员。有账号的可以搜索；没有账号的按名字添加。这里的顺序就是展示的顺序。",
+  "project.add_myself": "把我自己加进来",
   "project.members_required": "至少还缺一位成员。",
   "project.member_earlier": "上移",
   "project.member_later": "下移",
