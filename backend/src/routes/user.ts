@@ -18,8 +18,9 @@ import {
     HANDLE_MIN,
     HANDLE_MAX,
 } from "../config/profile.js";
-import { resolvePublicName, autoHandle } from "../config/public-name.js";
-import { ensureHandle } from "../services/public-handle.js";
+import { resolvePublicName, autoHandle, handleCandidate } from "../config/public-name.js";
+import { ensureHandle, freeHandle } from "../services/public-handle.js";
+import rateLimit from 'express-rate-limit';
 
 const cache = new NodeCache({ stdTTL: 60 * 60 * 24 }); // Cache expires in 24 hours
 const DECENTRALAND_API_URL = 'https://peer.decentraland.org/lambdas/profiles';
@@ -57,6 +58,57 @@ const WORK_SELECT = {
  */
 router.get('/social-networks', (_req: Request, res: Response) => {
     res.json({ networks: SOCIAL_NETWORKS });
+});
+
+// The sign-up form asks on every keystroke (debounced), so this is looser than
+// the upload limiter and tighter than nothing. Per IP: there is no account yet.
+const handleCheckLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    message: { message: 'Too many checks, please try again in a minute.' },
+});
+
+/**
+ * GET /api/user/handle-available?handle=carlosmu
+ * GET /api/user/handle-available?name=Carlos%20Mu
+ *
+ * Public on purpose: the sign-up form needs it before the account exists.
+ * With `name` it also does the slugging, so the rule that turns a display name
+ * into an address lives on the server and the form cannot drift from it.
+ *
+ * Leaks nothing: /member/<handle> already answers for every handle in use.
+ * The answer is a snapshot and the registration checks again before writing.
+ */
+router.get('/handle-available', handleCheckLimiter, async (req: Request, res: Response) => {
+    const { handle, name } = req.query;
+
+    const wanted = typeof handle === 'string' && handle.trim() !== ''
+        ? validateHandle(handle)
+        : { ok: true as const, value: handleCandidate(typeof name === 'string' ? name : null) };
+
+    if (!wanted.ok) {
+        return res.json({ handle: null, available: false, code: wanted.code, suggestion: null });
+    }
+    // Nothing usable was left of the name: too short, or all punctuation.
+    if (!wanted.value) {
+        return res.json({ handle: null, available: false, code: 'HANDLE_LENGTH', suggestion: null });
+    }
+
+    try {
+        const taken = await prisma.user.findFirst({ where: { handle: wanted.value }, select: { id: true } });
+        if (!taken) {
+            return res.json({ handle: wanted.value, available: true, code: null, suggestion: null });
+        }
+        return res.json({
+            handle: wanted.value,
+            available: false,
+            code: 'HANDLE_TAKEN',
+            suggestion: await freeHandle(wanted.value),
+        });
+    } catch (error) {
+        console.error('handle-available failed for', wanted.value, error);
+        return res.status(500).json({ message: 'Could not check that address right now.' });
+    }
 });
 
 router.get('/me', verifyToken, async (req: Request, res: Response) => {

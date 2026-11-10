@@ -89,105 +89,131 @@ export function detectImageType(buffer: Buffer) {
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
 
-// Configure ClamAV scanner
-const uploadHttpHandler =  async (req: Request, res: Response) => {
+/**
+ * Everything that happens to an image between "bytes arrived" and "there is a
+ * row in file_uploads": sniff the real type, virus scan, content scan, write to
+ * disk (or straight to the banned folder), record it.
+ *
+ * Pulled out of the upload route so registration can store an avatar with it:
+ * the account does not exist until the registration succeeds, so that path has
+ * no token and cannot go through POST /images/upload, but the image still has
+ * to pass exactly the same checks. One pipeline, two callers.
+ */
+export interface StoredImage {
+    sha256: string;
+    fileName: string;
+    mimeType: string;
+    banned: boolean;
+    servedUrl: string;
+}
 
+/** An image refused before it was stored. Carries what the caller should answer. */
+export class ImageRejected extends Error {
+    constructor(public code: 'UNSUPPORTED_TYPE' | 'INFECTED', message: string, public viruses?: string[]) {
+        super(message);
+        this.name = 'ImageRejected';
+    }
+}
+
+function mustBan(detections: any): boolean {
+    return detections?.adult === 'LIKELY' || detections?.adult === 'VERY_LIKELY' ||
+        detections?.violence === 'LIKELY' || detections?.violence === 'VERY_LIKELY' ||
+        detections?.racy === 'LIKELY' || detections?.racy === 'VERY_LIKELY';
+}
+
+export async function storeImageBuffer(buffer: Buffer, size: number, userId: number): Promise<StoredImage> {
+    const imageType = detectImageType(buffer);
+    if (!imageType) {
+        throw new ImageRejected('UNSUPPORTED_TYPE', 'Unsupported file type. Allowed: JPEG, PNG, GIF, WebP and AVIF.');
+    }
+
+    if (clamscan) {
+        const fileStream = new Readable();
+        fileStream.push(buffer);
+        fileStream.push(null);  // Signifies end of stream
+        const { isInfected, viruses } = await clamscan.scanStream(fileStream);
+        if (isInfected) {
+            console.log('File is infected:', viruses);
+            throw new ImageRejected('INFECTED', 'File is infected', viruses);
+        }
+    } else {
+        console.warn("ClamAV not available, skipping virus scan for this upload");
+    }
+
+    const [result] = await client.safeSearchDetection(buffer);
+    const detections = result.safeSearchAnnotation;
+    const banned = mustBan(detections);
+
+    const sha256Hash: string = calculateSHA256(buffer);
+    // extension comes from the sniffed type, never from the uploaded name
+    const fileName = `${sha256Hash}.${imageType.ext}`;
+    const publicFolder = path.join(__dirname, '../../public/user-uploaded-images');
+    const publicFilePath = path.join(publicFolder, fileName);
+
+    ensureDirectoryExistence(publicFilePath);
+    writeFileSync(publicFilePath, buffer);
+
+    if (banned) {
+        const bannedFolder = path.join(__dirname, '../../public/banned-images');
+        const bannedFilePath = path.join(bannedFolder, fileName);
+        ensureDirectoryExistence(bannedFilePath);
+        //move from public to banned
+        await moveFile(publicFilePath, bannedFilePath);
+        console.log(`Image ${sha256Hash} marked as banned due to inappropriate content.\n Moved from:${publicFilePath}\nto:${bannedFilePath}`);
+    }
+
+    await prisma.fileUpload.create({
+        data: {
+            userId,
+            fileName,
+            fileSize: size,
+            md5Hash: calculateMD5(buffer),
+            sha256Hash,
+            status: 'completed',
+            banned,
+        }
+    });
+
+    return {
+        sha256: sha256Hash,
+        fileName,
+        mimeType: imageType.mime,
+        banned,
+        servedUrl: `/api/images/user-uploaded-images/${fileName}`,
+    };
+}
+
+const uploadHttpHandler = async (req: Request, res: Response) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
     }
 
-
-    const imageType = detectImageType(req.file.buffer);
-    if (!imageType) {
-        return res.status(400).json({
-            message: 'Unsupported file type. Allowed: JPEG, PNG, GIF, WebP and AVIF.',
-        });
-    }
-
     try {
         const userId = parseInt(req.user.id); // Asumiendo que `req.user` tiene la información del usuario autenticado
-        if (clamscan) {
-            const fileStream = new Readable();
-            fileStream.push(req.file.buffer);
-            fileStream.push(null);  // Signifies end of stream
-            const {isInfected, file, viruses} = await clamscan.scanStream(fileStream);
-            if (isInfected) {
-                console.log('File is infected:', viruses);
-                return res.status(400).json({ message: 'File is infected', viruses });
-            }
-        } else {
-            console.warn("ClamAV not available, skipping virus scan for this upload");
-        }
-        const [result] = await client.safeSearchDetection(req.file.buffer);
-        console.log("detected")
-        const detections = result.safeSearchAnnotation;
-
-        console.log('Safe search result:');
-        console.log(`Adult: ${detections.adult}`);
-        console.log(`Medical: ${detections.medical}`);
-        console.log(`Spoof: ${detections.spoof}`);
-        console.log(`Violence: ${detections.violence}`);
-        console.log(`Racy: ${detections.racy}`);
-
-        // Calculate file hash (for unique identification)
-        const sha256Hash: string = calculateSHA256(req.file.buffer);
-        const filePageUrl = `/user-uploaded-images/${sha256Hash}`;
-        // Save file to disk if it passes the virus scan
-
-        // extension comes from the sniffed type, never from the uploaded name
-        const fileName = `${sha256Hash}.${imageType.ext}`;
-        const publicFolder = path.join(__dirname, '../../public/user-uploaded-images');
-        const publicFilePath = path.join(publicFolder, fileName);
-
-        ensureDirectoryExistence(publicFilePath);
-        writeFileSync(publicFilePath, req.file.buffer);
-        if ( mustBan(detections) ) {
-            const bannedFolder = path.join(__dirname, '../../public/banned-images');
-            const bannedFilePath =  path.join(bannedFolder, fileName);
-            ensureDirectoryExistence(bannedFilePath);
-            //move from public to banned
-            await moveFile(publicFilePath, bannedFilePath);
-            console.log(`Image ${sha256Hash} marked as banned due to inappropriate content.\n Moved from:${publicFilePath}\nto:${bannedFilePath}`);
-        }
-        // Store file info in the database
-        const fileUpload = await prisma.fileUpload.create({
-            data: {
-                userId,
-                fileName,
-                fileSize: req.file.size,
-                md5Hash: calculateMD5(req.file.buffer),
-                sha256Hash,
-                status: 'completed',
-                banned:mustBan(detections)
-            }
-        });
+        const stored = await storeImageBuffer(req.file.buffer, req.file.size, userId);
 
         res.status(200).json({
             message: 'File uploaded successfully and passed scan',
-            sha256: sha256Hash,
+            sha256: stored.sha256,
             // Stored name (<sha256>.<ext>) and ban flag, so callers can build the
             // served URL without guessing the extension.
-            fileName,
-            mimeType: imageType.mime,
-            banned: fileUpload.banned,
+            fileName: stored.fileName,
+            mimeType: stored.mimeType,
+            banned: stored.banned,
             // what a client needs to embed the image. `url` and `servedUrl` are
             // the same path under two names: the editor reads one, the profile
             // form the other.
-            url: `/api/images/user-uploaded-images/${fileName}`,
-            servedUrl: `/api/images/user-uploaded-images/${fileName}`,
-            filePageUrl,
+            url: stored.servedUrl,
+            servedUrl: stored.servedUrl,
+            filePageUrl: `/user-uploaded-images/${stored.sha256}`,
             fileUrl: `/user-uploaded-images/${req.file.originalname}`
         });
-
-        function mustBan(detections){
-            return detections.adult === 'LIKELY' || detections.adult === 'VERY_LIKELY' ||
-                detections.violence === 'LIKELY' || detections.violence === 'VERY_LIKELY' ||
-                detections.racy === 'LIKELY' || detections.racy === 'VERY_LIKELY';
-        }
     } catch (error) {
+        if (error instanceof ImageRejected) {
+            return res.status(400).json({ message: error.message, ...(error.viruses ? { viruses: error.viruses } : {}) });
+        }
         console.log("Error:", error);
-        res.status(500).json({ message: 'Error uploading file', error: error.message });
-
+        res.status(500).json({ message: 'Error uploading file', error: (error as any).message });
     }
 }
 

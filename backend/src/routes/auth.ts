@@ -7,7 +7,10 @@ import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import { env } from '../config/env';
 import { prisma } from '../db';
-import { ensureHandle } from '../services/public-handle.js';
+import { freeHandle } from '../services/public-handle.js';
+import { validateDisplayName, validateHandle } from '../config/profile.js';
+import { ImageRejected, storeImageBuffer } from './image.js';
+import { avatarBuffer } from '../config/avatar-data-url.js';
 
 const router = Router();
 import {updateUserExtraSpace, updateWalletNames} from "../services/decentraland-names";
@@ -19,13 +22,16 @@ const authLimiter = rateLimit({
 });
 
 router.post('/register', authLimiter, async (req, res) => {
-    const { email, password, socials } = req.body;
+    const { email, password, socials, displayName, handle, avatar } = req.body;
 
     // Both `error` and `message` are sent on failures: the Register page reads
     // `error`, while older clients read `message`.
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required.', message: 'Email and password are required.' });
     }
+
+    const fail = (text: string, code?: string) =>
+        res.status(400).json({ error: text, message: text, ...(code ? { code } : {}) });
 
     try {
         // Check if the user already exists
@@ -37,8 +43,8 @@ router.post('/register', authLimiter, async (req, res) => {
             return res.status(400).json({ error: 'Email is already registered.', message: 'Email is already registered.' });
         }
 
-        // Validated before the account exists: a bad handle must not leave a
-        // half-registered user behind.
+        // Everything is validated before the account exists: a bad handle must
+        // not leave a half-registered user behind.
         let socialRows: { network: string; handle: string }[];
         try {
             socialRows = normalizeSocials(socials);
@@ -49,6 +55,31 @@ router.post('/register', authLimiter, async (req, res) => {
             throw socialError;
         }
 
+        // The public name and the address of the member page are asked for at
+        // sign-up now, not left for /account: an account with neither shows up
+        // in credits and in the directory as `member-12`, and in practice it
+        // stays that way.
+        const checkedName = validateDisplayName(displayName);
+        if (!checkedName.ok) return fail('That public name cannot be used.', checkedName.code);
+        if (!checkedName.value) return fail('A public name is required.', 'DISPLAY_NAME_REQUIRED');
+
+        const checkedHandle = validateHandle(handle);
+        if (!checkedHandle.ok) return fail('That address cannot be used.', checkedHandle.code);
+        if (!checkedHandle.value) return fail('An address is required.', 'HANDLE_REQUIRED');
+
+        // The form already asked whether this handle was free, but that answer
+        // is a snapshot and the client is not to be trusted with uniqueness
+        // either way. This is the check that counts; it hands back a suffixed
+        // handle rather than refusing a registration over a name clash.
+        const resolvedHandle = await freeHandle(checkedHandle.value);
+        if (!resolvedHandle) {
+            const text = 'Internal server error. Please try again later.';
+            return res.status(500).json({ error: text, message: text });
+        }
+
+        const avatarBytes = avatarBuffer(avatar);
+        if (avatar && !avatarBytes) return fail('That image could not be read.', 'AVATAR_INVALID');
+
         // Hash the password
         const hashedPassword = await argon2.hash(password);
 
@@ -58,17 +89,31 @@ router.post('/register', authLimiter, async (req, res) => {
                 email,
                 password: hashedPassword,
                 verified: false, // User is not verified yet
+                displayName: checkedName.value,
+                handle: resolvedHandle,
                 socials: socialRows.length ? { create: socialRows } : undefined,
             },
         });
 
-        // Give the account its public handle straight away, so /member/<handle>
-        // works from the first day and nothing ever has to fall back to showing
-        // an email address. There is no Discord link or on-chain name yet, so
-        // this is the automatic `member-<id>`; it is upgraded to a real name the
-        // first time they load their account with one. Never fatal: ensureHandle
-        // swallows its own errors and an account without a handle still works.
-        await ensureHandle(newUser.id);
+        // The avatar can only be stored once the account owns it. It goes
+        // through the same pipeline as any other upload (virus scan, content
+        // scan, quota row), and it is never the reason a registration fails:
+        // the member can always set one later from /account.
+        let avatarStored = false;
+        if (avatarBytes) {
+            try {
+                const stored = await storeImageBuffer(avatarBytes, avatarBytes.length, newUser.id);
+                if (stored.banned) {
+                    console.warn('Registration: avatar rejected by the content scan for', email);
+                } else {
+                    await prisma.user.update({ where: { id: newUser.id }, data: { avatarUrl: stored.servedUrl } });
+                    avatarStored = true;
+                }
+            } catch (avatarError) {
+                const why = avatarError instanceof ImageRejected ? avatarError.code : avatarError;
+                console.error('Registration: avatar could not be stored for', email, why);
+            }
+        }
 
         // Tell the owner the account exists. Not awaited (the response must not
         // wait on SMTP) and it never rejects, but keep the catch anyway so a
@@ -84,11 +129,26 @@ router.post('/register', authLimiter, async (req, res) => {
             // they can ask for a new mail from the login page.
             console.error('Registration: verification mail failed for', email, mailError);
             const text = 'Your account was created, but we could not send the verification email. Please try again from the login page in a few minutes.';
-            return res.status(502).json({ error: text, message: text, accountCreated: true, mailSent: false });
+            return res.status(502).json({ error: text, message: text, accountCreated: true, mailSent: false, handle: resolvedHandle, avatarStored });
         }
 
-        res.json({ message: 'Registration successful! Please check your email to verify your account. The token expires in 6 hours.', mailSent: true });
+        res.json({
+            message: 'Registration successful! Please check your email to verify your account. The token expires in 6 hours.',
+            mailSent: true,
+            // The handle actually stored, which is not always the one asked for:
+            // the page tells them their address instead of letting them find out.
+            handle: resolvedHandle,
+            avatarStored,
+        });
     } catch (error) {
+        // P2002 on the handle: somebody claimed it between the check and the
+        // insert. Rare enough to answer with "try again" rather than retrying
+        // here, because by now the password has been hashed and the email may
+        // have been taken too.
+        if ((error as any)?.code === 'P2002') {
+            const text = 'That address was just taken. Please pick another one.';
+            return res.status(409).json({ error: text, message: text, code: 'HANDLE_TAKEN' });
+        }
         console.error('Error during registration:', error);
         res.status(500).json({ error: 'Internal server error. Please try again later.', message: 'Internal server error. Please try again later.' });
     }
