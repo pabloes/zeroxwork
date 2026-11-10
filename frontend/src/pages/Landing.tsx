@@ -5,12 +5,10 @@ import { useAuth } from "../context/AuthContext";
 import { useArticles } from "../services/use-articles";
 import { useProjects } from "../services/use-projects";
 import ArticleCard from "../components/ArticleCard";
-import ToolCard from "../components/ToolCard";
 import ProjectCard from "../components/ProjectCard";
 import ZxMark from "../components/ZxMark";
 
-// one row each: the rest lives on /tools, /portfolio and /blog
-const TOOLS_IN_ROW = 4;
+// one row each: the rest lives on /portfolio and /blog
 const PROJECTS_IN_ROW = 3;
 const ARTICLES_IN_ROW = 3;
 
@@ -36,7 +34,6 @@ const Landing: React.FC = () => {
     // Waiting for isAuthResolved too: isAuthenticated starts false while the
     // stored token is read, and without it a member sees the sign-up CTA flash.
     const showJoinCta = isAuthResolved && !isAuthenticated;
-    const { data: tools = [] } = useArticles('tool');
     const { data: projects = [] } = useProjects();
     const { data: articles = [] } = useArticles('blog');
 
@@ -60,7 +57,7 @@ const Landing: React.FC = () => {
         // showJoinCta included: the closing band is a .zx-reveal that mounts
         // only once auth resolves, and an observer set up before that would
         // never see it, leaving it hidden for good.
-    }, [tools.length, projects.length, articles.length, showJoinCta]);
+    }, [projects.length, articles.length, showJoinCta]);
 
     return (
         <div className="zx-landing">
@@ -78,7 +75,6 @@ const Landing: React.FC = () => {
                                     {t('landing.cta_join')} <span className="arr">→</span>
                                 </Link>
                             )}
-                            <a className="zx-btn zx-btn-ghost" href="#tools">{t('landing.cta_tools')}</a>
                         </div>
                     </div>
                     <div className="zx-hero-visual">
@@ -182,30 +178,17 @@ const Landing: React.FC = () => {
                 </>
             )}
 
-            {/* tools: one row of what is live, plus the member kit */}
-            <section className="zx-section" id="tools">
+            {/* member kit. La fila de herramientas vivas y su enlace a /tools
+                salieron de aquí: la sección se queda en lo que incluye ser
+                miembro. La ruta /tools sigue viva. */}
+            <section className="zx-section" id="kit">
                 <div className="zx-wrap">
                     <div className="zx-row-head zx-reveal">
                         <div style={{ maxWidth: '32em' }}>
                             <div className="zx-eyebrow" style={{ color: 'var(--zx-ok)' }}>{t('landing.tools_eyebrow')}</div>
-                            <h2 className="zx-sec-title">{t('landing.tools_title')}</h2>
-                            <p className="zx-sec-sub">{t('landing.tools_sub')}</p>
+                            <h2 className="zx-sec-title">{t('landing.kit')}</h2>
                         </div>
-                        <Link className="zx-more-link" to="/tools">{t('landing.tools_all')} →</Link>
                     </div>
-
-                    {tools.length > 0 && (
-                        <>
-                            <div className="zx-sub-head zx-reveal"><span className="zx-tick" />{t('landing.tools_live')}</div>
-                            <div className="zx-card-grid zx-cols-4 zx-reveal">
-                                {tools.slice(0, TOOLS_IN_ROW).map((tool, i) => (
-                                    <ToolCard key={tool.id} tool={tool} index={i} />
-                                ))}
-                            </div>
-                        </>
-                    )}
-
-                    <div className="zx-sub-head zx-reveal">{t('landing.kit')}</div>
                     <div className="zx-kit-grid zx-reveal">
                         {KIT.map(({ key, accent, tag }) => (
                             <div className="zx-kit" key={key} style={{ '--zx-accent': accent } as React.CSSProperties}>

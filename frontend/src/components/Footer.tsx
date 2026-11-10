@@ -16,7 +16,6 @@ const Footer: React.FC = () => {
 
                 <div className="zx-foot-links">
                     <Link to="/blog">{t('nav.blog')}</Link>
-                    <Link to="/tools">{t('nav.tools')}</Link>
                     <Link to="/portfolio">{t('nav.portfolio')}</Link>
                     <Link to="/members">{t('nav.members')}</Link>
                     <Link to="/terms">{t('footer.terms')}</Link>
