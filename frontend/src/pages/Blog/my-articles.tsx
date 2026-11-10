@@ -54,11 +54,11 @@ const MyArticles: React.FC = () => {
     const mutation = useMutation({
         mutationFn: (articleId: number) => deleteArticle(articleId),
         onSuccess: () => {
-            UIkit.notification('Article deleted successfully!', { status: 'success' });
+            UIkit.notification(t('article.deleted_ok'), { status: 'success' });
             queryClient.invalidateQueries({ queryKey: ['my-articles'] }); // Corrected invalidateQueries call
         },
         onError: () => {
-            UIkit.notification('Error deleting article.', { status: 'danger' });
+            UIkit.notification(t('article.delete_failed'), { status: 'danger' });
         }
     });
 
@@ -104,18 +104,18 @@ const MyArticles: React.FC = () => {
 
     // Show loading or error states if necessary
     if (isLoading) {
-        return <div>Loading articles...</div>;
+        return <div className="zx-empty">{t('common.loading')}</div>;
     }
 
     if (error) {
-        return <div>Error fetching articles.</div>;
+        return <div className="zx-empty">{t('article.load_failed')}</div>;
     }
 
     return (
         <div className="uk-container uk-margin-large-top">
             <div className="uk-flex uk-flex-between uk-flex-middle">
                 <Link to={`/create-article`} className="uk-button uk-button-primary">
-                    ✙ Create new article
+                    ✙ {t('blog.create')}
                 </Link>
             </div>
             <br/>
@@ -132,7 +132,7 @@ const MyArticles: React.FC = () => {
                                             data-uk-cover
                                         />
                                     ) : (
-                                        <div className="uk-placeholder">No image available</div>
+                                        <div className="uk-placeholder">{t('article.no_image')}</div>
                                     )}
                                     <canvas width="600" height="400"></canvas> {/* Placeholder for aspect ratio */}
 
@@ -145,7 +145,7 @@ const MyArticles: React.FC = () => {
                                     {/* Overlay with title and publication date */}
                                     <div className="uk-overlay uk-overlay-primary uk-position-bottom uk-light">
                                         <h3 className="uk-card-title">{article.title}</h3>
-                                        <p className="uk-text-meta">Published on: {new Date(article.createdAt).toLocaleDateString()}</p>
+                                        <p className="uk-text-meta">{t('article.published_on')} {new Date(article.createdAt).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             </div>
@@ -159,13 +159,13 @@ const MyArticles: React.FC = () => {
                                 {t(article.published ? 'article.unpublish' : 'article.publish')}
                             </button>
                             <Link to={`/edit-article/${article.id}`} className="uk-button uk-button-secondary uk-margin-small-bottom">
-                               ✏️️  Edit
+                               ✏️️ {t('article.edit')}
                             </Link>
                             <button
                                 className="uk-button uk-button-danger uk-margin-small-bottom"
                                 onClick={() => openDeleteModal(article)} // Trigger modal on click
                             >
-                               🗑️️ Delete
+                               🗑️️ {t('article.delete')}
                             </button>
                         </div>
                     </div>
@@ -182,10 +182,10 @@ const MyArticles: React.FC = () => {
                             handleDelete(articleToDelete.id);
                         }
                     }}
-                    title="Confirm Deletion"
-                    message={`Are you sure you want to delete the article "${articleToDelete.title}"? This action cannot be undone.`}
-                    confirmButtonText="Delete"
-                    cancelButtonText="Cancel"
+                    title={t('article.delete_title')}
+                    message={`${t('article.delete_warning')} "${articleToDelete.title}"`}
+                    confirmButtonText={t('article.delete_cta')}
+                    cancelButtonText={t('article.delete_cancel')}
                     wordToType="delete"
                     imageSrc={articleToDelete.thumbnail || ''} // Pass the URL of the article's thumbnail
                 />

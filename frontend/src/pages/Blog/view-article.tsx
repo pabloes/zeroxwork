@@ -95,16 +95,16 @@ const ArticlePage: React.FC = () => {
             {article ? (
                 <div className="uk-card uk-card-default uk-card-body markdown-body">
                     <p className="uk-text-meta">
-                        <b>Published on:&nbsp;</b>{new Date(article.createdAt).toLocaleDateString()}&nbsp;|&nbsp;
-                        <b>Last update:&nbsp;</b>{new Date(article.updatedAt).toLocaleDateString()}&nbsp;|&nbsp;
-                        <b>Author:</b>&nbsp;<img
+                        <b>{t('article.published_on')}&nbsp;</b>{new Date(article.createdAt).toLocaleDateString()}&nbsp;|&nbsp;
+                        <b>{t('article.last_update')}&nbsp;</b>{new Date(article.updatedAt).toLocaleDateString()}&nbsp;|&nbsp;
+                        <b>{t('article.author')}</b>&nbsp;<img
                         src={getNameAvatarImage({
                             name: article.author,
                             address: article.authorAddress,
                             avatarUrl: article.authorAvatar,
                             seed: article.authorAddress ?? authorLabel(article) ?? article.id,
                         })}
-                        alt="Author Avatar"
+                        alt=""
                         className="uk-border-circle"
                         style={{ width: '32px', height: '32px', marginRight: '10px', float:"none", marginLeft:"6px" }}
                     />{authorLabel(article) ?? article.author}

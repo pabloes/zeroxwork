@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ArticleEditor from '../../components/editor/ArticleEditor';
 import ImagePicker from '../../components/editor/ImagePicker';
+import TagsField from '../../components/editor/TagsField';
 import { useTranslation } from '../../i18n';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/axios-setup';
@@ -10,7 +11,6 @@ import UIkit from "uikit";
 import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
 import { apiErrorMessage } from '../../services/api-error';
-import CreditsField, { type CreditDraft } from '../../components/editor/CreditsField';
 import ProjectMediaField from '../../components/editor/ProjectMediaField';
 import { isAllowedVideoUrl, isProjectCategory } from '../../services/project-media';
 
@@ -95,10 +95,8 @@ const EditArticle: React.FC = () => {
     const [autoSlug, setAutoSlug] = useState<boolean>(false);
     const [categoryId, setCategoryId] = useState<number | null>(article?.categoryId || null);
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
-    const [newTagInput, setNewTagInput] = useState<string>('');
     const [thumbPickerOpen, setThumbPickerOpen] = useState<boolean>(false);
     const [newTags, setNewTags] = useState<string[]>([]);
-    const [credits, setCredits] = useState<CreditDraft[]>([]);
     const [articleType, setArticleType] = useState<'post' | 'link'>(article?.type || 'post');
     const [redirectUrl, setRedirectUrl] = useState<string>(article?.redirectUrl || '');
     const [screenshots, setScreenshots] = useState<string[]>(article?.screenshots || []);
@@ -120,12 +118,6 @@ const EditArticle: React.FC = () => {
             setRedirectUrl(article.redirectUrl || '');
             setScreenshots(article.screenshots ?? []);
             setVideoUrl(article.videoUrl ?? '');
-            setCredits((article.credits ?? []).map((credit: any) => ({
-                name: credit.name,
-                role: credit.role || '',
-                userId: credit.userId ?? null,
-                handle: credit.handle ?? null,
-            })));
         }
     }, [article]);
 
@@ -146,26 +138,6 @@ const EditArticle: React.FC = () => {
 
     const handleContentChange = (value: string) => {
         setContent(value);
-    };
-
-    const handleTagToggle = (tagId: number) => {
-        setSelectedTagIds(prev =>
-            prev.includes(tagId)
-                ? prev.filter(id => id !== tagId)
-                : [...prev, tagId]
-        );
-    };
-
-    const handleAddNewTag = () => {
-        const trimmed = newTagInput.trim();
-        if (trimmed && !newTags.includes(trimmed)) {
-            setNewTags(prev => [...prev, trimmed]);
-            setNewTagInput('');
-        }
-    };
-
-    const handleRemoveNewTag = (tagName: string) => {
-        setNewTags(prev => prev.filter(t => t !== tagName));
     };
 
     // Which category is selected, by name: only a project carries a gallery.
@@ -216,12 +188,6 @@ const EditArticle: React.FC = () => {
             newTags: newTags,
             type: articleType,
             redirectUrl: articleType === 'link' ? redirectUrl : undefined,
-            credits: credits.map((credit) => ({
-                name: credit.name,
-                role: credit.role || undefined,
-                userId: credit.userId ?? undefined,
-                handle: credit.handle ?? undefined,
-            })),
             screenshots,
             videoUrl: videoUrl.trim() || undefined,
         });
@@ -230,15 +196,15 @@ const EditArticle: React.FC = () => {
 
     // Show loading state while fetching the article
     if (isLoading) {
-        return <div>Loading...</div>;
+        return <div>{t('common.loading')}</div>;
     }
 
     return (
         <div className="uk-container uk-margin-large-top">
-            <PageTitle title={`Edit post: ${article?.title}`} />
+            <PageTitle title={`${t('article.form.edit_title')}: ${article?.title ?? ''}`} />
             <form className="uk-form-stacked" onSubmit={handleSubmit}>
                 <div className="uk-margin">
-                    <label className="uk-form-label" htmlFor="title">Title:</label>
+                    <label className="uk-form-label" htmlFor="title">{t('article.form.title_label')}</label>
                     <div className="uk-form-controls">
                         <input
                             className="uk-input"
@@ -247,13 +213,13 @@ const EditArticle: React.FC = () => {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             required
-                            placeholder="Enter article title"
+                            placeholder={t('article.form.title_placeholder')}
                         />
                     </div>
                 </div>
 
                 <div className="uk-margin">
-                    <label className="uk-form-label" htmlFor="slug">Slug:</label>
+                    <label className="uk-form-label" htmlFor="slug">{t('article.form.slug_label')}</label>
                     <div className="uk-form-controls uk-grid-small uk-flex-middle" uk-grid="">
                         <div className="uk-width-expand">
                             <input
@@ -262,7 +228,7 @@ const EditArticle: React.FC = () => {
                                 type="text"
                                 value={slug}
                                 onChange={handleSlugChange}
-                                placeholder="article-url-slug"
+                                placeholder={t('article.form.slug_placeholder')}
                             />
                         </div>
                         <div>
@@ -272,14 +238,14 @@ const EditArticle: React.FC = () => {
                                     type="checkbox"
                                     checked={autoSlug}
                                     onChange={(e) => setAutoSlug(e.target.checked)}
-                                /> auto-slug
+                                /> {t('article.form.slug_auto')}
                             </label>
                         </div>
                     </div>
                 </div>
 
                 <div className="uk-margin">
-                    <label className="uk-form-label" htmlFor="lang">Language:</label>
+                    <label className="uk-form-label" htmlFor="lang">{t('article.form.lang_label')}</label>
                     <div className="uk-form-controls">
                         <select
                             className="uk-select"
@@ -296,7 +262,7 @@ const EditArticle: React.FC = () => {
 
                 <div className="uk-margin">
                     <label className="uk-form-label" htmlFor="thumbnail">
-                        {isProject ? t('project.cover') : 'Thumbnail URL:'}
+                        {isProject ? t('project.cover') : t('article.form.thumbnail_label')}
                     </label>
                     <div className="uk-form-controls zx-thumb-field">
                         <input
@@ -305,7 +271,7 @@ const EditArticle: React.FC = () => {
                             type="text"
                             value={thumbnail}
                             onChange={(e) => setThumbnail(e.target.value)} // Update the thumbnail state
-                            placeholder="Enter image URL"
+                            placeholder={t('article.form.thumbnail_placeholder')}
                         />
                         <button type="button" className="zx-tb-text" onClick={() => setThumbPickerOpen(true)}>
                             {t('editor.image_from_library')}
@@ -326,7 +292,7 @@ const EditArticle: React.FC = () => {
                         <div className="uk-margin">
                             <img
                                 src={thumbnail}
-                                alt="Thumbnail preview"
+                                alt={t('article.form.thumbnail_alt')}
                                 style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'cover' }}
 /*
                                 onError={() => setThumbnail('')} // Clear thumbnail if the URL is invalid
@@ -337,7 +303,7 @@ const EditArticle: React.FC = () => {
                 </div>
 
                 <div className="uk-margin">
-                    <label className="uk-form-label" htmlFor="category">Category:</label>
+                    <label className="uk-form-label" htmlFor="category">{t('article.form.category_label')}</label>
                     <div className="uk-form-controls">
                         <select
                             className="uk-select"
@@ -345,7 +311,7 @@ const EditArticle: React.FC = () => {
                             value={categoryId || ''}
                             onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
                         >
-                            <option value="">No category</option>
+                            <option value="">{t('article.form.category_none')}</option>
                             {pickable.map((cat) => (
                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                             ))}
@@ -364,7 +330,7 @@ const EditArticle: React.FC = () => {
                 )}
 
                 <div className="uk-margin">
-                    <label className="uk-form-label">Article Type:</label>
+                    <label className="uk-form-label">{t('article.form.type_label')}</label>
                     <div className="uk-form-controls">
                         <label className="uk-margin-small-right">
                             <input
@@ -374,7 +340,7 @@ const EditArticle: React.FC = () => {
                                 value="post"
                                 checked={articleType === 'post'}
                                 onChange={() => setArticleType('post')}
-                            /> Post
+                            /> {t('article.form.type_post')}
                         </label>
                         <label>
                             <input
@@ -384,14 +350,14 @@ const EditArticle: React.FC = () => {
                                 value="link"
                                 checked={articleType === 'link'}
                                 onChange={() => setArticleType('link')}
-                            /> Link
+                            /> {t('article.form.type_link')}
                         </label>
                     </div>
                 </div>
 
                 {articleType === 'link' && (
                     <div className="uk-margin">
-                        <label className="uk-form-label" htmlFor="redirectUrl">Redirect URL:</label>
+                        <label className="uk-form-label" htmlFor="redirectUrl">{t('article.form.redirect_label')}</label>
                         <div className="uk-form-controls">
                             <input
                                 className="uk-input"
@@ -406,85 +372,23 @@ const EditArticle: React.FC = () => {
                     </div>
                 )}
 
-                <div className="uk-margin">
-                    <label className="uk-form-label">Tags:</label>
-                    <div className="uk-form-controls">
-                        {tags.length > 0 && (
-                            <div className="uk-margin-small-bottom">
-                                {tags.map((tag) => (
-                                    <label key={tag.id} className="uk-margin-small-right" style={{ display: 'inline-block' }}>
-                                        <input
-                                            className="uk-checkbox"
-                                            type="checkbox"
-                                            checked={selectedTagIds.includes(tag.id)}
-                                            onChange={() => handleTagToggle(tag.id)}
-                                        /> {tag.name}
-                                    </label>
-                                ))}
-                            </div>
-                        )}
-                        <div className="uk-grid-small uk-flex-middle" uk-grid="">
-                            <div className="uk-width-expand">
-                                <input
-                                    className="uk-input"
-                                    type="text"
-                                    value={newTagInput}
-                                    onChange={(e) => setNewTagInput(e.target.value)}
-                                    placeholder="Add new tag..."
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleAddNewTag();
-                                        }
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <button
-                                    type="button"
-                                    className="uk-button uk-button-default"
-                                    onClick={handleAddNewTag}
-                                >
-                                    Add
-                                </button>
-                            </div>
-                        </div>
-                        {newTags.length > 0 && (
-                            <div className="uk-margin-small-top">
-                                <span className="uk-text-meta">New tags: </span>
-                                {newTags.map((tagName) => (
-                                    <span key={tagName} className="uk-label uk-margin-small-right">
-                                        {tagName}
-                                        <a
-                                            href="#"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                handleRemoveNewTag(tagName);
-                                            }}
-                                            style={{ marginLeft: '5px', color: 'white' }}
-                                        >
-                                            ×
-                                        </a>
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <CreditsField value={credits} onChange={setCredits} />
+                <TagsField
+                    all={tags}
+                    value={{ tagIds: selectedTagIds, newTags }}
+                    onChange={(next) => { setSelectedTagIds(next.tagIds); setNewTags(next.newTags); }}
+                />
 
                 {articleType === 'post' && (
                     <>
                         <div className="uk-margin">
-                            <label className="uk-form-label" htmlFor="content">Content (Markdown):</label>
+                            <label className="uk-form-label" htmlFor="content">{t('article.form.content_label')}</label>
                             <div className="uk-form-controls">
                                 <ArticleEditor value={content} onChange={handleContentChange} />
                             </div>
                         </div>
 
                         <div className="uk-margin">
-                            <label className="uk-form-label" htmlFor="embedUrl">Embed URL (optional):</label>
+                            <label className="uk-form-label" htmlFor="embedUrl">{t('article.form.embed_label')}</label>
                             <div className="uk-form-controls">
                                 <input
                                     className="uk-input"
@@ -495,14 +399,12 @@ const EditArticle: React.FC = () => {
                                     placeholder="/embeds/my-tool/"
                                 />
                             </div>
-                            <p className="uk-text-meta">
-                                Internal paths (e.g. /embeds/my-tool/) or approved external URLs (e.g. https://pabloes.github.io/...). Use [iframe] in the content to position it, or it will be appended at the end.
-                            </p>
+                            <p className="uk-text-meta">{t('article.form.embed_hint')}</p>
                         </div>
 
                         {embedUrl && (
                             <div className="uk-margin">
-                                <label className="uk-form-label" htmlFor="embedHeight">Embed Height (px):</label>
+                                <label className="uk-form-label" htmlFor="embedHeight">{t('article.form.embed_height_label')}</label>
                                 <div className="uk-form-controls">
                                     <input
                                         className="uk-input"
@@ -523,7 +425,7 @@ const EditArticle: React.FC = () => {
                 <div className="uk-margin">
                     {formError && <p className="zx-form-error">{formError}</p>}
                     <button className="uk-button uk-button-primary" type="submit">
-                        Update
+                        {t('article.form.save')}
                     </button>
                 </div>
             </form>

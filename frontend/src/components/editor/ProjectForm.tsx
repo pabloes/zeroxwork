@@ -7,6 +7,7 @@ import { slugify } from '../../utils/slug';
 import ArticleEditor from './ArticleEditor';
 import ImagePicker from './ImagePicker';
 import ProjectMediaField from './ProjectMediaField';
+import TagsField from './TagsField';
 import ProjectMembersField, { type MemberDraft } from './ProjectMembersField';
 import { SCREENSHOTS_MIN, isAllowedVideoUrl } from '../../services/project-media';
 import {
@@ -75,7 +76,6 @@ const ProjectForm: React.FC<Props> = ({ initial, submitting, error, onSubmit }) 
     const [endedAt, setEndedAt] = useState(asDateValue(initial?.endedAt));
     const [status, setStatus] = useState(initial?.status ?? '');
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>(initial?.tags.map((tag) => tag.id) ?? []);
-    const [newTagInput, setNewTagInput] = useState('');
     const [newTags, setNewTags] = useState<string[]>([]);
     const [members, setMembers] = useState<MemberDraft[]>(
         initial?.members.map((member) => ({
@@ -96,18 +96,6 @@ const ProjectForm: React.FC<Props> = ({ initial, submitting, error, onSubmit }) 
     useEffect(() => {
         if (autoSlug) setSlug(slugify(title));
     }, [title, autoSlug]);
-
-    const addNewTag = () => {
-        const trimmed = newTagInput.trim();
-        if (trimmed !== '' && !newTags.includes(trimmed)) {
-            setNewTags((previous) => [...previous, trimmed]);
-            setNewTagInput('');
-        }
-    };
-
-    const toggleTag = (id: number) =>
-        setSelectedTagIds((previous) =>
-            previous.includes(id) ? previous.filter((tagId) => tagId !== id) : [...previous, id]);
 
     const reject = (key: string) => {
         setLocalError(t(key));
@@ -375,63 +363,12 @@ const ProjectForm: React.FC<Props> = ({ initial, submitting, error, onSubmit }) 
                 </p>
             </div>
 
-            <div className="uk-margin">
-                <label className="uk-form-label">{t('project.tags_label')}</label>
-                <div className="uk-form-controls">
-                    {tags.length > 0 && (
-                        <div className="uk-margin-small-bottom">
-                            {tags.map((tag) => (
-                                <label key={tag.id} className="uk-margin-small-right" style={{ display: 'inline-block' }}>
-                                    <input
-                                        className="uk-checkbox"
-                                        type="checkbox"
-                                        checked={selectedTagIds.includes(tag.id)}
-                                        onChange={() => toggleTag(tag.id)}
-                                    />{' '}
-                                    {tag.name}
-                                </label>
-                            ))}
-                        </div>
-                    )}
-                    <div className="uk-grid-small uk-flex-middle" uk-grid="">
-                        <div className="uk-width-expand">
-                            <input
-                                className="uk-input"
-                                type="text"
-                                value={newTagInput}
-                                onChange={(event) => setNewTagInput(event.target.value)}
-                                placeholder={t('project.tags_new_placeholder')}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter') {
-                                        event.preventDefault();
-                                        addNewTag();
-                                    }
-                                }}
-                            />
-                        </div>
-                        <div>
-                            <button type="button" className="uk-button uk-button-default" onClick={addNewTag}>
-                                {t('credits.add')}
-                            </button>
-                        </div>
-                    </div>
-                    {newTags.length > 0 && (
-                        <div className="uk-margin-small-top">
-                            {newTags.map((name) => (
-                                <span key={name} className="zx-chip">
-                                    {name}
-                                    <button
-                                        type="button"
-                                        className="zx-icon-btn"
-                                        onClick={() => setNewTags((previous) => previous.filter((tag) => tag !== name))}
-                                        aria-label={`${t('credits.remove')}: ${name}`}
-                                    >✕</button>
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+            <TagsField
+                all={tags}
+                label={t('project.tags_label')}
+                value={{ tagIds: selectedTagIds, newTags }}
+                onChange={(next) => { setSelectedTagIds(next.tagIds); setNewTags(next.newTags); }}
+            />
 
             <div className="uk-margin">
                 <label className="uk-form-label" htmlFor="content">{t('project.content_label')}</label>
