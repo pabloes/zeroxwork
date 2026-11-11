@@ -1,0 +1,351 @@
+/**
+ * Applies the agreed three-tier layout and the safety settings.
+ *
+ *   npx tsx scripts/harden-server.ts            # dry run, changes nothing
+ *   npx tsx scripts/harden-server.ts --apply    # applies it
+ *
+ * Needs Manage Server and Manage Channels on the bot, on top of its usual
+ * Manage Roles. Those two are meant to be granted for this run and taken away
+ * afterwards: the bot does not need them to do its job.
+ *
+ * Idempotent and additive. It never deletes a channel, never removes a role
+ * from anyone, and skips whatever is already in the desired state.
+ */
+import {
+    AutoModerationActionType,
+    AutoModerationRuleEventType,
+    AutoModerationRuleTriggerType,
+    ChannelType,
+    Client,
+    GatewayIntentBits,
+    GuildExplicitContentFilter,
+    GuildVerificationLevel,
+    PermissionFlagsBits,
+    type Guild,
+    type TextChannel,
+    type VoiceChannel,
+} from 'discord.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const APPLY = process.argv.includes('--apply');
+const token = process.env.DISCORD_BOT_TOKEN?.trim();
+const guildId = process.env.DISCORD_GUILD_ID?.trim();
+const memberRoleId = process.env.DISCORD_ROLE_ZEROXWORK?.trim();
+
+if (!token || !guildId || !memberRoleId) {
+    console.error('Need DISCORD_BOT_TOKEN, DISCORD_GUILD_ID and DISCORD_ROLE_ZEROXWORK in bot/.env.');
+    process.exit(1);
+}
+
+/** Tier 0 and 1 are visible to everyone; tier 2 is the reason to link. */
+const CHANNELS = [
+    { name: 'bienvenida', tier: 0, topic: 'Que es ZEROxWORK y como entrar. Nadie del equipo te escribira nunca por privado primero.' },
+    { name: 'anuncios', tier: 0, topic: 'Novedades. Solo escriben los admins.' },
+    { name: 'general', tier: 1, topic: 'Preséntate y pregunta lo que necesites.' },
+    { name: 'proyectos', tier: 2, topic: 'En que esta trabajando cada uno.' },
+    { name: 'feedback', tier: 2, topic: 'Enseña lo tuyo y pide opinion.' },
+    { name: 'herramientas', tier: 2, topic: 'Las herramientas de la comunidad.' },
+    { name: 'mod-log', tier: 3, topic: 'Avisos de AutoMod y del bot.' },
+] as const;
+
+/** Taken from @everyone and handed back to the member role. */
+const MEMBER_PRIVILEGES = [
+    PermissionFlagsBits.EmbedLinks,
+    PermissionFlagsBits.AttachFiles,
+    PermissionFlagsBits.UseExternalEmojis,
+    PermissionFlagsBits.CreateInstantInvite,
+];
+
+/** Patterns, not words: "wallet" or "airdrop" alone are normal talk here. */
+const SCAM_PATTERNS = [
+    '(?i)free\\s*(discord\\s*)?nitro',
+    '(?i)(claim|reclama)\\s+(your|tu)?\\s*(free|gratis)?\\s*(airdrop|nitro|reward|premio)',
+    '(?i)(connect|conecta|sincroniza|valida)\\s+(your|tu)?\\s*wallet\\s+(to|para|here|aqui|en)',
+    '(?i)(send|manda|envia|comparte|dame)\\b.{0,30}\\b(seed\\s*phrase|frase\\s*semilla|private\\s*key|clave\\s*privada)',
+    '(?i)(soporte|support)\\s+(oficial|official|team)\\b.{0,30}\\b(dm|mp|privado|direct)',
+];
+
+const changes: string[] = [];
+const skipped: string[] = [];
+const failures: string[] = [];
+
+function plan(line: string) { changes.push(line); console.log(`  → ${line}`); }
+function ok(line: string) { skipped.push(line); console.log(`  ✓ ${line}`); }
+function fail(line: string) { failures.push(line); console.log(`  ✗ ${line}`); }
+
+async function hardenGuild(guild: Guild) {
+    console.log('\n[servidor]');
+
+    if (guild.verificationLevel !== GuildVerificationLevel.Medium) {
+        plan(`verification level: ${GuildVerificationLevel[guild.verificationLevel]} → Medium`);
+        if (APPLY) await guild.setVerificationLevel(GuildVerificationLevel.Medium).catch((e) => fail(`verification level: ${e.message}`));
+    } else ok('verification level already Medium');
+
+    if (guild.explicitContentFilter !== GuildExplicitContentFilter.AllMembers) {
+        plan('explicit content filter → everyone');
+        if (APPLY) await guild.setExplicitContentFilter(GuildExplicitContentFilter.AllMembers).catch((e) => fail(`content filter: ${e.message}`));
+    } else ok('content filter already on for everyone');
+}
+
+async function hardenRoles(guild: Guild) {
+    console.log('\n[roles]');
+    const everyone = guild.roles.everyone;
+    const toDeny = [...MEMBER_PRIVILEGES, PermissionFlagsBits.MentionEveryone].filter((flag) => everyone.permissions.has(flag));
+
+    if (toDeny.length) {
+        plan(`@everyone loses ${toDeny.length} permission(s) including mentioning everyone and posting links`);
+        if (APPLY) {
+            const next = everyone.permissions.remove(toDeny);
+            await everyone.setPermissions(next).catch((e) => fail(`@everyone: ${e.message}`));
+        }
+    } else ok('@everyone already stripped');
+
+    const member = await guild.roles.fetch(memberRoleId!);
+    if (!member) return fail(`member role ${memberRoleId} not found`);
+
+    const toGrant = MEMBER_PRIVILEGES.filter((flag) => !member.permissions.has(flag));
+    const me = await guild.members.fetchMe();
+    if (toGrant.length === 0) {
+        ok(`${member.name} already has its privileges`);
+    } else if (toGrant.some((flag) => !me.permissions.has(flag))) {
+        // Discord refuses to let a bot hand out permissions it does not hold
+        fail(`${member.name} is missing ${toGrant.length} permission(s) the bot cannot grant because it does not hold them. `
+            + `Tick them by hand: Server Settings → Roles → ${member.name} → Embed Links, Attach Files, Use External Emoji, Create Invite.`);
+    } else {
+        plan(`${member.name} gets back links, files, external emoji and invites`);
+        if (APPLY) await member.setPermissions(member.permissions.add(toGrant)).catch((e) => fail(`${member.name}: ${e.message}`));
+    }
+}
+
+type Flag = 'ViewChannel' | 'SendMessages' | 'Connect';
+
+/** One permission overwrite as it should end up. `null` means "no opinion", cleared. */
+interface Desired {
+    id: string;
+    who: string;
+    set: Partial<Record<Flag, boolean | null>>;
+}
+
+function overwriteDiffers(channel: TextChannel | VoiceChannel, desired: Desired): boolean {
+    const current = channel.permissionOverwrites.cache.get(desired.id);
+    return Object.entries(desired.set).some(([name, value]) => {
+        const flag = PermissionFlagsBits[name as Flag];
+        const allowed = current?.allow.has(flag) ?? false;
+        const denied = current?.deny.has(flag) ?? false;
+        if (value === null) return allowed || denied;
+        return value ? !allowed : !denied;
+    });
+}
+
+function describeSet(set: Desired['set']): string {
+    return Object.entries(set)
+        .map(([name, value]) => `${name} ${value === null ? 'cleared' : value ? 'allowed' : 'denied'}`)
+        .join(', ');
+}
+
+/**
+ * Bring one existing channel to the agreed state, touching only what differs.
+ * The order of `desired` matters: whoever must keep access goes before the
+ * @everyone deny, or the bot locks itself out halfway through.
+ */
+async function reconcileChannel(channel: TextChannel | VoiceChannel, label: string, desired: Desired[], slowmode: number) {
+    let touched = false;
+
+    for (const item of desired) {
+        if (!overwriteDiffers(channel, item)) continue;
+        touched = true;
+        plan(`${label}: ${item.who}: ${describeSet(item.set)}`);
+        if (APPLY) {
+            await channel.permissionOverwrites.edit(item.id, item.set)
+                .catch((e) => fail(`${label} ${item.who}: ${e.message}`));
+        }
+    }
+
+    if ((channel.rateLimitPerUser ?? 0) !== slowmode) {
+        touched = true;
+        plan(`${label}: slowmode ${channel.rateLimitPerUser ?? 0}s → ${slowmode}s`);
+        if (APPLY) await channel.setRateLimitPerUser(slowmode).catch((e) => fail(`${label} slowmode: ${e.message}`));
+    }
+
+    if (!touched) ok(`${label} already as agreed`);
+}
+
+function toCreateOverwrites(desired: Desired[]) {
+    return desired.map((item) => ({
+        id: item.id,
+        allow: Object.entries(item.set).filter(([, v]) => v === true).map(([k]) => PermissionFlagsBits[k as Flag]),
+        deny: Object.entries(item.set).filter(([, v]) => v === false).map(([k]) => PermissionFlagsBits[k as Flag]),
+    }));
+}
+
+async function hardenChannels(guild: Guild) {
+    console.log('\n[canales]');
+    const me = await guild.members.fetchMe();
+    const existing = await guild.channels.fetch();
+
+    const everyone = { id: guild.id, who: '@everyone' };
+    const member = { id: memberRoleId!, who: 'ZEROxMEMBER' };
+    const bot = { id: me.id, who: 'the bot' };
+
+    // tier 0: everyone reads, only admins write
+    // tier 1: everyone reads and writes, slowed down
+    // tier 2: members only
+    // tier 3: staff and the bot, which posts the AutoMod alerts there
+    const desiredFor = (tier: number): { desired: Desired[]; slowmode: number } => {
+        switch (tier) {
+            case 0: return { desired: [{ ...everyone, set: { SendMessages: false } }], slowmode: 0 };
+            case 1: return { desired: [], slowmode: 30 };
+            case 2: return {
+                desired: [
+                    { ...member, set: { ViewChannel: true, SendMessages: true } },
+                    { ...everyone, set: { ViewChannel: false } },
+                ],
+                slowmode: 0,
+            };
+            default: return {
+                desired: [
+                    { ...bot, set: { ViewChannel: true, SendMessages: true } },
+                    { ...everyone, set: { ViewChannel: false } },
+                ],
+                slowmode: 0,
+            };
+        }
+    };
+
+    // Text channels only: a voice channel may share the name ("General" next to
+    // #general), and matching across types once sent these changes to the wrong one.
+    const textByName = new Map<string, TextChannel>();
+    for (const channel of existing.values()) {
+        if (channel?.type === ChannelType.GuildText) textByName.set(channel.name.toLowerCase(), channel);
+    }
+
+    for (const spec of CHANNELS) {
+        const { desired, slowmode } = desiredFor(spec.tier);
+        const found = textByName.get(spec.name);
+
+        if (!found) {
+            plan(`create #${spec.name} (${['escaparate', 'recepcion', 'miembros', 'staff'][spec.tier]})`);
+            if (APPLY) {
+                await guild.channels.create({
+                    name: spec.name,
+                    type: ChannelType.GuildText,
+                    topic: spec.topic,
+                    rateLimitPerUser: slowmode,
+                    permissionOverwrites: toCreateOverwrites(desired),
+                }).catch((e) => fail(`#${spec.name}: ${e.message}`));
+            }
+            continue;
+        }
+
+        if (!found.permissionsFor(me).has(PermissionFlagsBits.ViewChannel)) {
+            if (spec.tier === 3) {
+                fail(`#${spec.name}: the bot cannot see it. Add ZEROxBOT to that channel with View Channel and Send Messages.`);
+            } else {
+                ok(`#${spec.name} is members only; the bot has no access there and needs none`);
+            }
+            continue;
+        }
+
+        await reconcileChannel(found, `#${spec.name}`, desired, slowmode);
+    }
+
+    // Voice sits behind the member role like everything outside the two public tiers.
+    for (const channel of existing.values()) {
+        if (channel?.type !== ChannelType.GuildVoice) continue;
+        await reconcileChannel(channel, `voice "${channel.name}"`, [
+            { ...bot, set: { ViewChannel: true, Connect: true } },
+            { ...member, set: { ViewChannel: true, Connect: true } },
+            { ...everyone, set: { ViewChannel: false, SendMessages: null } },
+        ], 0);
+    }
+}
+
+async function hardenAutoMod(guild: Guild) {
+    console.log('\n[automod]');
+    let current;
+    try {
+        current = await guild.autoModerationRules.fetch();
+    } catch (error) {
+        return fail(`cannot read AutoMod rules (needs Manage Server): ${(error as Error).message}`);
+    }
+
+    const names = new Set([...current.values()].map((rule) => rule.name));
+    const alertChannel = guild.channels.cache.find((c) => c.name === 'mod-log' && c.type === ChannelType.GuildText);
+    const me = await guild.members.fetchMe();
+    if (alertChannel && !alertChannel.permissionsFor(me)?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])) {
+        return fail('AutoMod rules post their alerts in #mod-log, and the bot cannot see or write there yet.');
+    }
+    const alertAction = alertChannel
+        ? [{ type: AutoModerationActionType.SendAlertMessage, metadata: { channel: alertChannel.id } }]
+        : [];
+
+    const rules = [
+        {
+            name: 'ZEROxWORK: menciones masivas',
+            eventType: AutoModerationRuleEventType.MessageSend,
+            triggerType: AutoModerationRuleTriggerType.MentionSpam,
+            triggerMetadata: { mentionTotalLimit: 5 },
+            actions: [{ type: AutoModerationActionType.BlockMessage }, ...alertAction],
+        },
+        {
+            name: 'ZEROxWORK: spam',
+            eventType: AutoModerationRuleEventType.MessageSend,
+            triggerType: AutoModerationRuleTriggerType.Spam,
+            triggerMetadata: {},
+            actions: [{ type: AutoModerationActionType.BlockMessage }, ...alertAction],
+        },
+        {
+            name: 'ZEROxWORK: patrones de estafa',
+            eventType: AutoModerationRuleEventType.MessageSend,
+            triggerType: AutoModerationRuleTriggerType.Keyword,
+            triggerMetadata: { regexPatterns: SCAM_PATTERNS },
+            actions: [{ type: AutoModerationActionType.BlockMessage }, ...alertAction],
+        },
+    ];
+
+    for (const rule of rules) {
+        if (names.has(rule.name)) { ok(`${rule.name} already exists`); continue; }
+        plan(`create rule "${rule.name}"`);
+        if (APPLY) {
+            await guild.autoModerationRules.create({ ...rule, enabled: true } as never)
+                .catch((e) => fail(`${rule.name}: ${e.message}`));
+        }
+    }
+}
+
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+client.once('clientReady', async () => {
+    try {
+        const guild = await (await client.guilds.fetch(guildId!)).fetch();
+        console.log(`\n${APPLY ? 'APPLYING TO' : 'DRY RUN against'} ${guild.name}`);
+
+        const me = await guild.members.fetchMe();
+        const missing = (['ManageGuild', 'ManageChannels', 'ManageRoles'] as const)
+            .filter((p) => !me.permissions.has(PermissionFlagsBits[p]));
+        if (missing.length) {
+            console.log(`\n⚠ The bot is missing: ${missing.join(', ')}. Grant them for this run.`);
+            if (APPLY) { console.log('Refusing to apply a half-configuration.\n'); return; }
+        }
+
+        await hardenGuild(guild);
+        await hardenRoles(guild);
+        await hardenChannels(guild);
+        await hardenAutoMod(guild);
+
+        console.log(`\n${APPLY ? 'applied' : 'would change'}: ${changes.length} | already fine: ${skipped.length} | failed: ${failures.length}`);
+        if (!APPLY) console.log('Nothing was changed. Re-run with --apply when the plan looks right.\n');
+        else console.log('Remember to take Manage Server and Manage Channels back off the bot.\n');
+    } catch (error) {
+        console.error('Failed:', error instanceof Error ? error.message : error);
+    } finally {
+        client.destroy();
+    }
+});
+
+client.login(token).catch((error) => {
+    console.error('Login failed:', error.message);
+    process.exit(1);
+});
