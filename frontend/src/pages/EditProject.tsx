@@ -47,8 +47,8 @@ const EditProject: React.FC = () => {
         return <div className="zx-wrap zx-page"><div className="zx-empty">{t('common.loading')}</div></div>;
     }
 
-    // A project nobody may edit answers 404 to the reader as well, so there is
-    // nothing more to say than that it is not there.
+    // A draft answers 404 to anyone who may not edit it, so there is nothing
+    // more to say than that it is not there.
     if (isError || !project) {
         return (
             <div className="zx-wrap zx-page">
@@ -56,6 +56,26 @@ const EditProject: React.FC = () => {
                     <h1 className="zx-sec-title">{t('project.not_found_title')}</h1>
                     <p className="zx-sec-sub">{t('project.not_found')}</p>
                     <p><Link to="/my-projects">{t('nav.my_projects')}</Link></p>
+                </div>
+            </div>
+        );
+    }
+
+    // A published project loads for anybody, and the server says `canEdit:
+    // false` when it will refuse the save. Opening the form regardless means
+    // filling it in, uploading images, arranging a gallery -- and finding out
+    // at the Save button. Say it here, where it still costs nothing.
+    // `=== false` on purpose: a response without the field is not a refusal,
+    // and the server has the last word either way.
+    if (project.canEdit === false) {
+        return (
+            <div className="zx-wrap zx-page">
+                <div className="zx-page-head">
+                    <h1 className="zx-sec-title">{t('project.cannot_edit_title')}</h1>
+                    <p className="zx-sec-sub">{t('project.cannot_edit')}</p>
+                    <p>
+                        <Link to="/portfolio">{t('project.back_to_portfolio')}</Link>
+                    </p>
                 </div>
             </div>
         );

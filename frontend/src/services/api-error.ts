@@ -23,7 +23,13 @@ export function apiErrorMessage(
 
     const { status, data } = error.response;
 
-    if (status === 401 || status === 403) return t('article.error.unauthorized');
+    // 401 and 403 are opposite problems and sharing a line costs real time: one
+    // is fixed by signing in again, the other never is. Telling someone their
+    // session expired when the server said "not yours to edit" sends them off
+    // re-authenticating, reinstalling things, doubting their password -- and the
+    // actual answer, that they are the wrong person for this, is never shown.
+    if (status === 401) return t('article.error.unauthorized');
+    if (status === 403) return t('article.error.forbidden');
     if (status === 413) return t('article.error.too_large');
 
     const body = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
