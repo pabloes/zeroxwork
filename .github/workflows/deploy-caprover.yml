@@ -13,7 +13,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # two builds on the same small server: the website and then the bot
+    # Generous on purpose: the bot's upload has taken 17 minutes to be
+    # acknowledged while the server was still busy with the website's build.
     timeout-minutes: 25
 
     steps:
@@ -62,9 +63,11 @@ jobs:
           exit 1
 
       # The bot shares the database schema with the website, so it is updated in
-      # the same run. It goes after the health check on purpose: by then the new
-      # website has applied its migrations, and if the website came up broken
-      # this step never runs and the previous bot keeps working.
+      # the same run, once the website's upload is accepted and the site answers
+      # the health check. That does not mean the new website is live yet: with an
+      # app token the CLI returns when the upload is acknowledged, and CapRover
+      # builds afterwards. The bot copes with starting first, because its
+      # periodic passes log a failed query and try again on the next round.
       # CapRover finds the bot's image through the app's Captain Definition Path,
       # which must be ./captain-definition-bot. See DISCORD.md.
       - name: Deploy Discord bot to CapRover
