@@ -1,0 +1,563 @@
+// Portfolio: the project page and the cards that lead to it.
+//
+// Lives apart from theme.scss on purpose. These rules are one feature, they
+// arrived together from an agreed mock-up, and keeping them in their own file
+// means the next person can read the whole design in one sitting instead of
+// hunting for it among the site's global tokens.
+//
+// Everything here leans on the variables theme.scss already defines, so both
+// themes come for free and nothing is hardcoded twice.
+
+/* ---------------------------------------------------------- project page -- */
+
+.zx-proj-crumb {
+    font-family: var(--zx-mono);
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--zx-ink-faint);
+    margin: 0 0 14px;
+
+    a {
+        color: var(--zx-orange);
+        text-decoration: none;
+    }
+}
+
+.zx-proj-h1 {
+    font-family: var(--zx-display);
+    font-weight: 700;
+    letter-spacing: -.025em;
+    line-height: 1.02;
+    // Grows with the viewport instead of wrapping to four lines on a phone.
+    font-size: clamp(38px, 7vw, 68px);
+    margin: 0 0 14px;
+}
+
+.zx-proj-lead {
+    font-size: clamp(16px, 2.1vw, 19px);
+    line-height: 1.5;
+    color: var(--zx-ink-dim);
+    // A line longer than this stops being readable as a standfirst.
+    max-width: 46ch;
+    margin: 0 0 28px;
+}
+
+// The cover is one image the author uploaded, full width. If they want a
+// diptych they compose it themselves and upload the result: no second field,
+// no migration, and nothing here has to guess where to cut.
+.zx-proj-cover {
+    margin: 0 0 18px;
+    border: 1px solid var(--zx-line);
+    background: var(--zx-bg-2);
+    overflow: hidden;
+
+    img {
+        display: block;
+        width: 100%;
+        height: auto;
+        // Tall covers would otherwise push everything else below the fold.
+        max-height: 72vh;
+        object-fit: cover;
+    }
+}
+
+.zx-proj-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 332px;
+    gap: 46px;
+    align-items: start;
+
+    // With one slot the ficha cannot hold a column: it would sit orphaned
+    // beside a tall gallery. It becomes a strip above instead, and the number
+    // of facts decides that, not the author.
+    &.zx-proj-cols--solo {
+        grid-template-columns: 1fr;
+        gap: 34px;
+    }
+}
+
+@media (max-width: 900px) {
+    .zx-proj-cols {
+        grid-template-columns: 1fr;
+        gap: 34px;
+    }
+}
+
+/* ----------------------------------------------------------- the ficha --- */
+
+.zx-ficha {
+    border: 1px solid var(--zx-line);
+    background: var(--zx-surface);
+    padding: 20px;
+    // Follows the reader down a long write-up.
+    position: sticky;
+    top: 76px;
+
+    &.zx-ficha--strip {
+        position: static;
+        padding: 16px 20px;
+
+        .zx-ficha-slot {
+            margin: 0;
+            padding: 0;
+            border-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .zx-ficha-label {
+            margin: 0;
+        }
+    }
+}
+
+@media (max-width: 900px) {
+    .zx-ficha {
+        position: static;
+    }
+}
+
+.zx-ficha-slot + .zx-ficha-slot {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--zx-line);
+}
+
+.zx-ficha-label {
+    font-family: var(--zx-mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--zx-ink-faint);
+    margin: 0 0 10px;
+}
+
+.zx-ficha-note {
+    font-family: var(--zx-mono);
+    font-size: 9.5px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--zx-ink-faint);
+    margin: 10px 0 0;
+    opacity: .8;
+}
+
+.zx-ficha-fact {
+    font-size: 14px;
+    color: var(--zx-ink);
+    margin: 0;
+}
+
+.zx-ficha-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+// Square-cornered, full width, one under the other: a sidebar button is a
+// destination, not a call to action competing with the page.
+.zx-ficha-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-family: var(--zx-body);
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 11px 14px;
+    border: 1px solid var(--zx-line-2);
+    color: var(--zx-ink);
+    transition: background .18s, border-color .18s;
+
+    &:hover {
+        background: var(--zx-hover);
+        border-color: var(--zx-ink-faint);
+        text-decoration: none;
+        color: var(--zx-ink);
+    }
+
+    &.zx-ficha-btn--pri {
+        background: var(--zx-orange);
+        border-color: var(--zx-orange);
+        color: #1A0E02;
+
+        &:hover {
+            filter: brightness(1.07);
+            background: var(--zx-orange);
+            color: #1A0E02;
+        }
+    }
+}
+
+/* ------------------------------------------------------------- people ---- */
+
+.zx-people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.zx-person {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 10px 4px 4px;
+    border-radius: 20px;
+    font-size: 13px;
+    line-height: 1;
+    text-decoration: none;
+    max-width: 100%;
+}
+
+.zx-person-img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: none;
+}
+
+.zx-person-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.zx-person-role {
+    font-family: var(--zx-mono);
+    font-size: 9px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--zx-ink-faint);
+}
+
+// An outline and an arrow mean there is a page behind this name.
+.zx-person--linked {
+    border: 1px solid var(--zx-line-2);
+    color: var(--zx-ink);
+    background: transparent;
+    transition: border-color .18s, background .18s;
+
+    .zx-person-arrow {
+        color: var(--zx-ink-faint);
+        font-size: 10px;
+        transition: color .18s, transform .18s;
+    }
+
+    &:hover {
+        border-color: color-mix(in srgb, var(--zx-orange) 55%, transparent);
+        background: color-mix(in srgb, var(--zx-orange) 7%, transparent);
+        text-decoration: none;
+        color: var(--zx-ink);
+
+        .zx-person-arrow {
+            color: var(--zx-orange);
+            transform: translate(1px, -1px);
+        }
+    }
+}
+
+// No outline, no arrow: credited by name, with no account to visit.
+.zx-person--plain {
+    border: 1px solid transparent;
+    background: var(--zx-hover);
+    color: var(--zx-ink-dim);
+}
+
+/* ---------------------------------------------------------- the gallery -- */
+
+.zx-gal {
+    margin: 0 0 44px;
+}
+
+.zx-gal-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 14px;
+}
+
+.zx-gal-count {
+    font-family: var(--zx-mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: var(--zx-ink-faint);
+}
+
+// The video heads the gallery rather than opening a band of its own: it is one
+// more thing to look at, not a different kind of section.
+.zx-gal-video {
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--zx-line);
+    background: var(--zx-bg-2);
+    margin: 0 0 10px;
+    overflow: hidden;
+
+    iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+}
+
+// The shape of the grid is decided by how many shots there are, so three
+// screenshots never look like a row with a hole in it and eight never turn
+// into a strip of stamps.
+.zx-gal-grid {
+    display: grid;
+    gap: 10px;
+
+    &.zx-gal-grid--3 {
+        grid-template-columns: 1fr 1fr;
+
+        .zx-gal-item:first-child {
+            grid-column: 1 / -1;
+
+            img {
+                aspect-ratio: 16 / 7;
+            }
+        }
+    }
+
+    &.zx-gal-grid--6 {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    &.zx-gal-grid--8 {
+        grid-template-columns: 1fr 1fr 1fr;
+
+        .zx-gal-item:first-child {
+            grid-column: 1 / -1;
+
+            img {
+                aspect-ratio: 16 / 7;
+            }
+        }
+    }
+}
+
+@media (max-width: 560px) {
+    .zx-gal-grid.zx-gal-grid--3,
+    .zx-gal-grid.zx-gal-grid--6,
+    .zx-gal-grid.zx-gal-grid--8 {
+        grid-template-columns: 1fr;
+
+        .zx-gal-item:first-child {
+            grid-column: auto;
+
+            img {
+                aspect-ratio: 16 / 10;
+            }
+        }
+    }
+}
+
+.zx-gal-item {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--zx-line);
+    background: var(--zx-bg-2);
+    cursor: zoom-in;
+    margin: 0;
+    display: block;
+
+    img {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        transition: transform .5s cubic-bezier(.2, .7, .3, 1);
+    }
+
+    &:hover img {
+        transform: scale(1.03);
+    }
+}
+
+.zx-gal-num {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    font-family: var(--zx-mono);
+    font-size: 9.5px;
+    letter-spacing: .08em;
+    padding: 3px 7px;
+    background: rgba(11, 15, 19, .7);
+    color: #ECEFF2;
+    border: 1px solid rgba(255, 255, 255, .12);
+}
+
+/* -------------------------------------------------------------- body ----- */
+
+.zx-proj-body {
+    font-size: 16.5px;
+    line-height: 1.68;
+    color: var(--zx-ink);
+
+    p {
+        margin: 0 0 1.15em;
+        // Prose stops being readable past this, however wide the window is.
+        max-width: 66ch;
+    }
+
+    > p:first-child {
+        font-size: 17.5px;
+    }
+
+    em {
+        color: var(--zx-orange);
+        font-style: italic;
+    }
+
+    a {
+        color: var(--zx-cyan);
+    }
+}
+
+/* ------------------------------------------------------------- status ---- */
+
+.zx-chip--live {
+    color: var(--zx-mint);
+    border-color: color-mix(in srgb, var(--zx-mint) 45%, transparent);
+}
+
+.zx-chip--wip {
+    color: var(--zx-orange);
+    border-color: color-mix(in srgb, var(--zx-orange) 45%, transparent);
+}
+
+/* -------------------------------------------------- the portfolio cards -- */
+
+.zx-proj-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 1000px) {
+    .zx-proj-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 680px) {
+    .zx-proj-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.zx-pcard {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--zx-line);
+    background: var(--zx-surface);
+    color: var(--zx-ink);
+    text-decoration: none;
+    overflow: hidden;
+    transition: border-color .18s, transform .18s;
+
+    &:hover {
+        border-color: var(--zx-ink-faint);
+        text-decoration: none;
+        color: var(--zx-ink);
+        transform: translateY(-2px);
+
+        .zx-pcard-cover img {
+            transform: scale(1.03);
+        }
+
+        .zx-pcard-go {
+            color: var(--zx-orange);
+        }
+    }
+}
+
+.zx-pcard-cover {
+    overflow: hidden;
+    background: var(--zx-bg-2);
+
+    img {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        transition: transform .5s cubic-bezier(.2, .7, .3, 1);
+    }
+}
+
+// The card shows the cover and then a sliver of the gallery, because what a
+// project looks like inside is what makes someone open it. Three at most: more
+// turns the card into a contact sheet and the title stops being the headline.
+.zx-pcard-thumbs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: var(--zx-line);
+    border-top: 1px solid var(--zx-line);
+
+    img {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        background: var(--zx-bg-2);
+    }
+}
+
+.zx-pcard-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16 / 10;
+    background: var(--zx-bg-2);
+    font-family: var(--zx-mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--zx-ink-faint);
+}
+
+.zx-pcard-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 16px 18px;
+    flex: 1;
+}
+
+.zx-pcard-title {
+    font-family: var(--zx-display);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -.015em;
+    line-height: 1.15;
+    margin: 0;
+}
+
+.zx-pcard-desc {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--zx-ink-dim);
+    margin: 0;
+}
+
+.zx-pcard-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.zx-pcard-go {
+    font-family: var(--zx-mono);
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--zx-ink-faint);
+    transition: color .18s;
+    // Pinned to the bottom so every card in a row ends on the same line.
+    margin-top: auto;
+    padding-top: 4px;
+}

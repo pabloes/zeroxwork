@@ -51,7 +51,7 @@ const Portfolio: React.FC = () => {
             )}
 
             {visible.length > 0 ? (
-                <div className="zx-card-grid">
+                <div className="zx-proj-grid">
                     {visible.map((project) => (
                         <ProjectCard key={project.id} project={project} />
                     ))}
