@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficha de proyecto — ZEROxWORK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --zx-bg:#0B0F13; --zx-bg-2:#0E141A; --zx-surface:#141B22;
+  --zx-line:rgba(255,255,255,.07); --zx-line-2:rgba(255,255,255,.13);
+  --zx-ink:#ECEFF2; --zx-ink-dim:#99A2AB; --zx-ink-faint:#5B6571;
+  --zx-red:#EF4D42; --zx-orange:#EF8D28; --zx-blue:#2F9CFB; --zx-cyan:#47C8D6; --zx-mint:#55F0B7;
+  --zx-hover:rgba(255,255,255,.03);
+  --zx-paper:#F2EFE8;
+  --zx-spectrum:linear-gradient(115deg,var(--zx-red) 0%,var(--zx-orange) 28%,var(--zx-mint) 55%,var(--zx-cyan) 78%,var(--zx-blue) 100%);
+  --zx-display:'Space Grotesk',system-ui,sans-serif;
+  --zx-body:'Inter',system-ui,sans-serif;
+  --zx-mono:'JetBrains Mono',ui-monospace,monospace;
+  --zx-maxw:1180px;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --zx-bg:#F7F6F2; --zx-bg-2:#EDEBE5; --zx-surface:#FFFFFF;
+  --zx-line:rgba(11,15,19,.09); --zx-line-2:rgba(11,15,19,.17);
+  --zx-ink:#0E1318; --zx-ink-dim:#505A64; --zx-ink-faint:#86909A;
+  --zx-red:#E2453A; --zx-orange:#DB720E; --zx-blue:#1F85EE; --zx-cyan:#17A3B5; --zx-mint:#19C08A;
+  --zx-hover:rgba(11,15,19,.035);
+  --zx-paper:#FFFFFF;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--zx-bg);color:var(--zx-ink);font-family:var(--zx-body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit}
+
+/* ---------- chrome ---------- */
+.nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:18px;
+  padding:14px 20px;border-bottom:1px solid var(--zx-line);
+  background:color-mix(in srgb,var(--zx-bg) 82%,transparent);backdrop-filter:blur(10px)}
+.brand{font-family:var(--zx-display);font-weight:700;letter-spacing:-.01em;font-size:15px}
+.brand i{color:var(--zx-red);font-style:normal}
+.nav-sp{margin-left:auto}
+.ctrl{font-family:var(--zx-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--zx-ink-dim);background:transparent;border:1px solid var(--zx-line-2);border-radius:20px;
+  padding:6px 12px;cursor:pointer}
+.ctrl:hover{color:var(--zx-ink);background:var(--zx-hover)}
+.ctrl.on{color:var(--zx-ink);border-color:rgba(239,141,40,.55);background:rgba(239,141,40,.08)}
+
+.cases{display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  max-width:var(--zx-maxw);margin:0 auto;padding:18px 20px 0}
+.cases .lbl{font-family:var(--zx-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--zx-ink-faint);margin-right:4px}
+
+.wrap{max-width:var(--zx-maxw);margin:0 auto;padding:26px 20px 90px}
+
+/* ---------- head ---------- */
+.crumb{font-family:var(--zx-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--zx-ink-faint);margin:0 0 14px}
+.crumb a{color:var(--zx-orange);text-decoration:none}
+h1.t{font-family:var(--zx-display);font-weight:700;letter-spacing:-.025em;line-height:1.02;
+  font-size:clamp(38px,7vw,68px);margin:0 0 14px}
+.lead{font-size:clamp(16px,2.1vw,19px);line-height:1.5;color:var(--zx-ink-dim);max-width:46ch;margin:0 0 28px}
+
+/* ---------- cover ---------- */
+.cover{margin:0 0 18px;border:1px solid var(--zx-line);background:var(--zx-bg-2);overflow:hidden}
+.cover.single img{width:100%;height:auto;max-height:72vh;object-fit:cover}
+.dip{display:grid;grid-template-columns:1fr 2px 1fr;align-items:stretch}
+.dip .seam{background:var(--zx-spectrum)}
+.panel{position:relative;aspect-ratio:4/3;overflow:hidden}
+.panel.draw{background:var(--zx-paper);display:flex;align-items:center;justify-content:center;padding:4%}
+.panel.draw img{width:100%;height:100%;object-fit:contain}
+.panel.scene img{width:100%;height:100%;object-fit:cover}
+.plate{position:absolute;left:10px;bottom:10px;font-family:var(--zx-mono);font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border-radius:3px;
+  background:rgba(11,15,19,.72);color:#ECEFF2;border:1px solid rgba(255,255,255,.14)}
+.panel.draw .plate{background:rgba(11,15,19,.66)}
+@media(max-width:620px){
+  .dip{grid-template-columns:1fr;grid-template-rows:auto 2px auto}
+  .panel{aspect-ratio:16/10}
+  
+}
+
+
+/* ---------- layout ---------- */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 332px;gap:46px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr;gap:34px}}
+
+/* ---------- ficha ---------- */
+.ficha{border:1px solid var(--zx-line);background:var(--zx-surface);padding:20px;position:sticky;top:76px}
+@media(max-width:900px){.ficha{position:static}}
+.slot+.slot{margin-top:20px;padding-top:20px;border-top:1px solid var(--zx-line)}
+.slab{font-family:var(--zx-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--zx-ink-faint);margin:0 0 10px}
+.note{font-family:var(--zx-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--zx-ink-faint);margin:10px 0 0;opacity:.8}
+
+.people{display:flex;flex-wrap:wrap;gap:7px}
+.p{display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:20px;
+  font-size:13px;line-height:1;text-decoration:none;max-width:100%}
+.p img{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:none}
+.p .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p .ro{font-family:var(--zx-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--zx-ink-faint)}
+.p.linked{border:1px solid var(--zx-line-2);color:var(--zx-ink);background:transparent;transition:border-color .18s,background .18s}
+.p.linked .arw{color:var(--zx-ink-faint);font-size:10px;transition:color .18s,transform .18s}
+.p.linked:hover{border-color:rgba(239,141,40,.55);background:rgba(239,141,40,.07)}
+.p.linked:hover .arw{color:var(--zx-orange);transform:translate(1px,-1px)}
+.p.plain{border:1px solid transparent;background:var(--zx-hover);color:var(--zx-ink-dim)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--zx-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--zx-ink-dim);border:1px solid var(--zx-line);border-radius:20px;padding:4px 10px;white-space:nowrap}
+.chip.live{color:var(--zx-mint);border-color:color-mix(in srgb,var(--zx-mint) 45%,transparent)}
+.chip.wip{color:var(--zx-orange);border-color:color-mix(in srgb,var(--zx-orange) 45%,transparent)}
+.fact{font-size:14px;color:var(--zx-ink)}
+
+.btns{display:flex;flex-direction:column;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;
+  font-family:var(--zx-body);font-size:13.5px;font-weight:600;text-decoration:none;
+  padding:11px 14px;border:1px solid var(--zx-line-2);color:var(--zx-ink);transition:background .18s,border-color .18s}
+.btn:hover{background:var(--zx-hover);border-color:var(--zx-ink-faint)}
+.btn.pri{background:var(--zx-orange);border-color:var(--zx-orange);color:#1A0E02}
+.btn.pri:hover{filter:brightness(1.07);background:var(--zx-orange)}
+
+/* ---------- gallery ---------- */
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 14px}
+.sechead .n{font-family:var(--zx-mono);font-size:10px;letter-spacing:.1em;color:var(--zx-ink-faint)}
+.vid{aspect-ratio:16/9;border:1px dashed var(--zx-line-2);display:flex;align-items:center;justify-content:center;
+  font-family:var(--zx-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--zx-ink-faint);
+  background:var(--zx-bg-2);margin:0 0 10px}
+.grid{display:grid;gap:10px}
+.grid.g3{grid-template-columns:1fr 1fr}
+.grid.g3 .sh:first-child{grid-column:1/-1}
+.grid.g6{grid-template-columns:1fr 1fr}
+.grid.g8{grid-template-columns:1fr 1fr 1fr}
+.grid.g8 .sh:first-child{grid-column:1/-1}
+@media(max-width:560px){.grid.g3,.grid.g6,.grid.g8{grid-template-columns:1fr}.grid .sh:first-child{grid-column:auto}}
+.sh{position:relative;overflow:hidden;border:1px solid var(--zx-line);background:var(--zx-bg-2);cursor:zoom-in}
+.sh img{width:100%;aspect-ratio:16/10;object-fit:cover;transition:transform .5s cubic-bezier(.2,.7,.3,1)}
+.grid.g3 .sh:first-child img,.grid.g8 .sh:first-child img{aspect-ratio:16/7}
+.sh:hover img{transform:scale(1.03)}
+.sh .num{position:absolute;left:8px;top:8px;font-family:var(--zx-mono);font-size:9.5px;letter-spacing:.08em;
+  padding:3px 7px;background:rgba(11,15,19,.7);color:#ECEFF2;border:1px solid rgba(255,255,255,.12)}
+.sec{margin:0 0 44px}
+
+/* ---------- body ---------- */
+.body{font-size:16.5px;line-height:1.68;color:var(--zx-ink)}
+.body p{margin:0 0 1.15em;max-width:66ch}
+.body p:first-child{font-size:17.5px}
+.body em{color:var(--zx-orange);font-style:italic}
+.body a{color:var(--zx-cyan)}
+
+.empty{font-family:var(--zx-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--zx-ink-faint)}
+.rules{border-top:1px solid var(--zx-line);margin-top:60px;padding-top:26px}
+.rules h2{font-family:var(--zx-display);font-size:17px;margin:0 0 10px}
+.rules ul{margin:0;padding-left:18px;color:var(--zx-ink-dim);font-size:14px;line-height:1.7;max-width:76ch}
+.rules code{font-family:var(--zx-mono);font-size:12.5px;color:var(--zx-ink)}
+.cols.solo{grid-template-columns:1fr;gap:34px}.ficha.tira{position:static;padding:16px 20px}.ficha.tira .slot{margin:0;padding:0;border-top:0;display:flex;align-items:center;gap:20px;flex-wrap:wrap}.ficha.tira .slab{margin:0}</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="brand">ZERO<i>x</i>WORK</span>
+  <span class="nav-sp"></span>
+  <button class="ctrl" id="theme">Tema claro</button>
+</nav>
+
+<div class="cases">
+  <span class="lbl">Mismo molde, tres proyectos:</span>
+  <button class="ctrl on" data-case="mg">Money Grass</button>
+  <button class="ctrl" data-case="min">Mínimo legal</button>
+  <button class="ctrl" data-case="max">Máximo</button>
+</div>
+
+<main class="wrap" id="page"></main>
+
+<script>
+/* ---------------- avatar generado (iniciales sobre disco de marca) --------- */
+const HUES=[['#EF4D42','#7A1F19'],['#EF8D28','#7A4208'],['#2F9CFB','#0B3F6E'],
+            ['#47C8D6','#0E4D55'],['#55F0B7','#0D5B40'],['#9B7BF0','#352066']];
+function hash(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193);}return h>>>0;}
+function initials(n){const w=n.trim().split(/[\s._-]+/).filter(Boolean);
+  return ((w[0]?.[0]??'')+(w.length>1?w[w.length-1][0]:'')).toUpperCase();}
+function genAvatar(name,seed){
+  const [bg,fg]=HUES[hash(String(seed??name))%HUES.length];
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="24" fill="${bg}"/><text x="24" y="31" font-family="Inter,sans-serif" font-size="19" font-weight="600" fill="${fg}" text-anchor="middle">${initials(name)}</text></svg>`;
+  return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg);
+}
+
+/* ---------------- los tres casos, como datos ------------------------------ */
+const A='../assets/';
+const CASES={
+  mg:{
+    title:'Money Grass',
+    summary:'Una obra de arte concebida para recorrerla, no para contemplarla.',
+    
+    cover:A+'portada-mg.png',
+    members:[{n:'CarlosMu',h:'carlosmu',a:A+'carlos.jpg'},{n:'Pablo',h:'pablo'},{n:'Llacer'}],
+    tags:['Metaverse','Decentraland','Art','3D'],
+    site:'Visitar en Decentraland',
+    shots:[A+'shot-gate.webp',A+'shot-mooney.webp',A+'shot-posters.webp'],
+    body:['👉 Visítala en Decentraland — Genesis City, cuatro parcelas.',
+      '<em>Money Grass</em> es una pradera de billetes donde seres sin rostro pastan a ciegas, mientras que los carteles que los rodean describen una sociedad consumista abocada al matadero.',
+      'Se trata de una instalación en 3D más que de un juego: no hay nada que ganar ni puntuación. Lo que hace este espacio es situarte dentro de la metáfora a tu propia escala: llegas, caminas entre los animales que pastan, lees los carteles y la obra te llega o no te llega.']
+  },
+  min:{
+    title:'Parcel Lint',
+    summary:null, cover:A+'shot-posters.webp',
+    members:[{n:'Pablo',h:'pablo'}],
+    tags:[],
+    shots:[A+'shot-gate.webp',A+'shot-mooney.webp',A+'shot-posters.webp'],
+    body:['Un comprobador que recorre una escena y avisa de las parcelas que se salen del límite antes de desplegar.']
+  },
+  max:{
+    title:'Golfcraft',
+    summary:'Un golf por turnos en el metaverso, con torneos, apuestas y un campo que cambia cada temporada.', cover:A+'shot-gate.webp',
+    members:[{n:'Pablo',h:'pablo',r:'code'},{n:'CarlosMu',h:'carlosmu',a:A+'carlos.jpg',r:'code'},
+      {n:'Llacer',r:'art'},{n:'Marta Ruiz',h:'marta',r:'3D'},{n:'Kenji Watanabe',r:'sound'},
+      {n:'Ana Soler',h:'ana',r:'UI'},{n:'Diego Peña',r:'QA'},{n:'Nuria Vidal',h:'nuria',r:'producción'},
+      {n:'Tom Blake',r:'contratos'},{n:'Lucía Ferrer',r:'comunidad'},{n:'Ivan Petrov',h:'ivan',r:'backend'},
+      {n:'Sara Lima',r:'traducción'}],
+    tags:['Metaverse','Decentraland','Game','3D','Web3','Multiplayer','Torneos','MANA','Unity','Smart contracts'],
+    period:'2022–2024', status:'live',
+    site:'Jugar ahora', repo:'Repositorio', video:true,
+    shots:[A+'shot-gate.webp',A+'shot-mooney.webp',A+'shot-posters.webp',A+'ilustracion.png',
+      A+'shot-mooney.webp',A+'shot-gate.webp',A+'shot-posters.webp',A+'shot-mooney.webp'],
+    body:['Golfcraft empezó como un minijuego de una tarde y acabó siendo un campo entero con temporadas.',
+      'Cada torneo reparte un bote y el campo se rediseña cuando termina, así que nadie se aprende los hoyos de memoria.']
+  }
+};
+
+/* ---------------- la plantilla: una sola función para los tres ------------- */
+function personChip(m){
+  const img=m.a??genAvatar(m.n,m.h??m.n);
+  const role=m.r?`<span class="ro">${m.r}</span>`:'';
+  return m.h
+    ? `<a class="p linked" href="#"><img src="${img}" alt=""><span class="nm">${m.n}</span>${role}<span class="arw">↗</span></a>`
+    : `<span class="p plain"><img src="${img}" alt=""><span class="nm">${m.n}</span>${role}</span>`;
+}
+function slot(label,html,note){
+  if(!html)return'';
+  return `<div class="slot"><p class="slab">${label}</p>${html}${note?`<p class="note">${note}</p>`:''}</div>`;
+}
+/* La portada es UNA imagen y ya está: la que el autor sube en `thumbnail`.
+   Si quiere un díptico, lo compone él en su editor y sube el resultado. La
+   plantilla no parte imágenes ni necesita un campo de estilo de portada. */
+function cover(d){
+  return `<div class="cover single"><img src="${d.cover}" alt="${d.title}"></div>`;
+}
+function gallery(d){
+  const n=d.shots.length;
+  const cls=n<=3?'g3':n<=6?'g6':'g8';
+  const vid=d.video?`<div class="vid">Vídeo · YouTube</div>`:'';
+  const shots=d.shots.map((s,i)=>
+    `<figure class="sh"><img src="${s}" alt="" loading="lazy"><figcaption class="num">${String(i+1).padStart(2,'0')}</figcaption></figure>`).join('');
+  return `<section class="sec">
+    <div class="sechead"><p class="slab" style="margin:0">Capturas</p><span class="n">${String(n).padStart(2,'0')}${d.video?' + vídeo':''}</span></div>
+    ${vid}<div class="grid ${cls}">${shots}</div></section>`;
+}
+function render(key){
+  const d=CASES[key];
+  const links=[d.site?`<a class="btn pri" href="#">${d.site}<span>→</span></a>`:'',
+               d.repo?`<a class="btn" href="#">${d.repo}<span>→</span></a>`:''].join('');
+  const slots=[
+    slot('Créditos',`<div class="people">${d.members.map(personChip).join('')}</div>`,
+         d.members.length>1?'En orden de autoría':''),
+    slot('Etiquetas',d.tags.length?`<div class="chips">${d.tags.map(t=>`<span class="chip">${t}</span>`).join('')}</div>`:''),
+    slot('Periodo',d.period?`<p class="fact" style="margin:0">${d.period}</p>`:''),
+    slot('Estado',d.status?`<div class="chips"><span class="chip ${d.status}">${d.status==='live'?'En línea':d.status}</span></div>`:''),
+    slot('Enlaces',links?`<div class="btns">${links}</div>`:'')
+  ].filter(Boolean);
+  /* Con un solo hueco la ficha no da para columna: se queda huérfana a la
+     derecha de una galería alta. Entonces pasa a tira, ancha, antes de las
+     capturas. Lo decide el número de datos, no el autor. */
+  const solo=slots.length<=1;
+  const ficha=`<aside class="ficha${solo?' tira':''}">${slots.join('')}</aside>`;
+  document.getElementById('page').innerHTML=`
+    <p class="crumb"><a href="#">Portfolio</a> / ${d.title}</p>
+    <h1 class="t">${d.title}</h1>
+    ${d.summary?`<p class="lead">${d.summary}</p>`:''}
+    ${cover(d)}
+    <div class="cols${solo?' solo':''}">
+      ${solo?ficha:''}
+      <div>${gallery(d)}<section class="body">${d.body.map(p=>`<p>${p}</p>`).join('')}</section></div>
+      ${solo?'':ficha}
+    </div>
+    <section class="rules">
+      <h2>Lo que decide la plantilla sola, sin que el autor diseñe nada</h2>
+      <ul>
+        <li><code>portada</code> — obligatoria en el alta. Una imagen, a sangre y a lo ancho. Si el autor quiere un díptico lo compone él y sube una sola imagen: ni campo nuevo ni migración.</li>
+        <li><code>capturas</code> — 3 a 8, obligatorias en el alta. La rejilla cambia sola: 3 → una ancha y dos; 4–6 → dos columnas; 7–8 → tres columnas con la primera a lo ancho.</li>
+        <li><code>ficha técnica</code> — cada hueco vacío desaparece en vez de dejar un agujero. El mínimo enseña sólo Créditos; el máximo, los cinco.</li>
+        <li><code>créditos</code> — foto si la hay, iniciales sobre disco de marca si no; flecha ↗ sólo cuando hay cuenta a la que ir.</li>
+        <li><code>vídeo</code> — si existe, encabeza la sección de capturas en vez de abrir una banda propia.</li>
+      </ul>
+    </section>`;
+}
+
+/* ---------------- controles ---------------- */
+document.querySelectorAll('[data-case]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-case]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); render(b.dataset.case); window.scrollTo({top:0});
+}));
+const tb=document.getElementById('theme');
+tb.addEventListener('click',()=>{
+  const light=document.documentElement.getAttribute('data-theme')==='light';
+  document.documentElement.setAttribute('data-theme',light?'dark':'light');
+  tb.textContent=light?'Tema claro':'Tema oscuro';
+});
+render('mg');
+</script>
+<!-- comparador de rótulo (añadido para la revisión, no forma parte de la propuesta) -->
+<button id="zx-logo-toggle" type="button" style="position:fixed;right:16px;bottom:16px;z-index:999;font:600 11px/1 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-radius:999px;border:1px solid rgba(239,141,40,.55);background:#EF8D28;color:#140C03;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35)">Quitar rótulo</button>
+<script>
+(function(){
+  var ON='ilustracion.png', OFF='ilustracion-sinrotulo.png', off=false;
+  var btn=document.getElementById('zx-logo-toggle');
+  function imgs(){ return [].slice.call(document.images).filter(function(i){ return /ilustracion(-sinrotulo)?\.png/.test(i.getAttribute('src')||''); }); }
+  btn.addEventListener('click',function(){
+    off=!off;
+    imgs().forEach(function(i){ i.src=i.getAttribute('src').replace(off?ON:OFF, off?OFF:ON); });
+    btn.textContent = off ? 'Poner rótulo' : 'Quitar rótulo';
+  });
+})();
+</script>
+</body>
+</html>

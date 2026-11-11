@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Money Grass — ZEROxWORK (propuesta)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — copiados del sitio (theme.scss)
+   ============================================================ */
+:root{
+  color-scheme: dark;
+  --zx-bg:#0B0F13; --zx-bg-2:#0E141A; --zx-surface:#141B22;
+  --zx-line:rgba(255,255,255,.07); --zx-line-2:rgba(255,255,255,.13);
+  --zx-ink:#ECEFF2; --zx-ink-dim:#99A2AB; --zx-ink-faint:#5B6571;
+  --zx-red:#EF4D42; --zx-orange:#EF8D28; --zx-blue:#2F9CFB;
+  --zx-cyan:#47C8D6; --zx-mint:#55F0B7; --zx-violet:#9B7BF0;
+  --zx-hover:rgba(255,255,255,.03);
+  --zx-fill:rgba(255,255,255,.055);
+  --zx-plate:rgba(8,11,14,.62);
+  --zx-plate-ink:#F3F5F7;
+
+  --zx-spectrum: linear-gradient(115deg, var(--zx-red) 0%, var(--zx-orange) 28%, var(--zx-mint) 55%, var(--zx-cyan) 78%, var(--zx-blue) 100%);
+  --zx-display:'Space Grotesk', system-ui, sans-serif;
+  --zx-body:'Inter', system-ui, sans-serif;
+  --zx-mono:'JetBrains Mono', ui-monospace, monospace;
+  --zx-maxw:1180px;
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --zx-bg:#F7F6F2; --zx-bg-2:#EDEBE5; --zx-surface:#FFFFFF;
+  --zx-line:rgba(11,15,19,.09); --zx-line-2:rgba(11,15,19,.17);
+  --zx-ink:#0E1318; --zx-ink-dim:#505A64; --zx-ink-faint:#86909A;
+  --zx-red:#E2453A; --zx-orange:#DB720E; --zx-blue:#1F85EE;
+  --zx-cyan:#17A3B5; --zx-mint:#19C08A; --zx-violet:#7C5CE0;
+  --zx-hover:rgba(11,15,19,.035);
+  --zx-fill:rgba(11,15,19,.045);
+  --zx-plate:rgba(255,255,255,.78);
+  --zx-plate-ink:#0E1318;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--zx-bg);
+  color:var(--zx-ink);
+  font-family:var(--zx-body);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+/* trama diagonal del sitio, muy tenue */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(115deg, var(--zx-line) 0 1px, transparent 1px 104px),
+    repeating-linear-gradient(25deg, var(--zx-line) 0 1px, transparent 1px 104px);
+  opacity:.6;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{margin:0;font-family:var(--zx-display);letter-spacing:-.02em;font-weight:600}
+p{margin:0}
+
+.wrap{max-width:var(--zx-maxw);margin:0 auto;padding:0 30px;position:relative;z-index:1}
+.mono{font-family:var(--zx-mono)}
+.label{
+  font-family:var(--zx-mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--zx-ink-faint);
+}
+.diag-rule{height:1px;background:var(--zx-spectrum);opacity:.55;transform:skewY(-.9deg);transform-origin:left;position:relative;z-index:1}
+.hair{height:1px;background:var(--zx-line);border:0;margin:0}
+
+/* ============================================================
+   CHROME DEL SITIO
+   ============================================================ */
+.site{position:relative;z-index:3;background:var(--zx-bg);border-bottom:1px solid var(--zx-line)}
+.site-in{display:flex;align-items:center;justify-content:space-between;gap:18px;height:64px}
+.brand{display:flex;align-items:center;gap:11px}
+.brand svg{flex:none}
+.wordmark{font-family:var(--zx-display);font-weight:700;letter-spacing:-.01em;font-size:17px}
+.wordmark .z{color:var(--zx-ink-dim)}
+.wordmark .x{color:var(--zx-orange)}
+.nav{display:flex;align-items:center;gap:22px}
+.nav a{font-size:14.5px;color:var(--zx-ink-dim);transition:color .2s}
+.nav a:hover{color:var(--zx-ink)}
+.nav a[aria-current]{color:var(--zx-ink);font-weight:500}
+.site-tools{display:flex;align-items:center;gap:10px}
+.icon-btn{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--zx-line-2);
+  background:transparent;color:var(--zx-ink);cursor:pointer;
+  display:grid;place-items:center;font-size:15px;transition:border-color .2s,background .2s;
+}
+.icon-btn:hover{border-color:var(--zx-ink-dim);background:var(--zx-hover)}
+
+/* ============================================================
+   PORTADA — díptico ilustración / escena 3D
+   ============================================================ */
+.cover{position:relative;z-index:1;width:100%;background:var(--zx-bg-2)}
+.cover-media{
+  position:relative;width:100%;
+  height:clamp(380px,52vh,560px);
+  overflow:hidden;
+  border-bottom:1px solid var(--zx-line);
+}
+.cover-render{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:74% 50%}
+.cover-illus{
+  position:absolute;inset:0;
+  clip-path:polygon(0 0, 46% 0, 33% 100%, 0 100%);
+  background:var(--zx-bg-2);
+  background-image:repeating-linear-gradient(45deg, var(--zx-line) 0 1px, transparent 1px 11px);
+  display:flex;align-items:center;
+  padding-left:clamp(22px,6vw,88px);
+}
+.cover-seam{
+  position:absolute;inset:0;
+  clip-path:polygon(46% 0, 46.2% 0, 33.2% 100%, 33% 100%);
+  background:var(--zx-spectrum);
+}
+.illus-box{width:min(330px,62%)}
+.illus-kicker{display:block;font-family:var(--zx-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--zx-ink-faint)}
+.illus-state{
+  display:inline-block;margin-top:10px;
+  font-family:var(--zx-display);font-weight:600;font-size:clamp(22px,2.4vw,30px);
+  letter-spacing:-.02em;color:var(--zx-ink-dim);
+  border-bottom:2px dashed var(--zx-line-2);padding-bottom:4px;
+}
+.illus-note{margin-top:14px;font-size:13px;line-height:1.55;color:var(--zx-ink-faint);max-width:26em}
+.plate{
+  position:absolute;
+  font-family:var(--zx-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  background:var(--zx-plate);color:var(--zx-plate-ink);
+  border:1px solid var(--zx-line-2);border-radius:4px;padding:5px 9px;
+}
+.cover-plate{right:clamp(18px,4vw,40px);bottom:clamp(18px,4vw,34px)}
+
+/* ============================================================
+   CABECERA DE FICHA — título + ficha técnica
+   ============================================================ */
+.masthead{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:0 64px;padding-top:44px;padding-bottom:52px}
+.eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.eyebrow a{
+  font-family:var(--zx-mono);font-size:12px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--zx-orange);transition:opacity .2s;
+}
+.eyebrow a:hover{opacity:.7}
+.eyebrow span{font-family:var(--zx-mono);font-size:12px;color:var(--zx-ink-faint)}
+h1.title{font-size:clamp(42px,7vw,88px);line-height:.98;letter-spacing:-.035em;font-weight:600}
+.summary{
+  margin-top:26px;max-width:21ch;
+  font-family:var(--zx-display);font-weight:400;
+  font-size:clamp(20px,2vw,26px);line-height:1.34;letter-spacing:-.015em;
+  color:var(--zx-ink-dim);
+  border-left:2px solid var(--zx-orange);padding-left:18px;
+}
+
+/* ficha técnica */
+.ficha{
+  background:var(--zx-surface);border:1px solid var(--zx-line);border-radius:14px;
+  padding:4px 22px 22px;align-self:start;
+}
+.f-block{padding:18px 0;border-bottom:1px solid var(--zx-line)}
+.f-block:last-child{border-bottom:0;padding-bottom:4px}
+.f-label{margin-bottom:13px}
+.f-note{display:block;margin-top:10px;font-family:var(--zx-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--zx-ink-faint)}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  font-family:var(--zx-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--zx-ink-dim);border:1px solid var(--zx-line);border-radius:20px;padding:4px 10px;
+}
+
+/* ============================================================
+   CHIP DE PERSONA
+   ============================================================ */
+.people{display:flex;flex-wrap:wrap;gap:8px}
+.p-chip{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:3px 13px 3px 3px;border-radius:999px;
+  border:1px solid var(--zx-line-2);background:transparent;
+  font-family:var(--zx-body);font-size:14px;font-weight:500;color:var(--zx-ink);
+  line-height:1.2;max-width:100%;
+  transition:border-color .18s,background .18s,transform .18s;
+}
+.p-chip:hover{border-color:var(--zx-ink-dim);background:var(--zx-hover);transform:translateY(-1px)}
+.p-chip .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-chip .ext{font-size:11px;color:var(--zx-ink-faint);margin-left:1px;transition:color .18s,transform .18s}
+.p-chip:hover .ext{color:var(--zx-orange);transform:translate(1px,-1px)}
+.p-chip .role{
+  font-family:var(--zx-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--zx-ink-faint);border-left:1px solid var(--zx-line-2);padding-left:8px;white-space:nowrap;
+}
+/* sin cuenta: no enlaza. Relleno en vez de borde: se lee como dato, no como botón roto */
+.p-chip--plain{
+  border-color:transparent;background:var(--zx-fill);color:var(--zx-ink-dim);cursor:default;
+}
+.p-chip--plain:hover{border-color:transparent;background:var(--zx-fill);transform:none}
+.av{width:26px;height:26px;border-radius:50%;flex:none;display:block;object-fit:cover;background:var(--zx-bg-2)}
+.av-img{border:1px solid var(--zx-line)}
+
+/* ============================================================
+   GALERÍA
+   ============================================================ */
+.gallery{padding-bottom:12px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:16px}
+.shot-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.shot{
+  position:relative;display:block;overflow:hidden;border-radius:12px;
+  border:1px solid var(--zx-line);background:var(--zx-bg-2);aspect-ratio:4/3;
+}
+.shot--lead{grid-column:1 / -1;aspect-ratio:16/9}
+.shot img{width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.2,.7,.3,1)}
+.shot:hover img{transform:scale(1.025)}
+.shot .plate{left:12px;top:12px;opacity:.9}
+.shot .zoom{
+  position:absolute;right:12px;bottom:12px;opacity:0;transform:translateY(4px);
+  transition:opacity .2s,transform .2s;
+}
+.shot:hover .zoom{opacity:1;transform:none}
+
+/* ============================================================
+   CUERPO
+   ============================================================ */
+.body{padding-top:54px;padding-bottom:16px;display:grid;grid-template-columns:150px minmax(0,1fr);gap:0 40px}
+.body-gutter{align-self:start;position:sticky;top:26px;padding-top:6px}
+.body-col{max-width:64ch}
+.body-col p{font-size:17.5px;line-height:1.75;margin-top:22px;color:var(--zx-ink)}
+.body-col p:first-child{margin-top:0}
+.body-col em{font-style:italic;color:var(--zx-red)}
+.body-col a{color:var(--zx-ink);border-bottom:1px solid var(--zx-orange);transition:color .2s}
+.body-col a:hover{color:var(--zx-orange)}
+.note{
+  border-left:2px solid var(--zx-line-2);padding-left:18px;
+  color:var(--zx-ink-dim) !important;font-size:16px !important;
+}
+
+/* cierre */
+.closing{border-top:1px solid var(--zx-line);margin-top:46px;padding:40px 0 64px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;
+  font-family:var(--zx-display);font-weight:600;font-size:15px;
+  padding:13px 22px;border-radius:11px;border:1px solid transparent;cursor:pointer;
+  transition:transform .15s,box-shadow .25s,border-color .2s,background .2s,color .2s;
+}
+.btn .arr{transition:transform .2s}
+.btn:hover .arr{transform:translateX(3px)}
+.btn-primary{background:var(--zx-spectrum);color:#0a0c0e}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px -14px rgba(239,141,40,.45)}
+.btn-ghost{background:transparent;color:var(--zx-ink);border-color:var(--zx-line-2)}
+.btn-ghost:hover{border-color:var(--zx-ink-dim);background:var(--zx-hover)}
+.f-cta .btn{width:100%;justify-content:center}
+
+/* ============================================================
+   TIRA DE VARIANTES (no forma parte de la página)
+   ============================================================ */
+.variants{padding:40px 0 70px;position:relative;z-index:1}
+.v-head{margin-bottom:26px}
+.v-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.v-card{background:var(--zx-surface);border:1px solid var(--zx-line);border-radius:14px;padding:18px}
+.v-card h3{font-size:14px;margin-bottom:4px;letter-spacing:-.01em}
+.v-card .v-why{font-size:12.5px;color:var(--zx-ink-faint);line-height:1.5;margin-bottom:16px}
+.v-demo{display:flex;flex-direction:column;gap:9px;align-items:flex-start}
+
+/* variante B: fila de dos líneas */
+.p-row{
+  display:flex;align-items:center;gap:11px;width:100%;
+  padding:8px 12px 8px 8px;border-radius:12px;border:1px solid var(--zx-line);
+  transition:border-color .18s,background .18s;
+}
+.p-row:hover{border-color:var(--zx-line-2);background:var(--zx-hover)}
+.p-row .av{width:34px;height:34px}
+.p-row .nm{font-size:14.5px;font-weight:500;line-height:1.25}
+.p-row .sub{font-family:var(--zx-mono);font-size:10.5px;letter-spacing:.06em;color:var(--zx-ink-faint)}
+.p-row--plain{border-style:dashed;border-color:var(--zx-line);background:var(--zx-fill);cursor:default}
+.p-row--plain:hover{border-color:var(--zx-line);background:var(--zx-fill)}
+
+/* variante C: en línea */
+.p-inline{display:inline-flex;align-items:center;gap:8px;font-size:14.5px}
+.p-inline .av{width:22px;height:22px}
+.p-inline .nm{border-bottom:1px solid var(--zx-line-2);padding-bottom:1px}
+.p-inline--plain .nm{border-bottom:0;color:var(--zx-ink-dim)}
+
+.foot{border-top:1px solid var(--zx-line);padding:22px 0;position:relative;z-index:1}
+.foot-in{display:flex;align-items:center;justify-content:space-between;gap:14px}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 980px){
+  .masthead{grid-template-columns:minmax(0,1fr);gap:34px;padding-top:34px;padding-bottom:40px}
+  .summary{max-width:28ch}
+  .ficha{padding:4px 20px 20px}
+  .v-grid{grid-template-columns:1fr}
+}
+@media (max-width: 760px){
+  .wrap{padding:0 18px}
+  .nav{display:none}
+  .cover-media{height:430px}
+  .cover-render{object-position:62% 50%}
+  .cover-illus{
+    clip-path:polygon(0 0, 100% 0, 100% 44%, 0 56%);
+    align-items:flex-start;padding:26px 20px 0;
+  }
+  .cover-seam{clip-path:polygon(0 56%, 100% 44%, 100% 44.8%, 0 56.8%)}
+  .illus-box{width:100%;max-width:none}
+  .illus-note{max-width:34em}
+  .shot-grid{grid-template-columns:1fr}
+  .shot--lead{aspect-ratio:16/10}
+  .body{padding-top:40px;grid-template-columns:minmax(0,1fr);gap:0}
+  .body-gutter{position:static;margin-bottom:14px;padding-top:0}
+  .body-col p{font-size:16.5px}
+  .closing{padding:36px 0 48px}
+  .closing .btn{width:100%;justify-content:center}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important;animation:none !important}
+}
+.cover-illus{background-image:none;background:#F2EFE8;padding-left:0;overflow:hidden}.illus-img{position:absolute;left:0;top:0;width:50%;height:100%;object-fit:cover;object-position:34% 58%}.illus-plate{left:18px;bottom:18px}@media(max-width:760px){.illus-img{width:100%;object-position:50% 50%}}</style>
+</head>
+<body>
+
+<!-- ============ CHROME ============ -->
+<header class="site">
+  <div class="wrap site-in">
+    <a class="brand" href="#">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+        <rect x="0" y="0" width="30" height="30" rx="8" fill="var(--zx-ink)"/>
+        <circle cx="11" cy="15" r="5.4" fill="none" stroke="var(--zx-bg)" stroke-width="2.6"/>
+        <circle cx="20.5" cy="15" r="6.2" fill="var(--zx-orange)"/>
+        <path d="M18.2 12.7 L22.8 17.3 M22.8 12.7 L18.2 17.3" stroke="var(--zx-bg)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="wordmark"><span class="z">ZERO</span><span class="x">x</span>WORK</span>
+    </a>
+    <nav class="nav">
+      <a href="#">Blog</a>
+      <a href="#">Herramientas</a>
+      <a href="#" aria-current="page">Portfolio</a>
+      <a href="#">Miembros</a>
+    </nav>
+    <div class="site-tools">
+      <span class="label" style="letter-spacing:.14em">ES</span>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-pressed="true" aria-label="Cambiar tema">
+        <span id="theme-glyph">☾</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ PORTADA ============ -->
+  <section class="cover" aria-label="Portada de Money Grass">
+    <div class="cover-media">
+      <img class="cover-render" src="../assets/shot-mooney.webp"
+           alt="Money Grass: figuras sin rostro pastando sobre una pradera de billetes">
+      <div class="cover-illus">
+        <img class="illus-img" src="../assets/ilustracion.png" alt="Ilustración original de Money Grass"><span class="plate illus-plate">Ilustración · 2022</span>
+      </div>
+      <div class="cover-seam" aria-hidden="true"></div>
+      <span class="plate cover-plate">Escena 3D · Decentraland</span>
+    </div>
+  </section>
+  <div class="diag-rule" aria-hidden="true"></div>
+
+  <!-- ============ TÍTULO + FICHA ============ -->
+  <div class="wrap masthead">
+    <div>
+      <p class="eyebrow"><a href="#">Portfolio</a><span>/</span><span>Money Grass</span></p>
+      <h1 class="title">Money Grass</h1>
+      <p class="summary">Una obra de arte concebida para recorrerla, no para contemplarla.</p>
+    </div>
+
+    <aside class="ficha" aria-label="Ficha técnica">
+      <div class="f-block">
+        <h2 class="label f-label">Créditos</h2>
+        <div class="people">
+
+          <!-- con cuenta + foto -->
+          <a class="p-chip" href="#" title="Ver a CarlosMu">
+            <img class="av av-img" src="../assets/carlos.jpg" alt="">
+            <span class="nm">CarlosMu</span>
+            <span class="ext" aria-hidden="true">↗</span>
+          </a>
+
+          <!-- con cuenta, sin foto: iniciales sobre disco de marca -->
+          <a class="p-chip" href="#" title="Ver a Pablo">
+            <svg class="av" viewBox="0 0 40 40" aria-hidden="true">
+              <circle cx="20" cy="20" r="20" fill="#EF8D28"/>
+              <text x="20" y="26.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="17" font-weight="500" fill="#0B0F13">P</text>
+            </svg>
+            <span class="nm">Pablo</span>
+            <span class="ext" aria-hidden="true">↗</span>
+          </a>
+
+          <!-- sin cuenta: no enlaza -->
+          <span class="p-chip p-chip--plain" title="Sin cuenta en ZEROxWORK">
+            <svg class="av" viewBox="0 0 40 40" aria-hidden="true">
+              <circle cx="20" cy="20" r="20" fill="#9B7BF0"/>
+              <text x="20" y="26.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="17" font-weight="500" fill="#0B0F13">L</text>
+            </svg>
+            <span class="nm">Llacer</span>
+          </span>
+
+        </div>
+        <span class="f-note">En orden de autoría</span>
+      </div>
+
+      <div class="f-block">
+        <h2 class="label f-label">Etiquetas</h2>
+        <div class="chips">
+          <span class="chip">Metaverse</span>
+          <span class="chip">Decentraland</span>
+          <span class="chip">Art</span>
+          <span class="chip">3D</span>
+        </div>
+      </div>
+
+      <div class="f-block f-cta">
+        <a class="btn btn-primary" href="#">Visitar <span class="arr">→</span></a>
+        <span class="f-note">Enlace externo · Decentraland</span>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============ GALERÍA ============ -->
+  <section class="wrap gallery" aria-label="Capturas">
+    <div class="sec-head">
+      <h2 class="label">Capturas</h2>
+      <span class="label">03</span>
+    </div>
+    <div class="shot-grid">
+      <a class="shot shot--lead" href="#">
+        <img src="../assets/shot-gate.webp" alt="La entrada de Money Grass: un cartel de madera sobre la pradera de billetes" loading="lazy">
+        <span class="plate">01</span>
+        <span class="plate zoom">Ampliar ↗</span>
+      </a>
+      <a class="shot" href="#">
+        <img src="../assets/shot-posters.webp" alt="Carteles dibujados a mano entre los árboles, junto a dos figuras pastando" loading="lazy">
+        <span class="plate">02</span>
+        <span class="plate zoom">Ampliar ↗</span>
+      </a>
+      <a class="shot" href="#">
+        <img src="../assets/shot-mooney.webp" alt="Una figura sin rostro mastica un billete en primer plano" loading="lazy">
+        <span class="plate">03</span>
+        <span class="plate zoom">Ampliar ↗</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ CUERPO ============ -->
+  <article class="wrap body">
+    <div class="body-gutter"><h2 class="label">La obra</h2></div>
+    <div class="body-col">
+      <p class="note">👉 <a href="#">Visítala en Decentraland</a> — Genesis City, cuatro parcelas.</p>
+      <p><em>Money Grass</em> es una pradera de billetes donde seres sin rostro pastan a ciegas, mientras que los carteles que los rodean describen una sociedad consumista abocada al matadero.</p>
+      <p>Se trata de una instalación en 3D más que de un juego: no hay nada que ganar ni puntuación. Lo que hace este espacio es situarte dentro de la metáfora a tu propia escala: llegas, caminas entre los animales que pastan, lees los carteles y la obra te llega o no te llega.</p>
+    </div>
+  </article>
+
+  <div class="wrap"><div class="closing">
+    <a class="btn btn-primary" href="#">Visitar <span class="arr">→</span></a>
+    <a class="btn btn-ghost" href="#"><span class="arr" style="transform:rotate(180deg)">→</span> Volver al portfolio</a>
+  </div></div>
+
+</main>
+
+<!-- ============ TIRA DE VARIANTES ============ -->
+<hr class="hair">
+<section class="wrap variants" aria-label="Variantes del chip de persona">
+  <div class="v-head">
+    <h2 class="label">Variantes del chip de persona</h2>
+    <p style="margin-top:8px;font-size:13px;color:var(--zx-ink-faint);max-width:60ch">
+      No forma parte de la página. Los tres estados en cada variante: con cuenta y foto, con cuenta sin foto (iniciales sobre disco de marca) y sin cuenta (no enlaza).
+    </p>
+  </div>
+  <div class="v-grid">
+
+    <div class="v-card">
+      <h3>A · Píldora <span class="label" style="color:var(--zx-mint)">— elegida</span></h3>
+      <p class="v-why">Compacta, se apila en la ficha y aguanta nombres largos en cualquier idioma. El relleno sin borde marca “sin cuenta” sin parecer un enlace roto.</p>
+      <div class="v-demo">
+        <a class="p-chip" href="#"><img class="av av-img" src="../assets/carlos.jpg" alt=""><span class="nm">CarlosMu</span><span class="ext">↗</span></a>
+        <a class="p-chip" href="#">
+          <svg class="av" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#EF8D28"/><text x="20" y="26.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="17" fill="#0B0F13">P</text></svg>
+          <span class="nm">Pablo</span><span class="ext">↗</span>
+        </a>
+        <span class="p-chip p-chip--plain">
+          <svg class="av" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#9B7BF0"/><text x="20" y="26.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="17" fill="#0B0F13">L</text></svg>
+          <span class="nm">Llacer</span>
+        </span>
+        <a class="p-chip" href="#">
+          <svg class="av" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#47C8D6"/><text x="20" y="26.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="17" fill="#0B0F13">AM</text></svg>
+          <span class="nm">Ana M.</span><span class="role">Sonido</span><span class="ext">↗</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="v-card">
+      <h3>B · Fila con cuenta</h3>
+      <p class="v-why">Para la columna ancha o la página de miembro: cabe el @handle y el rol en dos líneas. Demasiado alta para una ficha de cuatro personas.</p>
+      <div class="v-demo">
+        <a class="p-row" href="#">
+          <img class="av av-img" src="../assets/carlos.jpg" alt="">
+          <span><span class="nm">CarlosMu</span><br><span class="sub">@carlosmu</span></span>
+        </a>
+        <a class="p-row" href="#">
+          <svg class="av" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#EF8D28"/><text x="20" y="26.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="17" fill="#0B0F13">P</text></svg>
+          <span><span class="nm">Pablo</span><br><span class="sub">@pablo</span></span>
+        </a>
+        <span class="p-row p-row--plain">
+          <svg class="av" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#9B7BF0"/><text x="20" y="26.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="17" fill="#0B0F13">L</text></svg>
+          <span><span class="nm">Llacer</span><br><span class="sub">Sin cuenta</span></span>
+        </span>
+      </div>
+    </div>
+
+    <div class="v-card">
+      <h3>C · En línea</h3>
+      <p class="v-why">Lo más cercano a hoy: cara pequeña y nombre subrayado, en una sola línea. Vale para la tarjeta del listado; en la ficha pesa poco frente al título.</p>
+      <div class="v-demo">
+        <a class="p-inline" href="#"><img class="av av-img" src="../assets/carlos.jpg" alt=""><span class="nm">CarlosMu</span></a>
+        <a class="p-inline" href="#">
+          <svg class="av" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#EF8D28"/><text x="20" y="27" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" fill="#0B0F13">P</text></svg>
+          <span class="nm">Pablo</span>
+        </a>
+        <span class="p-inline p-inline--plain">
+          <svg class="av" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#9B7BF0"/><text x="20" y="27" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" fill="#0B0F13">L</text></svg>
+          <span class="nm">Llacer</span>
+        </span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <span class="wordmark" style="font-size:14px"><span class="z">ZERO</span><span class="x">x</span>WORK</span>
+    <span class="label">Propuesta de rediseño · Página de proyecto</span>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('theme-toggle');
+    var glyph = document.getElementById('theme-glyph');
+    btn.addEventListener('click', function () {
+      var dark = root.getAttribute('data-theme') !== 'light';
+      root.setAttribute('data-theme', dark ? 'light' : 'dark');
+      glyph.textContent = dark ? '☀' : '☾';
+      btn.setAttribute('aria-pressed', String(!dark));
+    });
+  })();
+</script>
+<!-- comparador de rótulo (añadido para la revisión, no forma parte de la propuesta) -->
+<button id="zx-logo-toggle" type="button" style="position:fixed;right:16px;bottom:16px;z-index:999;font:600 11px/1 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-radius:999px;border:1px solid rgba(239,141,40,.55);background:#EF8D28;color:#140C03;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35)">Quitar rótulo</button>
+<script>
+(function(){
+  var ON='ilustracion.png', OFF='ilustracion-sinrotulo.png', off=false;
+  var btn=document.getElementById('zx-logo-toggle');
+  function imgs(){ return [].slice.call(document.images).filter(function(i){ return /ilustracion(-sinrotulo)?\.png/.test(i.getAttribute('src')||''); }); }
+  btn.addEventListener('click',function(){
+    off=!off;
+    imgs().forEach(function(i){ i.src=i.getAttribute('src').replace(off?ON:OFF, off?OFF:ON); });
+    btn.textContent = off ? 'Poner rótulo' : 'Quitar rótulo';
+  });
+})();
+</script>
+</body>
+</html>
