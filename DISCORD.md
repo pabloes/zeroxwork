@@ -175,11 +175,19 @@ npm run dev                          # needs the variables above
 
 ## Deploying
 
-Second CapRover app from the same repository:
+Second CapRover app from the same repository (`zerox-discord-bot` in production):
 
-1. Create an app, for example `zerox3-bot`, with **no** HTTP port exposed.
-2. In its settings set the captain definition path to `./bot/captain-definition`.
+1. Create the app and tick **Do not expose as web app**: it has no HTTP port.
+2. Set its captain definition path to `./captain-definition-bot`. That file sits
+   at the repository root on purpose: CapRover uses the directory of the
+   captain-definition as the Docker build context, and the bot's image needs
+   `backend/prisma` next to `bot/`.
 3. Add the variables from the table above in the panel, never through the API.
+
+Never run a second copy of the bot against the same Discord server with a
+different database, such as a laptop pointing at a local one. Each copy
+reconciles the server against its own database, so each takes away the roles
+the other granted.
 
 Adding roles later needs no migration: add the entry to
 `backend/src/constants/discord-roles.ts` and set its environment variable.
