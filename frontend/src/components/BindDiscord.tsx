@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/axios-setup';
 import { useTranslation } from '../i18n';
+import DiscordIcon from './DiscordIcon';
 
 interface DiscordLink {
     discordId: string;
@@ -88,7 +89,10 @@ const BindDiscord: React.FC = () => {
 
     return (
         <section className="zx-panel">
-            <h3 className="zx-panel-title">{t('account.discord.title')}</h3>
+            <h3 className="zx-panel-title zx-panel-title-icon">
+                <DiscordIcon className="zx-discord-icon" size={22} />
+                {t('account.discord.title')}
+            </h3>
             <p className="zx-panel-sub">{t('account.discord.description')}</p>
 
             {status && <p className="zx-panel-status">{t(status)}</p>}
@@ -108,6 +112,7 @@ const BindDiscord: React.FC = () => {
                 </div>
             ) : (
                 <button type="button" className="zx-btn zx-btn-primary" onClick={startLinking} disabled={busy}>
+                    <DiscordIcon size={18} />
                     {t('account.discord.link_button')} <span className="arr">→</span>
                 </button>
             )}

@@ -8,6 +8,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import PasswordsFeature from '@adminjs/passwords';
 import { GRANTABLE_ROLES } from '../src/constants/discord-roles';
+import { enqueueDiscordSyncForUser } from '../src/services/discord-sync-queue';
+
+/**
+ * Granting or revoking a role here has to reach the bot, which is a separate
+ * process. The row in the queue is what tells it to look at that member again.
+ */
+const queueGrantChange = async (response: any, _request: any, context: any) => {
+    const userId = Number(context?.record?.params?.userId ?? response?.record?.params?.userId);
+    if (Number.isInteger(userId)) {
+        await enqueueDiscordSyncForUser(userId, 'grant_changed');
+    }
+    return response;
+};
 import {Components, componentLoader} from './component-loader';
 import path from "path";
 
@@ -241,6 +254,11 @@ const options:AdminJSOptions =  {
             },
             options: {
                 navigation: { name: 'Discord' },
+                actions: {
+                    new: { after: queueGrantChange },
+                    edit: { after: queueGrantChange },
+                    delete: { after: queueGrantChange },
+                },
                 properties: {
                     roleKey: {
                         availableValues: GRANTABLE_ROLES.map((role) => ({ value: role.key, label: role.label })),

@@ -97,6 +97,23 @@ model DiscordRoleGrant {
   @@map("discord_role_grants")
 }
 
+/// Work queue between the website and the bot, which are separate processes.
+/// The site writes a row when a link, an unlink or a grant changes; the bot
+/// drains it every few seconds and deletes what it has applied.
+/// It exists mostly for the unlink case: a deleted link leaves nothing to poll
+/// for, so without this row the only way to notice is the periodic reconcile.
+model DiscordSyncJob {
+  id        Int      @id @default(autoincrement())
+  discordId String
+  reason    String
+  attempts  Int      @default(0)
+  lastError String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("discord_sync_jobs")
+}
+
 model Wallet {
   id          Int           @id @default(autoincrement())
   address     String        @unique
@@ -267,6 +284,7 @@ model Tag {
 
   @@map("tags")
 }
+
 
 /// A portfolio item, which is not an article wearing a category.
 ///

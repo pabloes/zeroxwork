@@ -9,6 +9,8 @@ export interface BotConfig {
     guildId: string;
     roleIds: Map<string, string>;
     logChannelId: string | null;
+    /** how often to drain the queue the website writes to */
+    queueMs: number;
     /** how often to pick up links changed since the last sync */
     fastPassMs: number;
     /** how often to walk every member, which is what catches unlinks */
@@ -34,7 +36,8 @@ export function loadConfig(): BotConfig {
         guildId: requireEnv('DISCORD_GUILD_ID'),
         roleIds,
         logChannelId: process.env.DISCORD_LOG_CHANNEL_ID?.trim() || null,
-        fastPassMs: Number(process.env.DISCORD_FAST_PASS_MS ?? 60_000),
-        reconcileMs: Number(process.env.DISCORD_RECONCILE_MS ?? 3_600_000),
+        queueMs: Number(process.env.DISCORD_QUEUE_MS ?? 5_000),
+        fastPassMs: Number(process.env.DISCORD_FAST_PASS_MS ?? 300_000),
+        reconcileMs: Number(process.env.DISCORD_RECONCILE_MS ?? 900_000),
     };
 }

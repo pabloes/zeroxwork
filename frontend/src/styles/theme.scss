@@ -29,6 +29,8 @@
   --zx-glow-b: rgba(47, 156, 251, .07);
   // the logo's "0" disc, light on the dark ground
   --zx-zero: #F5F7F9;
+  // blurple de Discord, aclarado para que respire sobre el fondo oscuro
+  --zx-discord: #7A84FF;
 
   --zx-spectrum: linear-gradient(115deg,
     var(--zx-red) 0%, var(--zx-orange) 28%, var(--zx-mint) 55%, var(--zx-cyan) 78%, var(--zx-blue) 100%);
@@ -67,6 +69,8 @@
   --zx-glow-b: rgba(47, 156, 251, .06);
   // on a light ground the disc flips to ink
   --zx-zero: #15222B;
+  // blurple oficial, que sobre fondo claro va sobrado de contraste
+  --zx-discord: #5865F2;
 }
 
 /* ---------- base ---------- */
@@ -1392,6 +1396,17 @@ a.uk-link-reset {
   font-size: 12px;
   color: var(--zx-ink);
   white-space: nowrap;
+}
+
+.zx-panel-title-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.zx-discord-icon {
+  color: var(--zx-discord);
+  flex: none;
 }
 
 /* Credits editor inside the article form. The rows are a plain list; these

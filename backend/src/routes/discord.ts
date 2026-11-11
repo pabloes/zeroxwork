@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { prisma } from '../db';
 import { verifyToken } from '../middleware/authMiddleware';
+import { enqueueDiscordSync } from '../services/discord-sync-queue';
 import {
     DiscordOAuthError,
     buildAuthorizeUrl,
@@ -118,6 +119,7 @@ router.get('/oauth/callback', callbackLimiter, async (req: Request, res: Respons
             },
         });
 
+        await enqueueDiscordSync(profile.id, 'linked');
         return backToAccount(res, 'linked');
     } catch (err) {
         if (err instanceof DiscordOAuthError) {
@@ -139,7 +141,15 @@ router.get('/oauth/callback', callbackLimiter, async (req: Request, res: Respons
  */
 router.delete('/link', verifyToken, async (req: Request, res: Response) => {
     try {
+        // the id has to be read before the delete: afterwards there is no trace
+        const link = await prisma.discordLink.findUnique({
+            where: { userId: req.user.id },
+            select: { discordId: true },
+        });
         const removed = await prisma.discordLink.deleteMany({ where: { userId: req.user.id } });
+        if (link && removed.count > 0) {
+            await enqueueDiscordSync(link.discordId, 'unlinked');
+        }
         res.json({ unlinked: removed.count > 0 });
     } catch (error) {
         console.error('Discord unlink failed');

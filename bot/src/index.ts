@@ -3,6 +3,7 @@ import { PrismaClient } from './db';
 import { loadConfig } from './config';
 import { hasRolePermission, manageableRoleIds, reconcileGuild, syncMember } from './sync';
 import { isNoop } from './roles';
+import { planJobs } from './queue';
 
 const config = loadConfig();
 const prisma = new PrismaClient();
@@ -57,6 +58,55 @@ async function fastPass(): Promise<void> {
     }
 }
 
+/**
+ * Drain what the website queued. This is what makes linking and unlinking feel
+ * immediate; the reconcile below stays as the backstop.
+ */
+async function drainQueue(): Promise<void> {
+    const jobs = await prisma.discordSyncJob.findMany({
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+        select: { id: true, discordId: true, attempts: true },
+    });
+    if (jobs.length === 0) return;
+
+    const guild = await getGuild();
+    const { managed } = manageableRoleIds(guild, config);
+    const plan = planJobs(jobs);
+
+    if (plan.giveUp.length) {
+        await prisma.discordSyncJob.deleteMany({ where: { id: { in: plan.giveUp } } });
+        await log(`Gave up on ${plan.giveUp.length} sync job(s); the reconcile will pick them up`);
+    }
+    if (managed.size === 0) return;
+
+    for (const discordId of plan.discordIds) {
+        const rows = plan.rowsByDiscordId.get(discordId) ?? [];
+        const member = await guild.members.fetch(discordId).catch(() => null);
+
+        if (!member) {
+            // linked but not in the server: nothing to do, and nothing to retry
+            await prisma.discordSyncJob.deleteMany({ where: { id: { in: rows } } });
+            continue;
+        }
+
+        const outcome = await syncMember(member, prisma, config, managed);
+        if (outcome.error) {
+            await prisma.discordSyncJob.updateMany({
+                where: { id: { in: rows } },
+                data: { attempts: { increment: 1 }, lastError: outcome.error.slice(0, 500) },
+            });
+            await log(`Role sync failed for ${member.user.tag}: ${outcome.error}`);
+            continue;
+        }
+
+        await prisma.discordSyncJob.deleteMany({ where: { id: { in: rows } } });
+        if (!isNoop(outcome.applied)) {
+            await log(`Roles updated for ${member.user.tag}: +${outcome.applied.add.length} -${outcome.applied.remove.length}`);
+        }
+    }
+}
+
 async function fullReconcile(): Promise<void> {
     const guild = await getGuild();
     const { changed, failed } = await reconcileGuild(guild, prisma, config);
@@ -84,6 +134,7 @@ client.once(Events.ClientReady, async (ready) => {
     }
 
     await fullReconcile();
+    setInterval(() => void drainQueue().catch((e) => console.error('Queue drain failed:', e.message)), config.queueMs);
     setInterval(() => void fastPass().catch((e) => console.error('Fast pass failed:', e.message)), config.fastPassMs);
     setInterval(() => void fullReconcile().catch((e) => console.error('Reconcile failed:', e.message)), config.reconcileMs);
 });
