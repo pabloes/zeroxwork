@@ -15,6 +15,7 @@ import userRoutes from "./routes/user";
 import walletRoutes from "./routes/wallet";
 import blogRoutes from "./routes/blog";
 import projectRoutes from './routes/project.js';
+import publicApiRoutes from './routes/public-api.js';
 import discordRoutes from "./routes/discord";
 import speedtestRoutes from "./routes/speedtest";
 import logsRoutes from "./routes/logs";
@@ -51,6 +52,12 @@ const run = async () => {
         }
         return next(err);
     });
+    // The public, read-only API answers everybody, so it carries its own CORS
+    // and is mounted before the site's own. It has to be this way round: the
+    // site's CORS sends Allow-Credentials, and a browser refuses that header
+    // next to a wildcard origin, so the two cannot both run on one response.
+    app.use('/api/public', cors({ origin: '*', methods: ['GET'], credentials: false }), publicApiRoutes);
+
     const allowedOrigins = process.env.NODE_ENV === 'production'
         ? ['https://zeroxwork.com', 'https://www.zeroxwork.com', 'https://zerox3.zeroxwork.com']
         : ['http://localhost:5173', 'http://localhost:3000'];

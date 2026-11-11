@@ -1,5 +1,6 @@
 import { sendMail } from './mailer';
 import { record } from './log-store';
+import { SITE_URL } from '../config/site.js';
 
 /**
  * Notices sent to the site owner when something happens on the site
@@ -14,7 +15,6 @@ import { record } from './log-store';
  *    (scope `admin-notify`, visible through /api/logs).
  */
 
-const SITE_URL = 'https://zeroxwork.com';
 
 /** Read per call, so the value is whatever the process has now. */
 function adminRecipient(): string | null {
