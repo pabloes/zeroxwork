@@ -13,7 +13,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # two builds on the same small server: the website and then the bot
+    timeout-minutes: 25
 
     steps:
       - name: Checkout code
@@ -59,3 +60,24 @@ jobs:
 
           echo "::error::Health check failed after $MAX_RETRIES attempts (last status: $STATUS)"
           exit 1
+
+      # The bot shares the database schema with the website, so it is updated in
+      # the same run. It goes after the health check on purpose: by then the new
+      # website has applied its migrations, and if the website came up broken
+      # this step never runs and the previous bot keeps working.
+      # CapRover finds the bot's image through the app's Captain Definition Path,
+      # which must be ./captain-definition-bot. See DISCORD.md.
+      - name: Deploy Discord bot to CapRover
+        env:
+          CAPROVER_BOT_TOKEN: ${{ secrets.CAPROVER_BOT_TOKEN }}
+        run: |
+          if [ -z "$CAPROVER_BOT_TOKEN" ]; then
+            echo "::warning::CAPROVER_BOT_TOKEN secret not set, skipping the bot deploy"
+            exit 0
+          fi
+
+          caprover deploy \
+            --caproverUrl "${{ secrets.CAPROVER_SERVER }}" \
+            --appName "zerox-discord-bot" \
+            --appToken "$CAPROVER_BOT_TOKEN" \
+            --branch main

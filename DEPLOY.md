@@ -7,6 +7,8 @@ Pushing to `main` triggers a GitHub Actions workflow that:
 2. CapRover builds the Docker image (Dockerfile)
 3. Container starts: `prisma generate` -> `prisma migrate deploy` -> `npm run prod`
 4. Workflow runs a health check against the API
+5. If the `CAPROVER_BOT_TOKEN` secret is set, deploys the Discord bot to its own
+   app, `zerox-discord-bot`. See [DISCORD.md](DISCORD.md)
 
 Manual deploys via `caprover deploy` CLI also work but should be avoided
 when the GH Actions workflow is active to prevent race conditions.

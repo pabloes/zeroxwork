@@ -183,6 +183,10 @@ Second CapRover app from the same repository (`zerox-discord-bot` in production)
    captain-definition as the Docker build context, and the bot's image needs
    `backend/prisma` next to `bot/`.
 3. Add the variables from the table above in the panel, never through the API.
+4. Enable the app's **App Token** and store it as the `CAPROVER_BOT_TOKEN`
+   secret in GitHub (`gh secret set CAPROVER_BOT_TOKEN`). The deploy workflow
+   then updates the bot on every push to `main`, right after the website passes
+   its health check. Without the secret that step is skipped with a warning.
 
 Never run a second copy of the bot against the same Discord server with a
 different database, such as a laptop pointing at a local one. Each copy
