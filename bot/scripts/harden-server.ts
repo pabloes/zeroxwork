@@ -158,8 +158,14 @@ async function reconcileChannel(channel: TextChannel | VoiceChannel, label: stri
         touched = true;
         plan(`${label}: ${item.who}: ${describeSet(item.set)}`);
         if (APPLY) {
-            await channel.permissionOverwrites.edit(item.id, item.set)
-                .catch((e) => fail(`${label} ${item.who}: ${e.message}`));
+            const applied = await channel.permissionOverwrites.edit(item.id, item.set)
+                .then(() => true)
+                .catch((e) => { fail(`${label} ${item.who}: ${e.message}`); return false; });
+            // an allow that failed must never be followed by the deny that relies on it
+            if (!applied) {
+                fail(`${label}: stopped there, the remaining changes were not attempted`);
+                return;
+            }
         }
     }
 
@@ -248,7 +254,12 @@ async function hardenChannels(guild: Guild) {
             continue;
         }
 
-        await reconcileChannel(found, `#${spec.name}`, desired, slowmode);
+        // If the bot already gets in some other way (its role was added by hand,
+        // say), leave that alone instead of stacking a second overwrite on top.
+        const botAlreadyIn = found.permissionsFor(me).has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]);
+        const needed = desired.filter((item) => !(item.id === bot.id && botAlreadyIn));
+
+        await reconcileChannel(found, `#${spec.name}`, needed, slowmode);
     }
 
     // Voice sits behind the member role like everything outside the two public tiers.
