@@ -192,8 +192,37 @@ which is who it is written for.
   own overwrite there. Without it the bot logs why and carries on.
 - No new intent and no slash command: buttons arrive as interactions.
 
-To add a language, add it to `WELCOME_LANGS` and `WELCOME`. Discord allows
-five buttons per row, and the row is full.
+The text ends by saying where to ask, and that depends on who pressed: the bot
+looks at which channels that person can write in. A linked member is sent to
+the general channel of their language; someone who has not linked yet cannot
+write there, and is sent to `#help`.
+
+To add a language, add it to `WELCOME_LANGS`, `WELCOME` and `LANG_FLAGS`, plus
+its topic in `bot/scripts/harden-server.ts`, and run that script to create its
+channel. Discord allows five buttons per row, and the row is full.
+
+## Channels
+
+Laid out by `bot/scripts/harden-server.ts` (dry run by default, `--apply` to
+change anything). Names are in English: a channel has a single name for
+everybody.
+
+| Channels | Who reads | Who writes |
+|---|---|---|
+| `#welcome`, `#announcements` | everyone | admins |
+| `#help` | everyone | everyone, 30 s slowmode |
+| `#🇬🇧-general`, `#🇪🇸-general`, `#🇧🇷-general`, `#🇨🇳-general`, `#🇫🇷-general` | everyone | ZEROxMEMBER |
+| `#projects`, `#feedback`, `#tools`, ZEROxPLAY, voice | ZEROxMEMBER | ZEROxMEMBER |
+| `#mod-log` | staff and the bot | staff and the bot |
+
+`#help` is the only place someone without the role can write, so that a person
+who cannot get in has somewhere to say so. AutoMod blocks links there for
+anyone without ZEROxMEMBER. The flags are the ones of the website's language
+selector.
+
+The bot finds `#help` and the general channels by name
+(`HELP_CHANNEL_NAME`, `generalChannelName` in `bot/src/welcome.ts`). Rename one
+by hand and the welcome falls back: to the English channel, then to `#help`.
 
 ## Running it
 

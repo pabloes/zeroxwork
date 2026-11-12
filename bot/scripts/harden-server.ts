@@ -26,6 +26,7 @@ import {
     type VoiceChannel,
 } from 'discord.js';
 import dotenv from 'dotenv';
+import { HELP_CHANNEL_NAME, WELCOME_LANGS, generalChannelName, type WelcomeLang } from '../src/welcome';
 
 dotenv.config();
 
@@ -43,20 +44,45 @@ interface ChannelSpec {
     name: string;
     /** The name it had before; a channel still called this is renamed, never duplicated. */
     was?: string;
-    tier: 0 | 1 | 2 | 3;
+    tier: 0 | 1 | 2 | 3 | 4;
     /** null: whatever topic the channel has is left alone. */
     topic: string | null;
+    /** Created next to the first open channel, in its category. */
+    lobby?: boolean;
 }
 
 /**
- * Tier 0 and 1 are visible to everyone; tier 2 is the reason to link.
+ * Each in its own language. Whoever has not linked reads these channels without
+ * being able to write, and the topic is where they find out why.
+ */
+const GENERAL_TOPICS: Record<WelcomeLang, string> = {
+    en: 'General chat in English. To write here, link your account at zeroxwork.com/account.',
+    es: 'Chat general en español. Para escribir aquí, vincula tu cuenta en zeroxwork.com/account.',
+    'pt-br': 'Chat geral em português. Para escrever aqui, vincule sua conta em zeroxwork.com/account.',
+    zh: '中文综合聊天。要在这里发言，请先在 zeroxwork.com/account 绑定账号。',
+    fr: 'Discussion générale en français. Pour écrire ici, liez votre compte sur zeroxwork.com/account.',
+};
+
+/**
+ * Tiers 0, 1 and 4 are visible to everyone; tier 2 is the reason to link.
  * Names and topics are in English: a channel has one name for everybody, and
  * English is the server's first language.
  */
 const CHANNELS: ChannelSpec[] = [
     { name: 'welcome', was: 'bienvenida', tier: 0, topic: 'What ZEROxWORK is and how to get in. Nobody from the team will ever DM you first.' },
     { name: 'announcements', was: 'anuncios', tier: 0, topic: 'News. Only admins post here.' },
-    { name: 'general', tier: 1, topic: null },
+    // The only place someone who has not linked can write: without it, a person
+    // stuck at the door would have nowhere to say so.
+    { name: HELP_CHANNEL_NAME, tier: 1, topic: 'Trouble linking your account or getting in? Ask here, in any language.' },
+    // A general channel per language. Everyone reads, linked members write.
+    // English keeps the channel that used to be the only #general.
+    ...WELCOME_LANGS.map((lang): ChannelSpec => ({
+        name: generalChannelName(lang),
+        ...(lang === 'en' ? { was: 'general' } : {}),
+        tier: 4,
+        topic: GENERAL_TOPICS[lang],
+        lobby: true,
+    })),
     { name: 'projects', was: 'proyectos', tier: 2, topic: 'What everyone is working on.' },
     { name: 'feedback', tier: 2, topic: 'Show your work and ask for opinions.' },
     { name: 'tools', was: 'herramientas', tier: 2, topic: 'The community\'s tools.' },
@@ -250,10 +276,18 @@ async function hardenChannels(guild: Guild) {
     // tier 1: everyone reads and writes, slowed down
     // tier 2: members only
     // tier 3: staff and the bot, which posts the AutoMod alerts there
+    // tier 4: everyone reads, members write
     const desiredFor = (tier: number): { desired: Desired[]; slowmode: number } => {
         switch (tier) {
             case 0: return { desired: [{ ...everyone, set: { SendMessages: false } }], slowmode: 0 };
             case 1: return { desired: [], slowmode: 30 };
+            case 4: return {
+                desired: [
+                    { ...member, set: { SendMessages: true } },
+                    { ...everyone, set: { SendMessages: false } },
+                ],
+                slowmode: 0,
+            };
             case 2: return {
                 desired: [
                     { ...member, set: { ViewChannel: true, SendMessages: true } },
@@ -278,18 +312,25 @@ async function hardenChannels(guild: Guild) {
         if (channel?.type === ChannelType.GuildText) textByName.set(channel.name.toLowerCase(), channel);
     }
 
+    // The language channels sit together, in whatever category the first one is in.
+    const firstLobby = CHANNELS.find((spec) => spec.lobby);
+    const lobbyParentId = firstLobby
+        ? (textByName.get(firstLobby.name) ?? (firstLobby.was ? textByName.get(firstLobby.was) : undefined))?.parentId ?? null
+        : null;
+
     for (const spec of CHANNELS) {
         const { desired, slowmode } = desiredFor(spec.tier);
         // Under its old name it is the same channel: rename it, never create a twin.
         const found = textByName.get(spec.name) ?? (spec.was ? textByName.get(spec.was) : undefined);
 
         if (!found) {
-            plan(`create #${spec.name} (${['escaparate', 'recepcion', 'miembros', 'staff'][spec.tier]})`);
+            plan(`create #${spec.name} (${['escaparate', 'abierto', 'miembros', 'staff', 'leen todos, escriben miembros'][spec.tier]})`);
             if (APPLY) {
                 await guild.channels.create({
                     name: spec.name,
                     type: ChannelType.GuildText,
                     topic: spec.topic ?? undefined,
+                    parent: spec.lobby ? lobbyParentId : null,
                     rateLimitPerUser: slowmode,
                     permissionOverwrites: toCreateOverwrites(desired),
                 }).catch((e) => fail(`#${spec.name}: ${e.message}`));

@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
     DEFAULT_WELCOME_LANG,
+    HELP_CHANNEL_NAME,
+    LANG_FLAGS,
     MAX_MESSAGE_LENGTH,
     WELCOME,
     WELCOME_LANGS,
     buildWelcomeMessage,
+    generalChannelName,
     parseWelcomeCustomId,
+    pickAskChannel,
     renderWelcome,
     welcomeCustomId,
 } from '../src/welcome.js';
@@ -42,8 +46,49 @@ describe('welcome texts', () => {
     });
 
     it('falls back to the channel name when its id is not known', () => {
-        expect(renderWelcome('es')).toContain('#general');
+        expect(renderWelcome('es')).toContain('#help');
         expect(renderWelcome('es', null)).not.toContain('<#');
+    });
+});
+
+describe('where to ask', () => {
+    const generals = WELCOME_LANGS.map((lang, index) => ({ id: `id-${index}`, name: generalChannelName(lang) }));
+    const help = { id: 'id-help', name: HELP_CHANNEL_NAME };
+    const idOf = (lang: (typeof WELCOME_LANGS)[number]) => generals[WELCOME_LANGS.indexOf(lang)].id;
+
+    it('names each general channel after its flag, all different', () => {
+        const names = WELCOME_LANGS.map(generalChannelName);
+        expect(new Set(names).size).toBe(WELCOME_LANGS.length);
+        for (const lang of WELCOME_LANGS) {
+            expect(generalChannelName(lang)).toBe(`${LANG_FLAGS[lang]}-general`);
+        }
+        expect(generalChannelName('en')).toBe('🇬🇧-general');
+    });
+
+    it.each(WELCOME_LANGS)('sends a linked %s reader to the general channel of their language', (lang) => {
+        expect(pickAskChannel(lang, [help, ...generals])).toBe(idOf(lang));
+    });
+
+    it.each(WELCOME_LANGS)('sends a %s reader who has not linked, and can only write in #help, to #help', (lang) => {
+        expect(pickAskChannel(lang, [help])).toBe('id-help');
+    });
+
+    it('falls back to the English channel when theirs is missing', () => {
+        const withoutFrench = generals.filter((channel) => channel.name !== generalChannelName('fr'));
+        expect(pickAskChannel('fr', [help, ...withoutFrench])).toBe(idOf('en'));
+    });
+
+    it('still finds the single #general of a server that has not been split', () => {
+        expect(pickAskChannel('es', [{ id: 'old', name: 'general' }])).toBe('old');
+    });
+
+    it('prefers #help over a leftover #general', () => {
+        expect(pickAskChannel('zh', [{ id: 'old', name: 'general' }, help])).toBe('id-help');
+    });
+
+    it('gives nothing when there is no channel to point at, and the text names #help instead', () => {
+        expect(pickAskChannel('es', [{ id: 'x', name: 'projects' }])).toBeNull();
+        expect(renderWelcome('es', pickAskChannel('es', []))).toContain('#help');
     });
 });
 

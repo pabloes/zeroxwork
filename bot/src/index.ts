@@ -1,10 +1,10 @@
-import { ChannelType, Client, Events, GatewayIntentBits, MessageFlags, TextChannel } from 'discord.js';
+import { ChannelType, Client, Events, GatewayIntentBits, MessageFlags, PermissionFlagsBits, TextChannel } from 'discord.js';
 import { PrismaClient } from './db';
 import { loadConfig } from './config';
 import { hasRolePermission, manageableRoleIds, reconcileGuild, syncMember } from './sync';
 import { isNoop } from './roles';
 import { planJobs } from './queue';
-import { parseWelcomeCustomId, renderWelcome } from './welcome';
+import { parseWelcomeCustomId, pickAskChannel, renderWelcome } from './welcome';
 import { ensureWelcomeMessage } from './welcome-publish';
 
 const config = loadConfig();
@@ -167,10 +167,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!lang) return;
 
     try {
-        const general = interaction.guild?.channels.cache
-            .find((channel) => channel.type === ChannelType.GuildText && channel.name === 'general');
+        // What this person can write in decides where they are sent to ask:
+        // their language's channel once linked, #help before that.
+        const writable = interaction.inCachedGuild()
+            ? [...interaction.guild.channels.cache.values()]
+                .filter((channel) => channel.type === ChannelType.GuildText
+                    && channel.permissionsFor(interaction.member)
+                        .has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]))
+                .map((channel) => ({ id: channel.id, name: channel.name }))
+            : [];
         await interaction.reply({
-            content: renderWelcome(lang, general?.id),
+            content: renderWelcome(lang, pickAskChannel(lang, writable)),
             flags: MessageFlags.Ephemeral,
             allowedMentions: { parse: [] },
         });

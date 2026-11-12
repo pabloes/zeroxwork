@@ -17,13 +17,52 @@ export type WelcomeLang = typeof WELCOME_LANGS[number];
 /** English is the first language everywhere, and what anything unknown falls back to. */
 export const DEFAULT_WELCOME_LANG: WelcomeLang = 'en';
 
+/** The flags of the website's language selector (frontend/src/components/LangFlag.tsx). */
+export const LANG_FLAGS: Record<WelcomeLang, string> = {
+    en: '🇬🇧',
+    es: '🇪🇸',
+    'pt-br': '🇧🇷',
+    zh: '🇨🇳',
+    fr: '🇫🇷',
+};
+
+/**
+ * Each language has its own general channel, told apart by its flag. Everyone
+ * can read them; only linked members write.
+ */
+export function generalChannelName(lang: WelcomeLang): string {
+    return `${LANG_FLAGS[lang]}-general`;
+}
+
+/** The one channel anybody can write in, for whoever cannot get in yet. */
+export const HELP_CHANNEL_NAME = 'help';
+
+/**
+ * Where this reader is sent to ask. Give it the channels they can write in,
+ * and that decides it: a linked member gets the general channel of their
+ * language (else the English one), and someone who has not linked yet, who
+ * cannot write there, gets #help. The last step is the single #general of a
+ * server that has not been split by language.
+ */
+export function pickAskChannel(
+    lang: WelcomeLang,
+    writable: readonly { id: string; name: string }[],
+): string | null {
+    const byName = (name: string) => writable.find((channel) => channel.name === name)?.id;
+    return byName(generalChannelName(lang))
+        ?? byName(generalChannelName(DEFAULT_WELCOME_LANG))
+        ?? byName(HELP_CHANNEL_NAME)
+        ?? byName('general')
+        ?? null;
+}
+
 const CUSTOM_ID_PREFIX = 'welcome:';
 
 /** Discord rejects message content above this. */
 export const MAX_MESSAGE_LENGTH = 2000;
 
 /**
- * `{general}` becomes a mention of the open channel, where unlinked members can ask.
+ * `{ask}` becomes a mention of the channel this reader can write in: see pickAskChannel.
  * Links are wrapped in <> so Discord does not unfurl a preview under the text.
  * The link step points at /account directly: the page is reached from a menu
  * whose label differs per language, and a URL cannot be mistranslated.
@@ -52,9 +91,9 @@ Right now you only see part of the server. To see the project channels, the chan
 **Rules**
 - Respect. Criticise the work, not the person.
 - No spam, advertising or referral links.
-- Nobody from the team will ever message you privately to ask for keys, seed phrases or to connect your wallet. If that happens, it is a scam: report it in {general}.
+- Nobody from the team will ever message you privately to ask for keys, seed phrases or to connect your wallet. If that happens, it is a scam: report it in {ask}.
 
-Questions? Ask in {general}.`,
+Questions? Ask in {ask}.`,
     },
     es: {
         label: 'Español',
@@ -79,9 +118,9 @@ Ahora mismo solo ves una parte del servidor. Para ver los canales de proyectos, 
 **Normas**
 - Respeto. Se critica el trabajo, no a la persona.
 - Nada de spam, publicidad ni enlaces de referidos.
-- Nadie del equipo te escribirá por privado para pedirte claves, frases semilla ni que conectes tu wallet. Si te pasa, es una estafa: avisa en {general}.
+- Nadie del equipo te escribirá por privado para pedirte claves, frases semilla ni que conectes tu wallet. Si te pasa, es una estafa: avisa en {ask}.
 
-¿Dudas? Pregunta en {general}.`,
+¿Dudas? Pregunta en {ask}.`,
     },
     'pt-br': {
         label: 'Português',
@@ -106,9 +145,9 @@ Por enquanto você vê só uma parte do servidor. Para ver os canais de projetos
 **Regras**
 - Respeito. Critica-se o trabalho, não a pessoa.
 - Nada de spam, publicidade ou links de indicação.
-- Ninguém da equipe vai escrever para você no privado pedindo chaves, frases-semente ou para conectar sua carteira. Se acontecer, é golpe: avise em {general}.
+- Ninguém da equipe vai escrever para você no privado pedindo chaves, frases-semente ou para conectar sua carteira. Se acontecer, é golpe: avise em {ask}.
 
-Dúvidas? Pergunte em {general}.`,
+Dúvidas? Pergunte em {ask}.`,
     },
     zh: {
         label: '中文',
@@ -133,9 +172,9 @@ Dúvidas? Pergunte em {general}.`,
 **规则**
 - 互相尊重。评价作品，不针对个人。
 - 禁止垃圾信息、广告和推广链接。
-- 团队成员绝不会私信向你索要密钥、助记词，或要求你连接钱包。如果遇到，那就是诈骗：请在 {general} 告知大家。
+- 团队成员绝不会私信向你索要密钥、助记词，或要求你连接钱包。如果遇到，那就是诈骗：请在 {ask} 告知大家。
 
-有问题？在 {general} 提问。`,
+有问题？在 {ask} 提问。`,
     },
     fr: {
         label: 'Français',
@@ -160,9 +199,9 @@ Pour l'instant, vous ne voyez qu'une partie du serveur. Pour voir les salons de 
 **Règles**
 - Respect. On critique le travail, pas la personne.
 - Pas de spam, de publicité ni de liens de parrainage.
-- Personne de l'équipe ne vous écrira en privé pour vous demander des clés, des phrases de récupération ou de connecter votre wallet. Si cela arrive, c'est une arnaque : signalez-le dans {general}.
+- Personne de l'équipe ne vous écrira en privé pour vous demander des clés, des phrases de récupération ou de connecter votre wallet. Si cela arrive, c'est une arnaque : signalez-le dans {ask}.
 
-Des questions ? Posez-les dans {general}.`,
+Des questions ? Posez-les dans {ask}.`,
     },
 };
 
@@ -221,9 +260,9 @@ export function buildWelcomeMessage(): WelcomeMessage {
     };
 }
 
-/** Full text for one language, pointing at the open channel when its id is known. */
-export function renderWelcome(lang: WelcomeLang, generalChannelId?: string | null): string {
-    const general = generalChannelId ? `<#${generalChannelId}>` : '#general';
+/** Full text for one language, pointing at the channel to ask in when its id is known. */
+export function renderWelcome(lang: WelcomeLang, askChannelId?: string | null): string {
+    const ask = askChannelId ? `<#${askChannelId}>` : `#${HELP_CHANNEL_NAME}`;
     const text = WELCOME[lang] ?? WELCOME[DEFAULT_WELCOME_LANG];
-    return text.body.replaceAll('{general}', general);
+    return text.body.replaceAll('{ask}', ask);
 }
