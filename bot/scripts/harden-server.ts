@@ -19,9 +19,11 @@ import {
     Client,
     GatewayIntentBits,
     GuildExplicitContentFilter,
+    GuildFeature,
     GuildVerificationLevel,
     PermissionFlagsBits,
     type Guild,
+    type NewsChannel,
     type TextChannel,
     type VoiceChannel,
 } from 'discord.js';
@@ -49,6 +51,11 @@ interface ChannelSpec {
     topic: string | null;
     /** Created next to the first open channel, in its category. */
     lobby?: boolean;
+    /**
+     * An announcement channel: other servers can follow it, and a post reaches
+     * them once published. Only Community servers have the type.
+     */
+    announcement?: boolean;
 }
 
 /**
@@ -70,7 +77,7 @@ const GENERAL_TOPICS: Record<WelcomeLang, string> = {
  */
 const CHANNELS: ChannelSpec[] = [
     { name: 'welcome', was: 'bienvenida', tier: 0, topic: 'What ZEROxWORK is and how to get in. Nobody from the team will ever DM you first.' },
-    { name: 'announcements', was: 'anuncios', tier: 0, topic: 'News. Only admins post here.' },
+    { name: 'announcements', was: 'anuncios', tier: 0, topic: 'News. Only admins post here.', announcement: true },
     // The only place someone who has not linked can write: without it, a person
     // stuck at the door would have nowhere to say so.
     { name: HELP_CHANNEL_NAME, tier: 1, topic: 'Trouble linking your account or getting in? Ask here, in any language.' },
@@ -205,7 +212,7 @@ interface Desired {
     set: Partial<Record<Flag, boolean | null>>;
 }
 
-function overwriteDiffers(channel: TextChannel | VoiceChannel, desired: Desired): boolean {
+function overwriteDiffers(channel: TextChannel | NewsChannel | VoiceChannel, desired: Desired): boolean {
     const current = channel.permissionOverwrites.cache.get(desired.id);
     return Object.entries(desired.set).some(([name, value]) => {
         const flag = PermissionFlagsBits[name as Flag];
@@ -227,7 +234,7 @@ function describeSet(set: Desired['set']): string {
  * The order of `desired` matters: whoever must keep access goes before the
  * @everyone deny, or the bot locks itself out halfway through.
  */
-async function reconcileChannel(channel: TextChannel | VoiceChannel, label: string, desired: Desired[], slowmode: number) {
+async function reconcileChannel(channel: TextChannel | NewsChannel | VoiceChannel, label: string, desired: Desired[], slowmode: number) {
     let touched = false;
 
     for (const item of desired) {
@@ -246,7 +253,8 @@ async function reconcileChannel(channel: TextChannel | VoiceChannel, label: stri
         }
     }
 
-    if ((channel.rateLimitPerUser ?? 0) !== slowmode) {
+    // announcement channels have no slowmode to set
+    if (channel.type !== ChannelType.GuildAnnouncement && (channel.rateLimitPerUser ?? 0) !== slowmode) {
         touched = true;
         plan(`${label}: slowmode ${channel.rateLimitPerUser ?? 0}s → ${slowmode}s`);
         if (APPLY) await channel.setRateLimitPerUser(slowmode).catch((e) => fail(`${label} slowmode: ${e.message}`));
@@ -307,10 +315,14 @@ async function hardenChannels(guild: Guild) {
 
     // Text channels only: a voice channel may share the name ("General" next to
     // #general), and matching across types once sent these changes to the wrong one.
-    const textByName = new Map<string, TextChannel>();
+    // An announcement channel is a text channel that other servers can follow.
+    const textByName = new Map<string, TextChannel | NewsChannel>();
     for (const channel of existing.values()) {
-        if (channel?.type === ChannelType.GuildText) textByName.set(channel.name.toLowerCase(), channel);
+        if (channel?.type === ChannelType.GuildText || channel?.type === ChannelType.GuildAnnouncement) {
+            textByName.set(channel.name.toLowerCase(), channel);
+        }
     }
+    const canAnnounce = guild.features.includes(GuildFeature.Community);
 
     // The language channels sit together, in whatever category the first one is in.
     const firstLobby = CHANNELS.find((spec) => spec.lobby);
@@ -321,17 +333,18 @@ async function hardenChannels(guild: Guild) {
     for (const spec of CHANNELS) {
         const { desired, slowmode } = desiredFor(spec.tier);
         // Under its old name it is the same channel: rename it, never create a twin.
-        const found = textByName.get(spec.name) ?? (spec.was ? textByName.get(spec.was) : undefined);
+        let found = textByName.get(spec.name) ?? (spec.was ? textByName.get(spec.was) : undefined);
+        const asAnnouncement = Boolean(spec.announcement) && canAnnounce;
 
         if (!found) {
             plan(`create #${spec.name} (${['escaparate', 'abierto', 'miembros', 'staff', 'leen todos, escriben miembros'][spec.tier]})`);
             if (APPLY) {
                 await guild.channels.create({
                     name: spec.name,
-                    type: ChannelType.GuildText,
+                    type: asAnnouncement ? ChannelType.GuildAnnouncement : ChannelType.GuildText,
                     topic: spec.topic ?? undefined,
                     parent: spec.lobby ? lobbyParentId : null,
-                    rateLimitPerUser: slowmode,
+                    ...(asAnnouncement ? {} : { rateLimitPerUser: slowmode }),
                     permissionOverwrites: toCreateOverwrites(desired),
                 }).catch((e) => fail(`#${spec.name}: ${e.message}`));
             }
@@ -340,10 +353,16 @@ async function hardenChannels(guild: Guild) {
 
         const rename = found.name !== spec.name;
         const retopic = spec.topic !== null && (found.topic ?? '') !== spec.topic;
+        // One way only: a channel someone made an announcement channel by hand stays one.
+        const convert = asAnnouncement && found.type !== ChannelType.GuildAnnouncement;
         const wording = [
             rename ? `rename to #${spec.name}` : '',
             retopic ? `topic → "${spec.topic}"` : '',
+            convert ? 'convert to an announcement channel' : '',
         ].filter(Boolean).join(', ');
+        if (spec.announcement && !canAnnounce) {
+            ok(`#${found.name} stays a text channel: announcement channels need Community`);
+        }
 
         if (!found.permissionsFor(me).has(PermissionFlagsBits.ViewChannel)) {
             // Manage Channels is not enough on a channel the bot cannot see
@@ -360,8 +379,13 @@ async function hardenChannels(guild: Guild) {
             // one edit for both: Discord allows two name or topic changes per channel every ten minutes
             plan(`#${found.name}: ${wording}`);
             if (APPLY) {
-                await found.edit({ name: spec.name, ...(retopic ? { topic: spec.topic } : {}) })
-                    .catch((e) => fail(`#${found.name}: ${e.message}`));
+                const edited = await found.edit({
+                    name: spec.name,
+                    ...(retopic ? { topic: spec.topic } : {}),
+                    ...(convert ? { type: ChannelType.GuildAnnouncement } : {}),
+                }).catch((e) => { fail(`#${found!.name}: ${e.message}`); return null; });
+                // the type change hands back a different object; the rest works on that one
+                if (edited) found = edited;
             }
         }
 

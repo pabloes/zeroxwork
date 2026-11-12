@@ -210,6 +210,7 @@ everybody.
 | Channels | Who reads | Who writes |
 |---|---|---|
 | `#welcome`, `#announcements` | everyone | admins |
+| | | `#announcements` is an announcement channel: other servers can follow it |
 | `#help` | everyone | everyone, 30 s slowmode |
 | `#🇬🇧-general`, `#🇪🇸-general`, `#🇧🇷-general`, `#🇨🇳-general`, `#🇫🇷-general` | everyone | ZEROxMEMBER |
 | `#projects`, `#feedback`, `#tools`, ZEROxPLAY, voice | ZEROxMEMBER | ZEROxMEMBER |
