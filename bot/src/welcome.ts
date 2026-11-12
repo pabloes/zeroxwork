@@ -10,8 +10,12 @@
  * welcome-publish.ts.
  */
 
-export const WELCOME_LANGS = ['es', 'en', 'pt-br', 'zh', 'fr'] as const;
+/** Same languages and same order as the website (frontend/src/i18n): English first. */
+export const WELCOME_LANGS = ['en', 'es', 'pt-br', 'zh', 'fr'] as const;
 export type WelcomeLang = typeof WELCOME_LANGS[number];
+
+/** English is the first language everywhere, and what anything unknown falls back to. */
+export const DEFAULT_WELCOME_LANG: WelcomeLang = 'en';
 
 const CUSTOM_ID_PREFIX = 'welcome:';
 
@@ -25,33 +29,6 @@ export const MAX_MESSAGE_LENGTH = 2000;
  * whose label differs per language, and a URL cannot be mistranslated.
  */
 export const WELCOME: Record<WelcomeLang, { label: string; body: string }> = {
-    es: {
-        label: 'Español',
-        body: `**Bienvenido a ZEROxWORK**
-
-Tanto si vienes a construir como a jugar, este es tu sitio.
-
-**ZEROxWORK · construir**
-Una comunidad-cowork online donde el código y el arte comparten mesa. Juntamos equipos de desarrollo y diseño para sacar adelante proyectos ambiciosos.
-
-**ZEROxPLAY · jugar**
-Los juegos que salen de aquí: Golfcraft, Portal Lake, Claim Bite, Elon Race y Flappy Roadster. Cada uno tiene su canal para jugar, comentar y proponer mejoras.
-
-Lo uno alimenta a lo otro. Lo que se construye en WORK se juega en PLAY, y quien juega acaba probando, opinando y, si quiere, construyendo.
-
-**Cómo entrar del todo**
-Ahora mismo solo ves una parte del servidor. Para ver los canales de proyectos, los de cada juego y la voz:
-1. Crea tu cuenta en <https://zeroxwork.com> y verifica tu email.
-2. Entra en <https://zeroxwork.com/account> y pulsa **Vincular Discord**.
-3. En unos segundos recibirás el rol **ZEROxMEMBER** y aparecerán los canales.
-
-**Normas**
-- Respeto. Se critica el trabajo, no a la persona.
-- Nada de spam, publicidad ni enlaces de referidos.
-- Nadie del equipo te escribirá por privado para pedirte claves, frases semilla ni que conectes tu wallet. Si te pasa, es una estafa: avisa en {general}.
-
-¿Dudas? Pregunta en {general}.`,
-    },
     en: {
         label: 'English',
         body: `**Welcome to ZEROxWORK**
@@ -78,6 +55,33 @@ Right now you only see part of the server. To see the project channels, the chan
 - Nobody from the team will ever message you privately to ask for keys, seed phrases or to connect your wallet. If that happens, it is a scam: report it in {general}.
 
 Questions? Ask in {general}.`,
+    },
+    es: {
+        label: 'Español',
+        body: `**Bienvenido a ZEROxWORK**
+
+Tanto si vienes a construir como a jugar, este es tu sitio.
+
+**ZEROxWORK · construir**
+Una comunidad-cowork online donde el código y el arte comparten mesa. Juntamos equipos de desarrollo y diseño para sacar adelante proyectos ambiciosos.
+
+**ZEROxPLAY · jugar**
+Los juegos que salen de aquí: Golfcraft, Portal Lake, Claim Bite, Elon Race y Flappy Roadster. Cada uno tiene su canal para jugar, comentar y proponer mejoras.
+
+Lo uno alimenta a lo otro. Lo que se construye en WORK se juega en PLAY, y quien juega acaba probando, opinando y, si quiere, construyendo.
+
+**Cómo entrar del todo**
+Ahora mismo solo ves una parte del servidor. Para ver los canales de proyectos, los de cada juego y la voz:
+1. Crea tu cuenta en <https://zeroxwork.com> y verifica tu email.
+2. Entra en <https://zeroxwork.com/account> y pulsa **Vincular Discord**.
+3. En unos segundos recibirás el rol **ZEROxMEMBER** y aparecerán los canales.
+
+**Normas**
+- Respeto. Se critica el trabajo, no a la persona.
+- Nada de spam, publicidad ni enlaces de referidos.
+- Nadie del equipo te escribirá por privado para pedirte claves, frases semilla ni que conectes tu wallet. Si te pasa, es una estafa: avisa en {general}.
+
+¿Dudas? Pregunta en {general}.`,
     },
     'pt-br': {
         label: 'Português',
@@ -165,19 +169,28 @@ Des questions ? Posez-les dans {general}.`,
 /** The message everyone sees: language-neutral, with one button per language. */
 export const WELCOME_HEADER = [
     '**ZEROxWORK · ZEROxPLAY**',
-    'Bienvenido · Welcome · Bem-vindo · 欢迎 · Bienvenue',
-    'Elige idioma · Choose your language · Escolha o idioma · 选择语言 · Choisissez la langue',
+    'Welcome · Bienvenido · Bem-vindo · 欢迎 · Bienvenue',
+    'Choose your language · Elige idioma · Escolha o idioma · 选择语言 · Choisissez la langue',
 ].join('\n');
 
 export function welcomeCustomId(lang: WelcomeLang): string {
     return `${CUSTOM_ID_PREFIX}${lang}`;
 }
 
-/** The language behind a pressed button, or null when the button is not ours. */
+function isWelcomeLang(value: string): value is WelcomeLang {
+    return (WELCOME_LANGS as readonly string[]).includes(value);
+}
+
+/**
+ * The language behind a pressed button, or null when the button is not ours.
+ *
+ * One of our buttons naming a language we no longer have (an old copy of the
+ * message, a language dropped later) still gets an answer, in English.
+ */
 export function parseWelcomeCustomId(customId: string): WelcomeLang | null {
     if (!customId.startsWith(CUSTOM_ID_PREFIX)) return null;
     const lang = customId.slice(CUSTOM_ID_PREFIX.length);
-    return (WELCOME_LANGS as readonly string[]).includes(lang) ? (lang as WelcomeLang) : null;
+    return isWelcomeLang(lang) ? lang : DEFAULT_WELCOME_LANG;
 }
 
 export interface WelcomeButton {
@@ -211,5 +224,6 @@ export function buildWelcomeMessage(): WelcomeMessage {
 /** Full text for one language, pointing at the open channel when its id is known. */
 export function renderWelcome(lang: WelcomeLang, generalChannelId?: string | null): string {
     const general = generalChannelId ? `<#${generalChannelId}>` : '#general';
-    return WELCOME[lang].body.replaceAll('{general}', general);
+    const text = WELCOME[lang] ?? WELCOME[DEFAULT_WELCOME_LANG];
+    return text.body.replaceAll('{general}', general);
 }

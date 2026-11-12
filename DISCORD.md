@@ -176,7 +176,8 @@ everyone on a typo.
 ## Welcome message
 
 One message in the server's rules channel (`#bienvenida`), with a button per
-site language: es, en, pt-br, zh, fr. Pressing one answers in that language,
+site language, in the site's order: en, es, pt-br, zh, fr. English comes
+first and is the fallback for anything unknown. Pressing one answers in that language,
 visible only to whoever pressed, so the channel stays a single message no
 matter how many people read it. It works for members who have not linked yet,
 which is who it is written for.

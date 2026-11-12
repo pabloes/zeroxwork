@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+    DEFAULT_WELCOME_LANG,
     MAX_MESSAGE_LENGTH,
     WELCOME,
     WELCOME_LANGS,
@@ -66,10 +67,30 @@ describe('buttons', () => {
         }
     });
 
-    it('ignores buttons that are not ours or name an unknown language', () => {
-        for (const id of ['', 'es', 'other:es', 'welcome:', 'welcome:de', 'welcome:es:extra']) {
+    it('ignores buttons that are not ours', () => {
+        for (const id of ['', 'es', 'other:es', 'Welcome:es']) {
             expect(parseWelcomeCustomId(id)).toBeNull();
         }
+    });
+
+    it('answers in English when one of our buttons names a language we do not have', () => {
+        for (const id of ['welcome:', 'welcome:de', 'welcome:es:extra', 'welcome:ES']) {
+            expect(parseWelcomeCustomId(id)).toBe('en');
+        }
+    });
+
+    it('puts English first, as the button and in the public text', () => {
+        const message = buildWelcomeMessage();
+        expect(DEFAULT_WELCOME_LANG).toBe('en');
+        expect(WELCOME_LANGS[0]).toBe('en');
+        expect(message.components[0].components[0].custom_id).toBe(welcomeCustomId('en'));
+        const [, greetings, choose] = message.content.split('\n');
+        expect(greetings.startsWith('Welcome')).toBe(true);
+        expect(choose.startsWith('Choose your language')).toBe(true);
+    });
+
+    it('renders English for a language that is not there at runtime', () => {
+        expect(renderWelcome('de' as never, CHANNEL_ID)).toBe(renderWelcome('en', CHANNEL_ID));
     });
 
     it('keeps the public message short and language-neutral', () => {

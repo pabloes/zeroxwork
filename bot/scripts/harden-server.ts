@@ -67,6 +67,21 @@ const SCAM_PATTERNS = [
     '(?i)(soporte|support)\\s+(oficial|official|team)\\b.{0,30}\\b(dm|mp|privado|direct)',
 ];
 
+/**
+ * Links from people who have not linked their account. Three shapes, because
+ * those are the ones Discord turns into something clickable. A bare
+ * "example.com" stays plain text and is left alone.
+ */
+const LINK_PATTERNS = [
+    '(?i)https?://',
+    '(?i)\\bwww\\.[a-z0-9-]+\\.[a-z]{2,}',
+    '(?i)discord(\\.gg|(app)?\\.com/invite)/[a-z0-9-]+',
+];
+/** Our own site is always fine to post, linked or not. */
+const LINK_ALLOW_LIST = ['https://zeroxwork.com', 'https://zeroxwork.com/*'];
+/** Shown to whoever gets blocked. English: it is the server's first language. Discord caps it at 150. */
+const LINK_BLOCK_MESSAGE = 'Links are for linked members. Link your account at zeroxwork.com/account to get the ZEROxMEMBER role.';
+
 const changes: string[] = [];
 const skipped: string[] = [];
 const failures: string[] = [];
@@ -87,6 +102,15 @@ async function hardenGuild(guild: Guild) {
         plan('explicit content filter → everyone');
         if (APPLY) await guild.setExplicitContentFilter(GuildExplicitContentFilter.AllMembers).catch((e) => fail(`content filter: ${e.message}`));
     } else ok('content filter already on for everyone');
+
+    // Discord's own raid and safety warnings: staff only, next to the AutoMod alerts
+    const modLog = guild.channels.cache.find((c) => c.name === 'mod-log' && c.type === ChannelType.GuildText);
+    if (!modLog) {
+        fail('safety alerts channel: #mod-log is not visible to the bot');
+    } else if (guild.safetyAlertsChannelId !== modLog.id) {
+        plan('safety alerts channel → #mod-log');
+        if (APPLY) await guild.edit({ safetyAlertsChannel: modLog.id }).catch((e) => fail(`safety alerts channel: ${e.message}`));
+    } else ok('safety alerts already go to #mod-log');
 }
 
 async function hardenRoles(guild: Guild) {
@@ -313,6 +337,19 @@ async function hardenAutoMod(guild: Guild) {
             triggerType: AutoModerationRuleTriggerType.Keyword,
             triggerMetadata: { regexPatterns: SCAM_PATTERNS },
             actions: [{ type: AutoModerationActionType.BlockMessage }, ...alertAction],
+        },
+        {
+            // Denying Embed Links only hides the preview: the URL still gets posted.
+            // This is what actually keeps links to members who linked their account.
+            name: 'ZEROxWORK: enlaces sin vincular',
+            eventType: AutoModerationRuleEventType.MessageSend,
+            triggerType: AutoModerationRuleTriggerType.Keyword,
+            triggerMetadata: { regexPatterns: LINK_PATTERNS, allowList: LINK_ALLOW_LIST },
+            exemptRoles: [memberRoleId!],
+            actions: [
+                { type: AutoModerationActionType.BlockMessage, metadata: { customMessage: LINK_BLOCK_MESSAGE } },
+                ...alertAction,
+            ],
         },
     ];
 
