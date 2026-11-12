@@ -12,10 +12,31 @@ export const HANDLE_MAX = 30;
 /**
  * Shortest password we will store. Low on purpose: a longer floor pushes
  * people towards one password they already use everywhere, and the account
- * guards nothing worth a dictionary attack. Only /register sets a password,
- * so this is the only place it has to hold.
+ * guards nothing worth a dictionary attack. Held wherever a password is set:
+ * sign-up, the reset link and the change in /account.
  */
 export const PASSWORD_MIN = 6;
+
+/** The longest address the mail standards allow; anything past it is not an address. */
+const EMAIL_MAX = 254;
+
+/**
+ * An address in the one form we store and look up: trimmed and lower case.
+ * `Ana@Example.com` and `ana@example.com` reach the same inbox, and treating
+ * them as two accounts is how somebody ends up locked out of "their" email.
+ *
+ * Deliberately loose about what an address looks like. Whether it exists is
+ * settled by the verification mail, not by a pattern.
+ */
+export function normalizeEmail(raw: unknown): string | null {
+    if (typeof raw !== 'string') return null;
+    const email = raw.trim().toLowerCase();
+    if (email.length === 0 || email.length > EMAIL_MAX) return null;
+    // No spaces, no angle brackets or quotes (they belong to "Name <address>",
+    // not to the address), one @, a dot after it. An apostrophe is legal.
+    if (!/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(email)) return null;
+    return email;
+}
 
 /**
  * Handles that would collide with a route or impersonate the site. The member

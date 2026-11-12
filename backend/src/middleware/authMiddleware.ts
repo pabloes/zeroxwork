@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 import {prisma} from "../db";
-import { env } from '../config/env';
+import { resolveSession } from './session';
 
 export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers['authorization']?.split(" ")[1];
@@ -10,26 +9,20 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
     }
 
     try {
-        const verified = jwt.verify(token, env.JWT_SECRET) as any;
-
-        if((verified.exp *1000) < Date.now()){
-            throw new jwt.TokenExpiredError("Session expired", verified.iat);
-        }
-
-        // Fetch current user data from database to get up-to-date role
-        const user = await prisma.user.findUnique({
-            where: { id: verified.userId },
-            select: { id: true, email: true, role: true }
-        });
-
+        // Not every token signed by us is a session: the links we mail are not,
+        // and a session dies with the password it was opened with.
+        const user = await resolveSession(token);
         if (!user) {
-            return res.status(401).json({ message: 'User not found' });
+            return res.status(401).json({ message: 'Session expired or not valid. Please sign in again.' });
         }
 
         req.user = user;
         next();
     } catch (error) {
-        res.status(401).json(error);
+        // Only the database can throw here. That is our problem, not a bad
+        // session, and answering 401 would sign the person out for it.
+        console.error('Session check failed: the account could not be read');
+        res.status(503).json({ message: 'The session could not be checked right now. Please try again.' });
     }
 };
 

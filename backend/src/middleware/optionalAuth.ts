@@ -8,24 +8,16 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../db/index.js';
-import { env } from '../config/env.js';
+import { resolveSession } from './session.js';
 
 export const optionalAuth = async (req: Request, _res: Response, next: NextFunction) => {
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) return next();
 
     try {
-        const verified = jwt.verify(token, env.JWT_SECRET) as any;
-        if ((verified.exp * 1000) < Date.now()) return next();
-
-        // Read the role from the database rather than the token, same as
-        // verifyToken: a token minted before a demotion must not still be admin.
-        const user = await prisma.user.findUnique({
-            where: { id: verified.userId },
-            select: { id: true, email: true, role: true },
-        });
+        // Same rules as verifyToken, including reading the role from the
+        // database: a token minted before a demotion must not still be admin.
+        const user = await resolveSession(token);
         if (user) (req as any).user = user;
     } catch {
         // An expired or forged token is simply not a reader we know. The route

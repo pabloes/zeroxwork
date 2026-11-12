@@ -34,7 +34,10 @@ router.post('/bind', verifyToken, async (req, res) => {
     // Añadir la wallet al usuario
 
     await updateUserExtraSpace(user);
-    res.json({ success: true, user });
+    // The whole row used to go back, password hash included. Nothing on the
+    // page reads it, but a hash has no business leaving the server.
+    const { password: _password, verificationCode: _verificationCode, ...safeUser } = user ?? ({} as any);
+    res.json({ success: true, user: user ? safeUser : null });
 });
 
 // Endpoint para obtener las wallets vinculadas al usuario

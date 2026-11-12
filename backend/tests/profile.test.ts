@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateDisplayName, avatarUrlHash, DISPLAY_NAME_MAX } from '../src/config/profile.js';
+import { validateDisplayName, avatarUrlHash, normalizeEmail, DISPLAY_NAME_MAX } from '../src/config/profile.js';
 
 const SHA = 'a'.repeat(64);
 
@@ -54,5 +54,25 @@ describe('avatar URL validation', () => {
         expect(avatarUrlHash(null)).toBeNull();
         expect(avatarUrlHash(undefined)).toBeNull();
         expect(avatarUrlHash('')).toBeNull();
+    });
+});
+
+describe('email normalisation', () => {
+    it('stores one form of an address: trimmed and lower case', () => {
+        expect(normalizeEmail('  Ana.Perez@Example.COM ')).toBe('ana.perez@example.com');
+    });
+
+    it('keeps what is legal in an address, apostrophes and plus signs included', () => {
+        for (const email of ["o'brien@example.ie", 'ana+discord@example.com', 'a_b-c@sub.example.co.uk']) {
+            expect(normalizeEmail(email)).toBe(email);
+        }
+    });
+
+    it('refuses what is not an address', () => {
+        const long = `${'a'.repeat(250)}@example.com`;
+        for (const input of [null, undefined, 42, {}, '', '   ', 'ana', 'ana@', '@example.com', 'ana@example',
+            'ana perez@example.com', 'Ana <ana@example.com>', 'ana@exa mple.com', 'a@b@c.com', long]) {
+            expect(normalizeEmail(input)).toBeNull();
+        }
     });
 });

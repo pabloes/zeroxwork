@@ -1,6 +1,6 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import argon2 from 'argon2';
-import {MailDeliveryError, sendMail} from "../services/mailer";
+import {MailDeliveryError} from "../services/mailer";
 import { InvalidSocialError, normalizeSocial } from '../constants/social-networks';
 import { notifyAdminNewUser } from '../services/admin-notify';
 import jwt from 'jsonwebtoken';
@@ -8,7 +8,27 @@ import rateLimit from 'express-rate-limit';
 import { env } from '../config/env';
 import { prisma } from '../db';
 import { freeHandle } from '../services/public-handle.js';
-import { PASSWORD_MIN, validateDisplayName, validateHandle } from '../config/profile.js';
+import { PASSWORD_MIN, normalizeEmail, validateDisplayName, validateHandle } from '../config/profile.js';
+import { verifyToken } from '../middleware/authMiddleware';
+import { findUserByEmail } from '../services/user-lookup.js';
+import {
+    AuthTokenError,
+    readEmailChange,
+    readEmailVerification,
+    readPasswordReset,
+    signEmailChange,
+    signEmailVerification,
+    signPasswordReset,
+    signSession,
+} from '../services/auth-tokens.js';
+import {
+    deliver,
+    emailChangeMail,
+    emailChangedNotice,
+    passwordChangedMail,
+    passwordResetMail,
+    verificationMail,
+} from '../services/auth-mails.js';
 import { ImageRejected, storeImageBuffer } from './image.js';
 import { avatarBuffer } from '../config/avatar-data-url.js';
 
@@ -22,12 +42,20 @@ const authLimiter = rateLimit({
 });
 
 router.post('/register', authLimiter, async (req, res) => {
-    const { email, password, socials, displayName, handle, avatar } = req.body;
+    const { password, socials, displayName, handle, avatar } = req.body ?? {};
 
     // Both `error` and `message` are sent on failures: the Register page reads
     // `error`, while older clients read `message`.
-    if (!email || !password) {
+    if (!req.body?.email || !password) {
         return res.status(400).json({ error: 'Email and password are required.', message: 'Email and password are required.' });
+    }
+
+    // Stored lower case, so the same inbox can never own two accounts that
+    // differ by a capital letter.
+    const email = normalizeEmail(req.body.email);
+    if (!email) {
+        const text = 'That email address is not valid.';
+        return res.status(400).json({ error: text, message: text, code: 'EMAIL_INVALID' });
     }
 
     // The form says so too, but the form is not what protects the account.
@@ -40,10 +68,8 @@ router.post('/register', authLimiter, async (req, res) => {
         res.status(400).json({ error: text, message: text, ...(code ? { code } : {}) });
 
     try {
-        // Check if the user already exists
-        const existingUser = await prisma.user.findUnique({
-            where: { email },
-        });
+        // Check if the user already exists, whatever capitals it was typed with
+        const existingUser = await findUserByEmail(email);
 
         if (existingUser) {
             return res.status(400).json({ error: 'Email is already registered.', message: 'Email is already registered.' });
@@ -177,62 +203,60 @@ function normalizeSocials(socials: unknown): { network: string; handle: string }
     return rows;
 }
 
-async function sendVerificationMail(userId, email){
-    const verificationToken = jwt.sign(
-        { userId },
-        env.JWT_SECRET,
-        { expiresIn: '6h' } // Token expires in 1 hour
-    );
-    const verificationUrl = `https://zeroxwork.com/verify?token=${verificationToken}`;
-    await sendMail(
-        email,
-        "ZEROxWORK email verification",
-        `<p>Please click on the following link to verify your account, the token expires in 6 hours:</p>
-                        <a href="${verificationUrl}">Verify Email</a>`
-    );
+async function sendVerificationMail(userId: number, email: string) {
+    await deliver(email, verificationMail(signEmailVerification(userId, env.JWT_SECRET)));
 }
 
+/**
+ * Verified against when the address is not ours, so "no such account" costs
+ * the same time as "wrong password" and the two cannot be told apart by clock.
+ */
+let dummyHash: Promise<string> | null = null;
+function wasteAHash(password: string): Promise<boolean> {
+    dummyHash ??= argon2.hash('not a password anybody has');
+    return dummyHash.then((hash) => argon2.verify(hash, password)).catch(() => false);
+}
+
+const INVALID_CREDENTIALS = { error: 'Invalid email or password.', code: 'INVALID_CREDENTIALS' };
+
 router.post('/login', authLimiter, async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-//TODO if not verified return error
+    const { email, password } = req.body ?? {};
+    if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
+        return res.status(400).json({ error: 'Email and password are required.' });
+    }
 
     try {
-        // Verificar que el usuario exista en la base de datos
-        const user = await prisma.user.findUnique({
-            where: { email },
-            include: {
-                wallets: {
-                    include: {
-                        walletNames: true
-                    }
-                }
-            }
-        });
+        const user = await findUserByEmail(email);
+
+        // One answer for "no such account" and "wrong password". Saying which
+        // one it was tells a stranger whose email is registered here.
         if (!user) {
-            return res.status(401).json({ error: 'User does not exist' });
-        }else if(!user.verified){
+            await wasteAHash(password);
+            return res.status(401).json(INVALID_CREDENTIALS);
+        }
+        if (!await argon2.verify(user.password, password)) {
+            return res.status(401).json(INVALID_CREDENTIALS);
+        }
+
+        // Only after the password: before it, this answer handed anybody who
+        // knew the address a way to make us mail it.
+        if (!user.verified) {
             const resendToken = jwt.sign(
                 { userId: user.id, purpose: 'resend_verification' },
                 env.VERIFICATION_RESEND_SECRET,
                 { expiresIn: '15m' }
             );
-            return res.status(403).json({ error: 'Email not verified. Look your mail inbox.', resendToken });
+            return res.status(403).json({ error: 'Email not verified. Look your mail inbox.', code: 'EMAIL_NOT_VERIFIED', resendToken });
         }
 
-        // Verificar que la contraseña sea correcta con argon2
-        const isPasswordValid = await argon2.verify(user.password, password);
-        if (!isPasswordValid) {
-            return res.status(401).json({ error: 'Invalid email or password.' });
-        }
+        const token = signSession(user, env.JWT_SECRET);
 
-        // Generar un token JWT
-        const token = jwt.sign(
-            { userId: user.id, email: user.email, role: user.role },
-            env.JWT_SECRET,
-            { expiresIn: 10000 }
-        );
-        await updateUserExtraSpace(user);
-        // Enviar el token como respuesta
+        const withNames = await prisma.user.findUnique({
+            where: { id: user.id },
+            include: { wallets: { include: { walletNames: true } } },
+        });
+        if (withNames) await updateUserExtraSpace(withNames as any);
+
         res.json({ token });
     } catch (error) {
         console.error('Error logging in user:', error);
@@ -287,46 +311,267 @@ router.post('/send-verification-mail', verificationLimiter, async(req,res)=>{
     }
 });
 
-router.post('/verify', async (req, res) => {
-    const { token } = req.body;
+const linkLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: { message: 'Too many requests. Try again later.' },
+});
 
-    if (!token) {
+/** The same two answers for every link we mail: it is wrong (or used), or it is too old. */
+function tokenFailure(res: Response, error: unknown) {
+    const code = error instanceof AuthTokenError ? error.code : 'TOKEN_INVALID';
+    const text = code === 'TOKEN_EXPIRED'
+        ? 'This link has expired. Ask for a new one.'
+        : 'This link is not valid or has already been used.';
+    return res.status(400).json({ error: text, message: text, code });
+}
+
+router.post('/verify', linkLimiter, async (req, res) => {
+    const { token } = req.body ?? {};
+
+    if (!token || typeof token !== 'string') {
         return res.status(400).json({ message: 'Token is required.' });
     }
 
+    let userId: number;
     try {
-        // Verify the token
-        const decoded = jwt.verify(token, env.JWT_SECRET);
+        ({ userId } = readEmailVerification(token, env.JWT_SECRET));
+    } catch (error) {
+        const expired = error instanceof AuthTokenError && error.code === 'TOKEN_EXPIRED';
+        return res.status(400).json({ message: expired ? 'Verification token has expired.' : 'Invalid verification token.' });
+    }
 
-        // Check if user exists in the database
-        const user = await prisma.user.findUnique({
-            where: { id: decoded.userId },
-        });
-
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
-
-        // Check if user is already verified
+        // The page relies on this exact sentence to treat a second click as success.
         if (user.verified) {
             return res.status(400).json({ message: 'User is already verified.' });
         }
-        if((user.exp *1000) < Date.now()){
-            return res.status(400).json({ message: 'This token is expired.' });
-        }
-        // Update the user's verified status
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { verified: true },
-        });
 
+        await prisma.user.update({ where: { id: user.id }, data: { verified: true } });
         return res.json({ message: 'Email has been successfully verified!' });
     } catch (error) {
-        // Handle verification errors
-        if (error.name === 'TokenExpiredError') {
-            return res.status(400).json({ message: 'Verification token has expired.' });
+        console.error('Verification failed: the account could not be updated');
+        return res.status(500).json({ message: 'Something went wrong' });
+    }
+});
+
+// ------------------------------------------------------------ password reset
+
+const forgotLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { message: 'Too many requests. Try again later.' },
+});
+
+/**
+ * One reset mail per account every two minutes, whoever asks and from
+ * wherever: the limiter above counts per IP, and without this a handful of
+ * addresses could still fill somebody's inbox. In memory, which is enough for
+ * one process; a restart only forgets a two-minute wait.
+ */
+const RESET_MAIL_COOLDOWN_MS = 2 * 60 * 1000;
+const lastResetMail = new Map<number, number>();
+function mayMailReset(userId: number, now = Date.now()): boolean {
+    const last = lastResetMail.get(userId);
+    if (last !== undefined && now - last < RESET_MAIL_COOLDOWN_MS) return false;
+    if (lastResetMail.size > 5000) lastResetMail.clear();
+    lastResetMail.set(userId, now);
+    return true;
+}
+
+router.post('/forgot-password', forgotLimiter, async (req: Request, res: Response) => {
+    const email = normalizeEmail(req.body?.email);
+    if (!email) {
+        const text = 'That email address is not valid.';
+        return res.status(400).json({ error: text, message: text, code: 'EMAIL_INVALID' });
+    }
+
+    // Answered before looking anything up: the reply is the same, and just as
+    // fast, whether or not that address has an account.
+    res.json({ ok: true });
+
+    try {
+        const user = await findUserByEmail(email);
+        if (!user || !mayMailReset(user.id)) return;
+        // To the address on the account, not the one typed: they are the same
+        // inbox, but only one of them is ours to trust.
+        await deliver(user.email, passwordResetMail(signPasswordReset(user, env.JWT_SECRET)));
+    } catch (error) {
+        const why = error instanceof MailDeliveryError ? `mail not accepted (${error.code ?? 'no code'})` : 'unexpected error';
+        console.error(`Password reset mail failed: ${why}`);
+    }
+});
+
+function passwordProblem(password: unknown): { text: string; code: string } | null {
+    if (typeof password !== 'string' || password.length < PASSWORD_MIN) {
+        return { text: `The password must be at least ${PASSWORD_MIN} characters.`, code: 'PASSWORD_SHORT' };
+    }
+    return null;
+}
+
+/** Never awaited by a request: telling the owner is a courtesy, not a step that may fail it. */
+function tellOwner(to: string, mail: { subject: string; html: string }) {
+    deliver(to, mail).catch(() => console.error(`Account notice not delivered: ${mail.subject}`));
+}
+
+router.post('/reset-password', linkLimiter, async (req: Request, res: Response) => {
+    const { token, password } = req.body ?? {};
+    if (!token || typeof token !== 'string') return tokenFailure(res, null);
+
+    const problem = passwordProblem(password);
+    if (problem) return res.status(400).json({ error: problem.text, message: problem.text, code: problem.code });
+
+    try {
+        const claims = readPasswordReset(token, env.JWT_SECRET);
+        const user = await prisma.user.findUnique({
+            where: { id: claims.userId },
+            select: { id: true, email: true, password: true },
+        });
+        if (!user || !claims.matches(user.password)) return tokenFailure(res, null);
+
+        const hashed = await argon2.hash(password);
+        // Only if the password is still the one the link was made for: two
+        // clicks on the same link cannot both win.
+        const changed = await prisma.user.updateMany({
+            where: { id: user.id, password: user.password },
+            // Reading this mail is the same proof of owning the address that
+            // the verification link asks for.
+            data: { password: hashed, verified: true },
+        });
+        if (changed.count === 0) return tokenFailure(res, null);
+
+        tellOwner(user.email, passwordChangedMail());
+        res.json({ ok: true });
+    } catch (error) {
+        if (error instanceof AuthTokenError) return tokenFailure(res, error);
+        console.error('Password reset failed with an unexpected error');
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// ------------------------------------------------- changes from /account
+
+const accountLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { message: 'Too many requests. Try again later.' },
+});
+
+const WRONG_PASSWORD = { error: 'The current password is not right.', code: 'WRONG_PASSWORD' };
+
+router.post('/change-password', verifyToken, accountLimiter, async (req: Request, res: Response) => {
+    const { currentPassword, newPassword } = req.body ?? {};
+    if (typeof currentPassword !== 'string' || !currentPassword) return res.status(400).json(WRONG_PASSWORD);
+
+    const problem = passwordProblem(newPassword);
+    if (problem) return res.status(400).json({ error: problem.text, code: problem.code });
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { id: true, email: true, role: true, password: true },
+        });
+        // 400, not 401: this is a wrong field in a form, not a dead session.
+        if (!user || !await argon2.verify(user.password, currentPassword)) {
+            return res.status(400).json(WRONG_PASSWORD);
         }
-        return res.status(400).json({ message: 'Invalid verification token.' });
+        if (newPassword === currentPassword) {
+            return res.status(400).json({ error: 'The new password is the same as the current one.', code: 'PASSWORD_SAME' });
+        }
+
+        const hashed = await argon2.hash(newPassword);
+        await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
+
+        // Every session opened with the old password just died, this one
+        // included. Hand back a new one so the person who did it stays in.
+        const token = signSession({ ...user, password: hashed }, env.JWT_SECRET);
+        tellOwner(user.email, passwordChangedMail());
+        res.json({ ok: true, token });
+    } catch (error) {
+        console.error('Password change failed with an unexpected error');
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+router.post('/change-email', verifyToken, accountLimiter, async (req: Request, res: Response) => {
+    const { currentPassword } = req.body ?? {};
+    const newEmail = normalizeEmail(req.body?.newEmail);
+    if (!newEmail) {
+        return res.status(400).json({ error: 'That email address is not valid.', code: 'EMAIL_INVALID' });
+    }
+    if (typeof currentPassword !== 'string' || !currentPassword) return res.status(400).json(WRONG_PASSWORD);
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { id: true, email: true, password: true },
+        });
+        if (!user || !await argon2.verify(user.password, currentPassword)) {
+            return res.status(400).json(WRONG_PASSWORD);
+        }
+        if (user.email.toLowerCase() === newEmail) {
+            return res.status(400).json({ error: 'That is already your email.', code: 'EMAIL_SAME' });
+        }
+        // Sign-up already tells anybody whether an address is taken, so saying
+        // it here gives nothing new away, and silence would only confuse.
+        if (await findUserByEmail(newEmail)) {
+            return res.status(400).json({ error: 'That email is already used by another account.', code: 'EMAIL_TAKEN' });
+        }
+
+        // Nothing changes yet. The address becomes theirs when the link in
+        // that inbox is opened, which is the only proof they can read it.
+        try {
+            await deliver(newEmail, emailChangeMail(signEmailChange(user, newEmail, env.JWT_SECRET)));
+        } catch (mailError) {
+            console.error('Email change: confirmation mail not delivered');
+            return res.status(502).json({ error: 'The confirmation email could not be sent. Try again in a few minutes.', code: 'MAIL_FAILED' });
+        }
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Email change failed with an unexpected error');
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+/** Opened from the mail, possibly in a browser with no session: the token is the proof. */
+router.post('/confirm-email-change', linkLimiter, async (req: Request, res: Response) => {
+    const { token } = req.body ?? {};
+    if (!token || typeof token !== 'string') return tokenFailure(res, null);
+
+    const taken = () => res.status(400).json({ error: 'That email is already used by another account.', code: 'EMAIL_TAKEN' });
+
+    try {
+        const claims = readEmailChange(token, env.JWT_SECRET);
+        const newEmail = normalizeEmail(claims.newEmail);
+        const user = await prisma.user.findUnique({
+            where: { id: claims.userId },
+            select: { id: true, email: true, password: true },
+        });
+        if (!user || !newEmail || !claims.matches(user)) return tokenFailure(res, null);
+
+        // Somebody may have registered it in the hour the link was good for.
+        const owner = await findUserByEmail(newEmail);
+        if (owner && owner.id !== user.id) return taken();
+
+        const changed = await prisma.user.updateMany({
+            where: { id: user.id, email: user.email, password: user.password },
+            data: { email: newEmail, verified: true },
+        });
+        if (changed.count === 0) return tokenFailure(res, null);
+
+        // The old address hears about it: if this was not its owner, that
+        // mail is the only warning they will get.
+        tellOwner(user.email, emailChangedNotice(newEmail));
+        res.json({ ok: true, email: newEmail });
+    } catch (error) {
+        if (error instanceof AuthTokenError) return tokenFailure(res, error);
+        if ((error as { code?: string })?.code === 'P2002') return taken();
+        console.error('Email change confirmation failed with an unexpected error');
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
