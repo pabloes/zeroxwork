@@ -140,6 +140,7 @@ would do, including which database it is pointing at. `--apply` is what writes.
 | `seed-handles.ts` | Gives handles to the accounts that have an on-chain name |
 | `backfill-handles.ts` | Gives every remaining account a handle (Discord -> eth name -> `member-<id>`) |
 | `backfill-translations.ts` | Translates articles that have no translations yet (costs DeepL quota) |
+| `merge-accounts.ts` | Joins several accounts of the same person into one (see below) |
 
 Order matters between `seed-handles.ts` and `backfill-handles.ts`: the first
 claims the real names, the second only fills the gaps, so running them the other
@@ -164,6 +165,68 @@ survives deploys, so they are one-time, not something to repeat on every push.
 
 `/members` is empty until the handles exist: the route lists accounts with a
 handle, and refuses to fall back to showing an email address.
+
+## Backing up the database
+
+From `/admin`, the dashboard has a **Descargar copia** button: it runs `pg_dump`
+inside the container and the browser downloads it gzipped. Only an account that
+is ADMIN *right now* gets the file — the session says who asked, the database
+says whether they still may.
+
+The dump carries every email and password hash on the site. It is not a file to
+leave in Downloads, and never one to upload anywhere.
+
+`pg_dump` comes from the `postgresql-client` line in the `Dockerfile`, which is
+Alpine's (16.x). A `pg_dump` newer than the server works; an older one refuses.
+If the Postgres ever moves past that version the download fails with a message
+naming both versions, and that line is what to change.
+
+Restoring is deliberately not a button. Load it into a **new** database and look
+before switching anything over:
+
+```bash
+gunzip -c zeroxwork-20261112-1717.sql.gz | psql "postgresql://.../zeroxwork_restaurada"
+```
+
+Without the panel — if the app is the thing that is down — the same dump from
+the server, where the client version always matches the server's:
+
+```bash
+# Find the Postgres container first — the name depends on the CapRover app:
+docker ps --filter ancestor=postgres --format '{{.Names}}'
+
+docker exec <that container> pg_dump -U postgres zeroxwork | gzip > copia.sql.gz
+```
+
+## Joining several accounts into one
+
+`merge-accounts.ts` moves everything that hangs off some accounts onto another
+one and then deletes them. It exists because the order is not a detail:
+`Article.userId` is `onDelete: Cascade`, so deleting an account first takes its
+articles with it.
+
+```bash
+# Inside the container. Dry run first: it writes nothing.
+npx tsx scripts/merge-accounts.ts --keep 3 --drop 1,2,9
+npx tsx scripts/merge-accounts.ts --keep 3 --drop 1,2,9 --apply
+```
+
+The dry run is not a mock-up: it performs the real writes against the real
+database, with its indexes and foreign keys, and rolls the transaction back at
+the end. If a unique index were going to blow up, it blows up in the dry run.
+
+It moves articles, article credits, projects, project credits, uploads, API
+keys, wallets, socials and the Discord link and roles. Where a unique index
+makes two rows impossible — the same social network twice, the same Discord
+role twice — the surviving account's row wins and the duplicate goes.
+
+What it does **not** touch, on purpose: the surviving account's email, handle,
+display name, role and password. Set those in `/admin` first, and check you can
+log in with that account **before** the others are deleted. It refuses to run if
+the account being kept is not ADMIN while one being deleted is, which is the way
+to end up with no administrator at all and no way back in from the web.
+
+Take a backup first — the button above.
 
 ## Publishing the portfolio projects
 

@@ -19,6 +19,7 @@ import publicApiRoutes from './routes/public-api.js';
 import discordRoutes from "./routes/discord";
 import speedtestRoutes from "./routes/speedtest";
 import logsRoutes from "./routes/logs";
+import adminBackupRoutes from "./routes/admin-backup";
 import { ROLE } from './constants/roles';
 import { installConsoleCapture } from './services/log-store';
 import requestLogger from './middleware/requestLogger';
@@ -92,6 +93,10 @@ const run = async () => {
         cookiePassword: env.ADMIN_COOKIE_PASSWORD,
     }, undefined );
 
+    // Antes que el router de AdminJS, que se queda con todo lo que cuelga de
+    // /admin. La descarga mira la misma sesion que AdminJS acaba de abrir, y
+    // vuelve a comprobar el rol contra la base de datos en cada peticion.
+    app.use(admin.options.rootPath, adminBackupRoutes);
     app.use(admin.options.rootPath, router);
 
     app.use('/api/images/user-uploaded-images', express.static('public/user-uploaded-images'));

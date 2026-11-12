@@ -1,6 +1,12 @@
 # Use Node.js base image
 FROM node:20.17.0-alpine
 
+# pg_dump, para la descarga de copias de seguridad desde /admin. Es el cliente
+# que trae Alpine (16.x): un pg_dump mas nuevo que el servidor funciona, pero
+# uno mas viejo se niega a volcar. Si el Postgres de produccion se sube por
+# encima de esta version, esta es la linea que hay que cambiar.
+RUN apk add --no-cache postgresql-client
+
 # Set the working directory for the root folder (which includes frontend and backend folders)
 WORKDIR /usr/src/app
 
