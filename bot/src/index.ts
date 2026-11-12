@@ -1,9 +1,11 @@
-import { Client, Events, GatewayIntentBits, TextChannel } from 'discord.js';
+import { ChannelType, Client, Events, GatewayIntentBits, MessageFlags, TextChannel } from 'discord.js';
 import { PrismaClient } from './db';
 import { loadConfig } from './config';
 import { hasRolePermission, manageableRoleIds, reconcileGuild, syncMember } from './sync';
 import { isNoop } from './roles';
 import { planJobs } from './queue';
+import { parseWelcomeCustomId, renderWelcome } from './welcome';
+import { ensureWelcomeMessage } from './welcome-publish';
 
 const config = loadConfig();
 const prisma = new PrismaClient();
@@ -123,6 +125,12 @@ client.once(Events.ClientReady, async (ready) => {
         console.error(`Cannot see guild ${config.guildId}. Is the bot invited?`);
         return;
     }
+    // Independent of the role work below, so it goes first: the welcome is
+    // worth having even if the bot could not manage a single role.
+    await ensureWelcomeMessage(guild)
+        .then((result) => console.log(result))
+        .catch((error) => console.error('Welcome publish failed:', error instanceof Error ? error.message : 'unknown error'));
+
     if (!hasRolePermission(guild)) {
         console.error('The bot is missing the Manage Roles permission; nothing will be applied.');
         return;
@@ -148,6 +156,26 @@ client.on(Events.GuildMemberAdd, async (member) => {
     const outcome = await syncMember(member, prisma, config, managed);
     if (!isNoop(outcome.applied)) {
         await log(`${member.user.tag} joined with a linked account, roles applied`);
+    }
+});
+
+// Buttons under the welcome message: answer in the chosen language, and only to
+// whoever pressed. Works for unlinked members too, which is the point.
+client.on(Events.InteractionCreate, async (interaction) => {
+    if (!interaction.isButton()) return;
+    const lang = parseWelcomeCustomId(interaction.customId);
+    if (!lang) return;
+
+    try {
+        const general = interaction.guild?.channels.cache
+            .find((channel) => channel.type === ChannelType.GuildText && channel.name === 'general');
+        await interaction.reply({
+            content: renderWelcome(lang, general?.id),
+            flags: MessageFlags.Ephemeral,
+            allowedMentions: { parse: [] },
+        });
+    } catch (error) {
+        console.error('Welcome reply failed:', error instanceof Error ? error.message : 'unknown error');
     }
 });
 

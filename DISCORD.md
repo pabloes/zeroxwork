@@ -113,14 +113,20 @@ crash there must not take the website down with it.
   which an admin fills in by hand from `/admin`.
 - Takes roles back when the link or the grant disappears.
 - Applies roles the moment a linked user joins the server.
+- Keeps the multilingual welcome message in the rules channel (see below).
 
-Three passes, because each catches something the others cannot:
+Four passes, because each catches something the others cannot:
 
 | Pass | When | Catches |
 |---|---|---|
+| queue | every 5 seconds | what the website just did: link, unlink, grant change |
 | `guildMemberAdd` | on join | someone who linked before joining |
-| fast pass | every minute | new links and changed grants |
-| full reconcile | hourly, and at boot | unlinks, manual role edits, anything missed |
+| fast pass | every 5 minutes | new links and changed grants the queue missed |
+| full reconcile | every 15 minutes, and at boot | unlinks, manual role edits, anything missed |
+
+The queue is the `discord_sync_jobs` table: the website writes a row, the bot
+drains it. It is what makes linking feel immediate; the other passes are the
+backstop for a row that never got written.
 
 The unlink case is why the full reconcile exists: a deleted row leaves nothing
 to poll for, so roles are reconciled against the member list instead.
@@ -159,17 +165,39 @@ because Discord answers 403 for those no matter how many times you retry.
 | `DISCORD_ROLE_CRASH_CITY_PARTICIPANT` | no | Unset means the role is simply not managed |
 | `DISCORD_ROLE_CRASH_CITY_CREATOR` | no | Same |
 | `DISCORD_LOG_CHANNEL_ID` | no | Private channel for moderation logs |
-| `DISCORD_FAST_PASS_MS` | no | Default 60000 |
-| `DISCORD_RECONCILE_MS` | no | Default 3600000 |
+| `DISCORD_QUEUE_MS` | no | Default 5000 |
+| `DISCORD_FAST_PASS_MS` | no | Default 300000 |
+| `DISCORD_RECONCILE_MS` | no | Default 900000 |
 
 A role whose variable is missing is left alone entirely. That is deliberate: the
 alternative, treating it as "nobody should have this role", would strip it from
 everyone on a typo.
 
+## Welcome message
+
+One message in the server's rules channel (`#bienvenida`), with a button per
+site language: es, en, pt-br, zh, fr. Pressing one answers in that language,
+visible only to whoever pressed, so the channel stays a single message no
+matter how many people read it. It works for members who have not linked yet,
+which is who it is written for.
+
+- Texts and buttons: `bot/src/welcome.ts`. Each language must fit in one
+  Discord message (2000 characters); a test fails if one does not.
+- The bot publishes it when it starts and edits it in place if the text
+  changed, so changing the welcome is a deploy, not a manual edit. It looks for
+  its own message among the last 50 in the channel.
+- It needs View Channel, Send Messages and Read Message History in that
+  channel. `#bienvenida` denies Send Messages to everyone, so the bot has its
+  own overwrite there. Without it the bot logs why and carries on.
+- No new intent and no slash command: buttons arrive as interactions.
+
+To add a language, add it to `WELCOME_LANGS` and `WELCOME`. Discord allows
+five buttons per row, and the row is full.
+
 ## Running it
 
 ```bash
-cd bot && npm install && npm test   # pure role logic, no network
+cd bot && npm install && npm test   # pure logic, no network
 npm run dev                          # needs the variables above
 ```
 
