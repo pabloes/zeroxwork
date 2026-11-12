@@ -213,13 +213,20 @@ everybody.
 | | | `#announcements` is an announcement channel: other servers can follow it |
 | `#help` | everyone | everyone, 30 s slowmode |
 | `#🇬🇧-general`, `#🇪🇸-general`, `#🇧🇷-general`, `#🇨🇳-general`, `#🇫🇷-general` | everyone | ZEROxMEMBER |
-| `#projects`, `#feedback`, `#tools`, ZEROxPLAY, voice | ZEROxMEMBER | ZEROxMEMBER |
+| ZEROxWORK (`#tools`, `#projects`, `#feedback`), ZEROxPLAY, voice | ZEROxMEMBER | ZEROxMEMBER |
 | `#mod-log` | staff and the bot | staff and the bot |
 
 `#help` is the only place someone without the role can write, so that a person
 who cannot get in has somewhere to say so. AutoMod blocks links there for
 anyone without ZEROxMEMBER. The flags are the ones of the website's language
 selector.
+
+`#tools`, `#projects` and `#feedback` carry no permissions of their own: they
+stay in sync with the ZEROxWORK category, which is where who gets in is set.
+The category lets the bot in by name. That matters: Manage Channels is not
+enough to move or rename a channel the bot cannot see, so a members-only
+channel made by hand outside a category is out of the script's reach until the
+bot is added to it.
 
 The bot finds `#help` and the general channels by name
 (`HELP_CHANNEL_NAME`, `generalChannelName` in `bot/src/welcome.ts`). Rename one

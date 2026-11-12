@@ -22,6 +22,7 @@ import {
     GuildFeature,
     GuildVerificationLevel,
     PermissionFlagsBits,
+    type CategoryChannel,
     type Guild,
     type NewsChannel,
     type TextChannel,
@@ -56,7 +57,20 @@ interface ChannelSpec {
      * them once published. Only Community servers have the type.
      */
     announcement?: boolean;
+    /**
+     * The category it lives in. A channel in one carries no permissions of its
+     * own: it stays in sync with the category, so there is one place to change
+     * who gets in.
+     */
+    category?: string;
 }
+
+/**
+ * Members-only categories. What is created inside is born closed, and the bot
+ * is let in by name so it can keep the channels in order: Manage Channels is
+ * not enough on a channel it cannot see.
+ */
+const CATEGORIES = ['ZEROxWORK'] as const;
 
 /**
  * Each in its own language. Whoever has not linked reads these channels without
@@ -90,9 +104,10 @@ const CHANNELS: ChannelSpec[] = [
         topic: GENERAL_TOPICS[lang],
         lobby: true,
     })),
-    { name: 'projects', was: 'proyectos', tier: 2, topic: 'What everyone is working on.' },
-    { name: 'feedback', tier: 2, topic: 'Show your work and ask for opinions.' },
-    { name: 'tools', was: 'herramientas', tier: 2, topic: 'The community\'s tools.' },
+    // in the order they are listed in the server
+    { name: 'tools', was: 'herramientas', tier: 2, topic: 'The community\'s tools.', category: 'ZEROxWORK' },
+    { name: 'projects', was: 'proyectos', tier: 2, topic: 'What everyone is working on.', category: 'ZEROxWORK' },
+    { name: 'feedback', tier: 2, topic: 'Show your work and ask for opinions.', category: 'ZEROxWORK' },
     { name: 'mod-log', tier: 3, topic: 'AutoMod and bot alerts.' },
 ];
 
@@ -212,7 +227,7 @@ interface Desired {
     set: Partial<Record<Flag, boolean | null>>;
 }
 
-function overwriteDiffers(channel: TextChannel | NewsChannel | VoiceChannel, desired: Desired): boolean {
+function overwriteDiffers(channel: TextChannel | NewsChannel | VoiceChannel | CategoryChannel, desired: Desired): boolean {
     const current = channel.permissionOverwrites.cache.get(desired.id);
     return Object.entries(desired.set).some(([name, value]) => {
         const flag = PermissionFlagsBits[name as Flag];
@@ -234,7 +249,7 @@ function describeSet(set: Desired['set']): string {
  * The order of `desired` matters: whoever must keep access goes before the
  * @everyone deny, or the bot locks itself out halfway through.
  */
-async function reconcileChannel(channel: TextChannel | NewsChannel | VoiceChannel, label: string, desired: Desired[], slowmode: number) {
+async function reconcileChannel(channel: TextChannel | NewsChannel | VoiceChannel | CategoryChannel, label: string, desired: Desired[], slowmode: number) {
     let touched = false;
 
     for (const item of desired) {
@@ -253,8 +268,8 @@ async function reconcileChannel(channel: TextChannel | NewsChannel | VoiceChanne
         }
     }
 
-    // announcement channels have no slowmode to set
-    if (channel.type !== ChannelType.GuildAnnouncement && (channel.rateLimitPerUser ?? 0) !== slowmode) {
+    // announcement channels and categories have no slowmode to set
+    if ((channel.type === ChannelType.GuildText || channel.type === ChannelType.GuildVoice) && (channel.rateLimitPerUser ?? 0) !== slowmode) {
         touched = true;
         plan(`${label}: slowmode ${channel.rateLimitPerUser ?? 0}s → ${slowmode}s`);
         if (APPLY) await channel.setRateLimitPerUser(slowmode).catch((e) => fail(`${label} slowmode: ${e.message}`));
@@ -330,11 +345,39 @@ async function hardenChannels(guild: Guild) {
         ? (textByName.get(firstLobby.name) ?? (firstLobby.was ? textByName.get(firstLobby.was) : undefined))?.parentId ?? null
         : null;
 
+    // Categories first: the channels below are moved into them and take their permissions.
+    const categories = new Map<string, CategoryChannel>();
+    for (const name of CATEGORIES) {
+        // The bot before the rest: once @everyone cannot see the category, the
+        // bot could not either, and it would be locked out of its own work.
+        const closed: Desired[] = [
+            { ...bot, set: { ViewChannel: true } },
+            { ...member, set: { ViewChannel: true, SendMessages: true } },
+            { ...everyone, set: { ViewChannel: false } },
+        ];
+        let category = [...existing.values()]
+            .find((c): c is CategoryChannel => c?.type === ChannelType.GuildCategory && c.name === name);
+        if (!category) {
+            plan(`create category ${name} (miembros)`);
+            if (APPLY) {
+                category = await guild.channels.create({
+                    name,
+                    type: ChannelType.GuildCategory,
+                    permissionOverwrites: toCreateOverwrites(closed),
+                }).catch((e) => { fail(`category ${name}: ${e.message}`); return undefined; });
+            }
+        } else {
+            await reconcileChannel(category, `category ${name}`, closed, 0);
+        }
+        if (category) categories.set(name, category);
+    }
+
     for (const spec of CHANNELS) {
         const { desired, slowmode } = desiredFor(spec.tier);
         // Under its old name it is the same channel: rename it, never create a twin.
         let found = textByName.get(spec.name) ?? (spec.was ? textByName.get(spec.was) : undefined);
         const asAnnouncement = Boolean(spec.announcement) && canAnnounce;
+        const home = spec.category ? categories.get(spec.category) : undefined;
 
         if (!found) {
             plan(`create #${spec.name} (${['escaparate', 'abierto', 'miembros', 'staff', 'leen todos, escriben miembros'][spec.tier]})`);
@@ -343,9 +386,10 @@ async function hardenChannels(guild: Guild) {
                     name: spec.name,
                     type: asAnnouncement ? ChannelType.GuildAnnouncement : ChannelType.GuildText,
                     topic: spec.topic ?? undefined,
-                    parent: spec.lobby ? lobbyParentId : null,
+                    parent: home ? home.id : spec.lobby ? lobbyParentId : null,
                     ...(asAnnouncement ? {} : { rateLimitPerUser: slowmode }),
-                    permissionOverwrites: toCreateOverwrites(desired),
+                    // inside a category it inherits; rules of its own would take it out of sync
+                    ...(home ? {} : { permissionOverwrites: toCreateOverwrites(desired) }),
                 }).catch((e) => fail(`#${spec.name}: ${e.message}`));
             }
             continue;
@@ -355,10 +399,13 @@ async function hardenChannels(guild: Guild) {
         const retopic = spec.topic !== null && (found.topic ?? '') !== spec.topic;
         // One way only: a channel someone made an announcement channel by hand stays one.
         const convert = asAnnouncement && found.type !== ChannelType.GuildAnnouncement;
+        // In its category and in sync with it, or not there yet.
+        const move = spec.category !== undefined && (!home || found.parentId !== home.id || !found.permissionsLocked);
         const wording = [
             rename ? `rename to #${spec.name}` : '',
             retopic ? `topic → "${spec.topic}"` : '',
             convert ? 'convert to an announcement channel' : '',
+            move ? `move under ${spec.category}, taking its permissions` : '',
         ].filter(Boolean).join(', ');
         if (spec.announcement && !canAnnounce) {
             ok(`#${found.name} stays a text channel: announcement channels need Community`);
@@ -383,10 +430,17 @@ async function hardenChannels(guild: Guild) {
                     name: spec.name,
                     ...(retopic ? { topic: spec.topic } : {}),
                     ...(convert ? { type: ChannelType.GuildAnnouncement } : {}),
+                    ...(move && home ? { parent: home.id, lockPermissions: true } : {}),
                 }).catch((e) => { fail(`#${found!.name}: ${e.message}`); return null; });
                 // the type change hands back a different object; the rest works on that one
                 if (edited) found = edited;
             }
+        }
+
+        // Its permissions are the category's: nothing of its own to reconcile.
+        if (spec.category) {
+            if (!wording) ok(`#${spec.name} is in ${spec.category} and in sync with it`);
+            continue;
         }
 
         // If the bot already gets in some other way (its role was added by hand,
@@ -395,6 +449,25 @@ async function hardenChannels(guild: Guild) {
         const needed = desired.filter((item) => !(item.id === bot.id && botAlreadyIn));
 
         await reconcileChannel(found, `#${spec.name}`, needed, slowmode);
+    }
+
+    // Inside each category, the order they are listed in above.
+    const fresh = APPLY ? await guild.channels.fetch() : existing;
+    for (const [name, category] of categories) {
+        const wanted = CHANNELS.filter((spec) => spec.category === name).map((spec) => spec.name);
+        const inside = [...fresh.values()]
+            .filter((c): c is TextChannel | NewsChannel => (c?.type === ChannelType.GuildText || c?.type === ChannelType.GuildAnnouncement) && c.parentId === category.id)
+            .sort((a, b) => a.rawPosition - b.rawPosition || a.id.localeCompare(b.id));
+        const ours = inside.filter((c) => wanted.includes(c.name));
+        if (ours.length !== wanted.length) continue; // not all there yet (a dry run, or one left by hand)
+        if (ours.every((c, index) => c.name === wanted[index])) { ok(`${name} is in order`); continue; }
+        plan(`${name}: order → ${wanted.join(', ')}`);
+        if (APPLY) {
+            await guild.channels.setPositions(wanted.map((channelName, position) => ({
+                channel: ours.find((c) => c.name === channelName)!.id,
+                position,
+            }))).catch((e) => fail(`${name} order: ${e.message}`));
+        }
     }
 
     // Voice sits behind the member role like everything outside the two public tiers.
