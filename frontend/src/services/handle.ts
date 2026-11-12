@@ -17,6 +17,15 @@ export const DISPLAY_NAME_MAX = 40;
 /** Mirrors PASSWORD_MIN on the server, which rejects anything shorter. */
 export const PASSWORD_MIN = 6;
 
+/**
+ * Fills the `{min}` of a translated password text. The dictionary does not
+ * interpolate, so the number is put in here rather than typed by hand in five
+ * languages.
+ */
+export function withPasswordMin(text: string): string {
+    return text.replace('{min}', String(PASSWORD_MIN));
+}
+
 /** `Pablo Estornut` -> `pablo-estornut`. Empty when nothing usable is left. */
 export function slugifyHandle(name: string): string {
     return name

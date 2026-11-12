@@ -23,6 +23,38 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@zeroxwork">
 
+  <!-- Enlaces de un solo uso (verificar correo, contraseña nueva, confirmar correo): el token
+       se saca de la dirección antes de que nada más la lea. Analytics y AdSense, que se cargan
+       al final del body, envían la URL de la página; así no ven el token, ni se queda en el
+       historial. La app lo recoge de window.__zxLinkToken (src/services/link-token.ts). -->
+  <script>
+    (function () {
+      function lift() {
+        var path = location.pathname.replace(/\/+$/, '');
+        if (path !== '/verify' && path !== '/reset-password' && path !== '/confirm-email') return;
+
+        // el fragmento manda (no viaja al servidor); la query es de los correos antiguos
+        var match = /[#&]token=([^&]*)/.exec(location.hash) || /[?&]token=([^&]*)/.exec(location.search);
+        if (!match || !match[1]) return;
+
+        var token = match[1];
+        try { token = decodeURIComponent(token); } catch (e) { /* se queda tal cual */ }
+
+        window.__zxLinkToken = { path: path, token: token };
+        try { history.replaceState(null, '', location.pathname); } catch (e) { /* sin history API */ }
+      }
+
+      lift();
+
+      // Abrir un enlace estando ya en esa misma página solo cambia el fragmento: no hay
+      // carga, este script no vuelve a ejecutarse y el token se quedaría en la dirección
+      // sin que nadie lo atienda. Se recarga para que entre por el camino de siempre.
+      window.addEventListener('hashchange', function () {
+        if (/[#&]token=/.test(location.hash)) location.reload();
+      });
+    })();
+  </script>
+
   <!-- Tema: elección guardada, si no la del sistema. Antes del primer pintado -->
   <script>
     (function () {

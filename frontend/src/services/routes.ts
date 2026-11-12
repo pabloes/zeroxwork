@@ -17,6 +17,9 @@ import MyImagesPage from "../pages/MyImagesPage";
 import AccountPage from "../pages/Account";
 import ImageUploadedPage from "../pages/ImageUploadedPage";
 import VerifyEmail from "../pages/VerifyEmail";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetPassword from "../pages/ResetPassword";
+import ConfirmEmail from "../pages/ConfirmEmail";
 import Terms from "../pages/Terms";
 import Privacy from "../pages/Privacy";
 import CreateArticle from "../pages/Blog/create-article";
@@ -43,6 +46,9 @@ export const pageRoutes = [
     {RouteElement:AccountPage, title:`Account`, path:`/account`, props:{}, auth:true},
     {RouteElement:ImageUploadedPage, title:`Uploaded image information`, path: `/uploaded-image-page/:sha256`, props: {}, auth:true},
     {RouteElement:VerifyEmail, title:"Verify Email", path:"/verify", props:{}},
+    {RouteElement:ForgotPassword, title:"Forgot password", path:"/forgot-password", props:{}},
+    {RouteElement:ResetPassword, title:"Choose a new password", path:"/reset-password", props:{}},
+    {RouteElement:ConfirmEmail, title:"Confirm email change", path:"/confirm-email", props:{}},
 
     {RouteElement:Terms, title:"Terms and Conditions", path:"/terms", props:{}},
     {RouteElement:Privacy, title:"Privacy Policy", path:"/privacy", props:{}},

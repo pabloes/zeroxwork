@@ -7,6 +7,8 @@ interface AuthContextType {
     isAuthenticated: boolean;
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
+    /** Swaps the session token for a new one the server handed out. */
+    replaceToken: (token: string) => void;
     isAuthResolved:boolean;
 }
 
@@ -58,6 +60,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    // The server signs every session out when the password changes and answers
+    // with a fresh token for the one that asked: this keeps that one alive.
+    const replaceToken = (token: string) => {
+        // Decoded first: a malformed token throws here, before it replaces a good one.
+        const decodedUser = jwtDecode(token);
+        localStorage.setItem('authToken', token);
+        setUser(decodedUser);
+        setIsAuthenticated(true);
+    };
+
     const logout = () => {
         // Remove the token from localStorage
         localStorage.removeItem('authToken');
@@ -66,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated, login, logout, isAuthResolved }}>
+        <AuthContext.Provider value={{ user, isAuthenticated, login, logout, replaceToken, isAuthResolved }}>
             {children}
         </AuthContext.Provider>
     );

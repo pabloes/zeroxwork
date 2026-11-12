@@ -1263,6 +1263,36 @@ a.uk-link-reset {
   }
 }
 
+// security panel (AccountSecurity.tsx): two short forms side by side, stacked
+// when there is no room. Labels, inputs and messages are the profile form's.
+.zx-security-forms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 30px 44px;
+}
+
+.zx-security-form {
+  flex: 1;
+  min-width: 260px;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .zx-panel-status {
+    margin: 6px 0 0;
+  }
+}
+
+.zx-security-form-title {
+  font-family: var(--zx-display);
+  font-weight: 500;
+  font-size: 16px;
+  margin: 0 0 4px;
+  color: var(--zx-ink);
+}
+
 /* ---------- project credits ---------- */
 
 .zx-credits {

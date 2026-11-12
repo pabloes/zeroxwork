@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/axios-setup';
+import { takeLinkToken } from '../services/link-token';
 import { useTranslation } from '../i18n';
 
 const VerifyEmail = () => {
@@ -8,11 +9,11 @@ const VerifyEmail = () => {
     // Stored as a key, not a translated string: the effect must not depend on `t`,
     // or a re-render would fire a second POST with an already-consumed token.
     const [errorKey, setErrorKey] = useState('');
-    const location = useLocation();
     const navigate = useNavigate();
 
     useEffect(() => {
-        const token = new URLSearchParams(location.search).get('token');
+        // Not from the address: index.html has already taken the token out of it.
+        const token = takeLinkToken('/verify');
 
         if (!token) {
             setErrorKey('verify.no_token');
@@ -34,7 +35,7 @@ const VerifyEmail = () => {
                 }
                 setErrorKey('verify.failed');
             });
-    }, [location, navigate]);
+    }, [navigate]);
 
     return (
         <div className="uk-section uk-section-small">

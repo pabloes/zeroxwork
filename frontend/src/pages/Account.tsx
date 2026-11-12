@@ -1,4 +1,5 @@
 import AccountQuota from "../components/AccountQuota";
+import AccountSecurity from "../components/AccountSecurity";
 import BindDiscord from "../components/BindDiscord";
 import BindWallet from "../components/BindWallet";
 import ProfileForm from "../components/ProfileForm";
@@ -24,6 +25,8 @@ const AccountPage: React.FC = () => {
                 </div>
 
                 <AccountQuota changes={changes} />
+                <br/>
+                <AccountSecurity />
                 <br/>
                 <BindDiscord />
                 <br/>
