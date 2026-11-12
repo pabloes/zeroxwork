@@ -82,6 +82,12 @@ const LINK_ALLOW_LIST = ['https://zeroxwork.com', 'https://zeroxwork.com/*'];
 /** Shown to whoever gets blocked. English: it is the server's first language. Discord caps it at 150. */
 const LINK_BLOCK_MESSAGE = 'Links are for linked members. Link your account at zeroxwork.com/account to get the ZEROxMEMBER role.';
 
+/**
+ * Shown on the invite. One text for everyone, so it is in English, the
+ * server's first language. Discord caps it at 120 characters.
+ */
+const SERVER_DESCRIPTION = 'Build or play. ZEROxWORK: an online community-cowork for code and art. ZEROxPLAY: our games.';
+
 const changes: string[] = [];
 const skipped: string[] = [];
 const failures: string[] = [];
@@ -111,6 +117,11 @@ async function hardenGuild(guild: Guild) {
         plan('safety alerts channel → #mod-log');
         if (APPLY) await guild.edit({ safetyAlertsChannel: modLog.id }).catch((e) => fail(`safety alerts channel: ${e.message}`));
     } else ok('safety alerts already go to #mod-log');
+
+    if (guild.description !== SERVER_DESCRIPTION) {
+        plan(`description: ${JSON.stringify(guild.description)} → ${JSON.stringify(SERVER_DESCRIPTION)}`);
+        if (APPLY) await guild.edit({ description: SERVER_DESCRIPTION }).catch((e) => fail(`description: ${e.message}`));
+    } else ok('description already set');
 }
 
 async function hardenRoles(guild: Guild) {
