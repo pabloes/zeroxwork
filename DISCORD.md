@@ -175,7 +175,7 @@ everyone on a typo.
 
 ## Welcome message
 
-One message in the server's rules channel (`#bienvenida`), with a button per
+One message in the server's rules channel (`#welcome`), with a button per
 site language, in the site's order: en, es, pt-br, zh, fr. English comes
 first and is the fallback for anything unknown. Pressing one answers in that language,
 visible only to whoever pressed, so the channel stays a single message no
@@ -188,7 +188,7 @@ which is who it is written for.
   changed, so changing the welcome is a deploy, not a manual edit. It looks for
   its own message among the last 50 in the channel.
 - It needs View Channel, Send Messages and Read Message History in that
-  channel. `#bienvenida` denies Send Messages to everyone, so the bot has its
+  channel. `#welcome` denies Send Messages to everyone, so the bot has its
   own overwrite there. Without it the bot logs why and carries on.
 - No new intent and no slash command: buttons arrive as interactions.
 

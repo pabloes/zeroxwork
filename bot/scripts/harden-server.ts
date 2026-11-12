@@ -39,16 +39,29 @@ if (!token || !guildId || !memberRoleId) {
     process.exit(1);
 }
 
-/** Tier 0 and 1 are visible to everyone; tier 2 is the reason to link. */
-const CHANNELS = [
-    { name: 'bienvenida', tier: 0, topic: 'Que es ZEROxWORK y como entrar. Nadie del equipo te escribira nunca por privado primero.' },
-    { name: 'anuncios', tier: 0, topic: 'Novedades. Solo escriben los admins.' },
-    { name: 'general', tier: 1, topic: 'Preséntate y pregunta lo que necesites.' },
-    { name: 'proyectos', tier: 2, topic: 'En que esta trabajando cada uno.' },
-    { name: 'feedback', tier: 2, topic: 'Enseña lo tuyo y pide opinion.' },
-    { name: 'herramientas', tier: 2, topic: 'Las herramientas de la comunidad.' },
-    { name: 'mod-log', tier: 3, topic: 'Avisos de AutoMod y del bot.' },
-] as const;
+interface ChannelSpec {
+    name: string;
+    /** The name it had before; a channel still called this is renamed, never duplicated. */
+    was?: string;
+    tier: 0 | 1 | 2 | 3;
+    /** null: whatever topic the channel has is left alone. */
+    topic: string | null;
+}
+
+/**
+ * Tier 0 and 1 are visible to everyone; tier 2 is the reason to link.
+ * Names and topics are in English: a channel has one name for everybody, and
+ * English is the server's first language.
+ */
+const CHANNELS: ChannelSpec[] = [
+    { name: 'welcome', was: 'bienvenida', tier: 0, topic: 'What ZEROxWORK is and how to get in. Nobody from the team will ever DM you first.' },
+    { name: 'announcements', was: 'anuncios', tier: 0, topic: 'News. Only admins post here.' },
+    { name: 'general', tier: 1, topic: null },
+    { name: 'projects', was: 'proyectos', tier: 2, topic: 'What everyone is working on.' },
+    { name: 'feedback', tier: 2, topic: 'Show your work and ask for opinions.' },
+    { name: 'tools', was: 'herramientas', tier: 2, topic: 'The community\'s tools.' },
+    { name: 'mod-log', tier: 3, topic: 'AutoMod and bot alerts.' },
+];
 
 /** Taken from @everyone and handed back to the member role. */
 const MEMBER_PRIVILEGES = [
@@ -91,10 +104,13 @@ const SERVER_DESCRIPTION = 'Build or play. ZEROxWORK: an online community-cowork
 const changes: string[] = [];
 const skipped: string[] = [];
 const failures: string[] = [];
+/** Wanted, but out of the bot's reach: someone with access has to do it. */
+const manual: string[] = [];
 
 function plan(line: string) { changes.push(line); console.log(`  → ${line}`); }
 function ok(line: string) { skipped.push(line); console.log(`  ✓ ${line}`); }
 function fail(line: string) { failures.push(line); console.log(`  ✗ ${line}`); }
+function byHand(line: string) { manual.push(line); console.log(`  ✋ ${line}`); }
 
 async function hardenGuild(guild: Guild) {
     console.log('\n[servidor]');
@@ -264,7 +280,8 @@ async function hardenChannels(guild: Guild) {
 
     for (const spec of CHANNELS) {
         const { desired, slowmode } = desiredFor(spec.tier);
-        const found = textByName.get(spec.name);
+        // Under its old name it is the same channel: rename it, never create a twin.
+        const found = textByName.get(spec.name) ?? (spec.was ? textByName.get(spec.was) : undefined);
 
         if (!found) {
             plan(`create #${spec.name} (${['escaparate', 'recepcion', 'miembros', 'staff'][spec.tier]})`);
@@ -272,7 +289,7 @@ async function hardenChannels(guild: Guild) {
                 await guild.channels.create({
                     name: spec.name,
                     type: ChannelType.GuildText,
-                    topic: spec.topic,
+                    topic: spec.topic ?? undefined,
                     rateLimitPerUser: slowmode,
                     permissionOverwrites: toCreateOverwrites(desired),
                 }).catch((e) => fail(`#${spec.name}: ${e.message}`));
@@ -280,13 +297,31 @@ async function hardenChannels(guild: Guild) {
             continue;
         }
 
+        const rename = found.name !== spec.name;
+        const retopic = spec.topic !== null && (found.topic ?? '') !== spec.topic;
+        const wording = [
+            rename ? `rename to #${spec.name}` : '',
+            retopic ? `topic → "${spec.topic}"` : '',
+        ].filter(Boolean).join(', ');
+
         if (!found.permissionsFor(me).has(PermissionFlagsBits.ViewChannel)) {
+            // Manage Channels is not enough on a channel the bot cannot see
+            if (wording) byHand(`#${found.name}: ${wording}`);
             if (spec.tier === 3) {
                 fail(`#${spec.name}: the bot cannot see it. Add ZEROxBOT to that channel with View Channel and Send Messages.`);
             } else {
-                ok(`#${spec.name} is members only; the bot has no access there and needs none`);
+                ok(`#${found.name} is members only; the bot has no access there and needs none`);
             }
             continue;
+        }
+
+        if (wording) {
+            // one edit for both: Discord allows two name or topic changes per channel every ten minutes
+            plan(`#${found.name}: ${wording}`);
+            if (APPLY) {
+                await found.edit({ name: spec.name, ...(retopic ? { topic: spec.topic } : {}) })
+                    .catch((e) => fail(`#${found.name}: ${e.message}`));
+            }
         }
 
         // If the bot already gets in some other way (its role was added by hand,
@@ -394,7 +429,8 @@ client.once('clientReady', async () => {
         await hardenChannels(guild);
         await hardenAutoMod(guild);
 
-        console.log(`\n${APPLY ? 'applied' : 'would change'}: ${changes.length} | already fine: ${skipped.length} | failed: ${failures.length}`);
+        console.log(`\n${APPLY ? 'applied' : 'would change'}: ${changes.length} | already fine: ${skipped.length} | failed: ${failures.length} | by hand: ${manual.length}`);
+        if (manual.length) console.log(`To do by hand, the bot cannot see these channels:\n${manual.map((line) => `  - ${line}`).join('\n')}`);
         if (!APPLY) console.log('Nothing was changed. Re-run with --apply when the plan looks right.\n');
         else console.log('Remember to take Manage Server and Manage Channels back off the bot.\n');
     } catch (error) {
