@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAccount, useConnect, useSignMessage, useDisconnect } from 'wagmi';
 import { api } from '../services/axios-setup';
 import 'uikit/dist/css/uikit.min.css';
@@ -19,6 +19,9 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
     const { signMessage, data, isPending } = useSignMessage();
+    // What the server asked this wallet to sign, kept until the signature is
+    // back: the two travel together, and one without the other is refused.
+    const proofRef = useRef<{ address: string; expires: number; code: string } | null>(null);
     const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
     const [defaultIdentity, setDefaultIdentity] = useState<number | null>(null); // Store selected identity
     const [selectedName, setSelectedName] = useState<string | null>(null); // Store selected name
@@ -62,21 +65,33 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
     }, [data]);
 
     const handleSignMessage = async () => {
+        if (!address) return;
         try {
-            await signMessage({ message: 'Binding wallet' });
+            // The server writes the text: it names this account and this wallet
+            // and expires in minutes. A fixed text signed once could be reused
+            // by anybody, on any account.
+            const { data: wanted } = await api.get('/wallet/bind-message', { params: { address } });
+            proofRef.current = { address, expires: wanted.expires, code: wanted.code };
+            signMessage({ message: wanted.message });
         } catch (error) {
             console.error('Error signing message:', error);
+            UIkit.notification('Failed to bind wallet', { status: 'danger' });
         }
     };
 
     const bindWallet = async (signature: string) => {
         try {
+            const proof = proofRef.current;
+            if (!proof) throw new Error('signature without a pending request');
             await api.post('wallet/bind', {
-                userId: 1, // ID del usuario logueado
-                address,
+                // the wallet the text was written for, even if another one was
+                // selected in the meantime
+                address: proof.address,
                 signature,
-                message: 'Binding wallet',
+                expires: proof.expires,
+                code: proof.code,
             });
+            proofRef.current = null;
             await UIkit.notification('Wallet bound successfully!');
             refetchWallets(); // Refetch wallets after binding
             if (onAddWallet) onAddWallet();

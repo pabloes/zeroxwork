@@ -84,6 +84,22 @@ Turnstile) checked in the same place `verifySolution` is called.
 fifteen-minute wait, so insisting does not shorten it. It is AdminJS's own
 `maxRetries`, set in `backend/src/server.ts`. There is still no second factor.
 
+## Linking a wallet
+
+`GET /api/wallet/bind-message?address=…` returns the text to sign, and
+`POST /api/wallet/bind` takes the signature back with the `expires` and `code`
+that came with it (`backend/src/services/wallet-proof.ts`).
+
+The server writes that text and rebuilds it when the signature arrives: it
+names the site, the wallet and the account, and is good for ten minutes. What
+the client says it signed is never looked at. Before this, the text was the
+fixed string "Binding wallet" and was not even checked, so any signature a
+wallet had ever made linked it to whoever sent it in; and since an address can
+belong to one account only, the first to claim it kept it.
+
+Wallets that sign through a contract (EIP-1271) are not supported; they never
+were.
+
 ## Addresses
 
 Stored trimmed and lower case from now on (`normalizeEmail`). Accounts created
@@ -103,7 +119,7 @@ rewritten.
 ## Testing
 
 ```bash
-cd backend && npx vitest run tests/auth-tokens.test.ts tests/auth-http.test.ts tests/auth-mails.test.ts tests/human-check.test.ts
+cd backend && npx vitest run tests/auth-tokens.test.ts tests/auth-http.test.ts tests/auth-mails.test.ts tests/human-check.test.ts tests/wallet-proof.test.ts tests/wallet-http.test.ts
 ```
 
 `auth-http.test.ts` runs the real routes and middleware over HTTP with the
