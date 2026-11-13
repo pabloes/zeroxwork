@@ -91,6 +91,12 @@ const run = async () => {
             return user;
         },
         cookiePassword: env.ADMIN_COOKIE_PASSWORD,
+        // Un tope a los intentos de adivinar la contrasena de la unica cuenta
+        // que lo lee todo, y que ahora puede descargar la base de datos
+        // entera. Sin esto se podia probar sin limite. Diez intentos por IP;
+        // cada intento reinicia la cuenta atras de un cuarto de hora, asi que
+        // insistir no la acorta.
+        maxRetries: { count: 10, duration: 15 * 60 },
     }, undefined );
 
     // Antes que el router de AdminJS, que se queda con todo lo que cuelga de

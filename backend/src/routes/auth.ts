@@ -21,6 +21,7 @@ import {
     signPasswordReset,
     signSession,
 } from '../services/auth-tokens.js';
+import { SpentChallenges, createChallenge, verifySolution } from '../services/human-check.js';
 import {
     deliver,
     emailChangeMail,
@@ -41,8 +42,42 @@ const authLimiter = rateLimit({
     message: { message: 'Too many requests. Try again later.' },
 });
 
-router.post('/register', authLimiter, async (req, res) => {
+const humanCheckLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 60,
+    message: { message: 'Too many requests. Try again later.' },
+});
+const spentChallenges = new SpentChallenges();
+
+/** The work the sign-up form has to hand back done. See services/human-check.ts. */
+router.get('/human-check', humanCheckLimiter, (_req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.json(createChallenge(env.JWT_SECRET));
+});
+
+/**
+ * Accounts actually created from one address in a day. The check above costs a
+ * script milliseconds; this is what costs it something real, because past the
+ * limit it needs another IP. Only sign-ups that went through are counted, so
+ * typos and retries are free. Twenty leaves room for a workshop on one wifi.
+ */
+const signUpsPerDay = rateLimit({
+    windowMs: 24 * 60 * 60 * 1000,
+    max: 20,
+    skipFailedRequests: true,
+    message: { error: 'Too many accounts were created from this network today. Try again tomorrow.', code: 'TOO_MANY_ACCOUNTS' },
+});
+
+router.post('/register', authLimiter, signUpsPerDay, async (req, res) => {
     const { password, socials, displayName, handle, avatar } = req.body ?? {};
+
+    // Before anything is looked up or stored: no solved challenge, no account.
+    // Each one counts once, so a second of work cannot pay for many sign-ups.
+    const solved = verifySolution(env.JWT_SECRET, req.body?.humanCheck);
+    if (!solved.ok || !spentChallenges.use(solved.id, solved.expiresAt)) {
+        const text = 'We could not confirm that you are a person. Please try again.';
+        return res.status(400).json({ error: text, message: text, code: 'HUMAN_CHECK_FAILED' });
+    }
 
     // Both `error` and `message` are sent on failures: the Register page reads
     // `error`, while older clients read `message`.

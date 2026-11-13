@@ -18,6 +18,8 @@ const CODE_KEYS: Record<string, string> = {
     TOKEN_INVALID: 'auth.error.token_invalid',
     TOKEN_EXPIRED: 'auth.error.token_expired',
     MAIL_FAILED: 'auth.error.mail_failed',
+    HUMAN_CHECK_FAILED: 'auth.error.human_check_failed',
+    TOO_MANY_ACCOUNTS: 'auth.error.too_many_accounts',
 };
 
 /** What to say when the failure is not one we have a line for. */

@@ -56,6 +56,34 @@ local run.
 - `POST /register` still says when an address is taken. Closing that means
   changing how sign-up answers, and it has not been done.
 
+## What a sign-up costs
+
+An account is the key to the Discord role, so creating one must not be free.
+
+- **Proof of work** (`backend/src/services/human-check.ts`,
+  `frontend/src/services/human-check.ts`). The form fetches a challenge from
+  `GET /api/auth/human-check`, finds the number behind a hash, and sends it
+  with the sign-up. A fraction of a second on a laptop, a second or two on a
+  phone, and nothing for the person to do. Each solved challenge is accepted
+  once and expires after five minutes.
+- **Twenty accounts per network per day**, counting only sign-ups that went
+  through.
+- The older limit of 15 requests per quarter of an hour on `/login` and
+  `/register` is still there.
+
+Be clear about what the proof of work is: it turns away anything that posts to
+the API without running the page, and that is all. Whoever writes a solver pays
+milliseconds per account. What actually costs an attacker is the daily limit,
+which forces a new IP every twenty accounts, and the verification mail. If
+sign-ups are ever abused, the next step is a real captcha (Cloudflare
+Turnstile) checked in the same place `verifySolution` is called.
+
+## The admin panel
+
+`/admin` allows ten sign-in attempts per IP; every attempt restarts a
+fifteen-minute wait, so insisting does not shorten it. It is AdminJS's own
+`maxRetries`, set in `backend/src/server.ts`. There is still no second factor.
+
 ## Addresses
 
 Stored trimmed and lower case from now on (`normalizeEmail`). Accounts created
@@ -65,15 +93,17 @@ rewritten.
 
 ## Not here yet
 
-- 2FA, and a limit on `/admin` login attempts.
-- A captcha on sign-up.
+- 2FA, for `/admin` first. It needs a place to keep each admin's secret, so a
+  migration.
+- A captcha that tells people from scripts, rather than one that only makes
+  scripts pay.
 - Sign-in with Discord, Google or a wallet.
 - Mails in the reader's language: they are in English.
 
 ## Testing
 
 ```bash
-cd backend && npx vitest run tests/auth-tokens.test.ts tests/auth-http.test.ts tests/auth-mails.test.ts
+cd backend && npx vitest run tests/auth-tokens.test.ts tests/auth-http.test.ts tests/auth-mails.test.ts tests/human-check.test.ts
 ```
 
 `auth-http.test.ts` runs the real routes and middleware over HTTP with the

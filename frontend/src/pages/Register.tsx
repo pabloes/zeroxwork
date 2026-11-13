@@ -14,6 +14,8 @@ import {
     handleShapeError,
     slugifyHandle,
 } from "../services/handle";
+import { solveHumanCheck } from "../services/human-check";
+import { authErrorKey } from "../services/auth-error";
 
 /** How long after the last keystroke the address is checked against the server. */
 const CHECK_DEBOUNCE_MS = 450;
@@ -31,6 +33,8 @@ const Register: React.FC = () => {
     const [password, setPassword] = useState('');
     const [passwordRepeat, setPasswordRepeat] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // While the browser does the work the server asks for before a sign-up.
+    const [isProving, setIsProving] = useState(false);
     const [isRegistered, setIsRegistered] = useState(false);
     const [message, setMessage] = useState('');
     const [acceptTerms, setAcceptTerms] = useState(false);
@@ -139,8 +143,14 @@ const Register: React.FC = () => {
             return;
         }
         setIsSubmitting(true);
+        setMessage('');
 
         try {
+            // A fresh one for every attempt: the server takes each solved
+            // challenge once, so a retry after an error needs new work.
+            setIsProving(true);
+            const humanCheck = await solveHumanCheck().finally(() => setIsProving(false));
+
             // Networks left blank are dropped: an added-but-empty field is not an answer.
             const filledSocials = Object.fromEntries(
                 Object.entries(socials).filter(([, handle]) => handle.trim())
@@ -152,6 +162,7 @@ const Register: React.FC = () => {
                 displayName: displayName.trim(),
                 handle: typedHandle,
                 ...(avatar ? { avatar } : {}),
+                humanCheck,
             });
             // The stored address is not always the one asked for: somebody can
             // claim it between the check and the insert.
@@ -159,7 +170,12 @@ const Register: React.FC = () => {
             setAvatarDropped(Boolean(avatar) && data?.avatarStored === false);
             setIsRegistered(true);
         } catch (axiosError:AxiosError|any) {
-            const errorMessage = (typeof axiosError?.response?.data?.error === "string" ? axiosError?.response?.data?.error : axiosError?.response?.data?.error?.message) || t('register.error_default');
+            // Our own words for the refusals we have a line for; otherwise what
+            // the server said; and a line of ours when it said nothing at all
+            // (the network dropped, or the check itself could not be fetched).
+            const key = authErrorKey(axiosError);
+            const fromServer = (typeof axiosError?.response?.data?.error === "string" ? axiosError?.response?.data?.error : axiosError?.response?.data?.error?.message)
+            const errorMessage = key ? minText(key) : (fromServer || t('register.error_default'));
             setMessage(errorMessage);
             UIkit.notification({ message: errorMessage, status: 'danger' });
         } finally {
@@ -354,7 +370,7 @@ const Register: React.FC = () => {
                             className={`uk-button uk-button-primary ${canSubmit ? '' : 'uk-disabled'}`}
                             disabled={!canSubmit}
                         >
-                            {isSubmitting ? t('register.submitting') : t('register.submit')}
+                            {isProving ? t('register.human_check') : isSubmitting ? t('register.submitting') : t('register.submit')}
                         </button>
                     </form>
                 ) : (

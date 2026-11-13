@@ -8,6 +8,7 @@
  */
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import argon2 from 'argon2';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
 const SECRET = 'jwt-secret-for-tests';
@@ -130,6 +131,18 @@ async function mailTo(to: string, subjectPart: string) {
 }
 
 const tokenIn = (html: string) => decodeURIComponent(/#token=([^"<\s]+)/.exec(html)![1]);
+
+/** What the sign-up page does before it posts: fetch the work and do it. */
+async function humanCheck() {
+    const res = await fetch(`${base}/api/auth/human-check`);
+    const work = await res.json() as { challenge: string; salt: string; maxNumber: number; signature: string };
+    for (let number = 0; number <= work.maxNumber; number++) {
+        if (crypto.createHash('sha256').update(work.salt + number).digest('hex') === work.challenge) {
+            return { challenge: work.challenge, salt: work.salt, number, signature: work.signature };
+        }
+    }
+    throw new Error('no number matches');
+}
 const settle = () => new Promise((done) => setTimeout(done, 60));
 
 async function signIn(email: string, password: string): Promise<string> {
@@ -187,7 +200,7 @@ describe('signing up', () => {
     const form = { email: 'Ana@Example.com', password: 'correct horse', displayName: 'Ana Perez', handle: 'ana-perez' };
 
     it('stores the address lower case and mails a link that is not a login', async () => {
-        const res = await post('/register', form);
+        const res = await post('/register', { ...form, humanCheck: await humanCheck() });
         expect(res.status).toBe(200);
         expect(users[0].email).toBe('ana@example.com');
 
@@ -205,13 +218,51 @@ describe('signing up', () => {
     });
 
     it('refuses the same inbox twice, capitals or not, and what is not an address', async () => {
-        await post('/register', form);
-        const again = await post('/register', { ...form, email: 'ANA@example.com', handle: 'ana-two' });
+        await post('/register', { ...form, humanCheck: await humanCheck() });
+        const again = await post('/register', { ...form, email: 'ANA@example.com', handle: 'ana-two', humanCheck: await humanCheck() });
         expect(again.status).toBe(400);
+        expect(again.body.code).toBeUndefined();
         expect(users).toHaveLength(1);
 
-        const bad = await post('/register', { ...form, email: 'ana at example' });
+        const bad = await post('/register', { ...form, email: 'ana at example', humanCheck: await humanCheck() });
         expect(bad.body.code).toBe('EMAIL_INVALID');
+    });
+
+    it('creates nothing for a request that did not do the work', async () => {
+        const solved = await humanCheck();
+        const attempts = [
+            form,
+            { ...form, humanCheck: 'yes' },
+            { ...form, humanCheck: { ...solved, number: solved.number + 1 } },
+            { ...form, humanCheck: { ...solved, salt: solved.salt.replace(/\.(\d+)\.(\d+)$/, '.$1.1') } },
+        ];
+        for (const body of attempts) {
+            const res = await post('/register', body);
+            expect(res.status).toBe(400);
+            expect(res.body.code).toBe('HUMAN_CHECK_FAILED');
+        }
+        await settle();
+        expect(users).toHaveLength(0);
+        expect(outbox).toHaveLength(0);
+    });
+
+    it('takes a solved challenge once: the same work does not pay for a second account', async () => {
+        const solved = await humanCheck();
+        expect((await post('/register', { ...form, humanCheck: solved })).status).toBe(200);
+
+        const second = await post('/register', { ...form, email: 'other@example.com', handle: 'other-one', humanCheck: solved });
+        expect(second.status).toBe(400);
+        expect(second.body.code).toBe('HUMAN_CHECK_FAILED');
+        expect(users).toHaveLength(1);
+    });
+
+    it('hands out the work uncached, and different every time', async () => {
+        const first = await fetch(`${base}/api/auth/human-check`);
+        const second = await fetch(`${base}/api/auth/human-check`);
+        expect(first.headers.get('cache-control')).toBe('no-store');
+        const [a, b] = [await first.json(), await second.json()] as any[];
+        expect(a.algorithm).toBe('SHA-256');
+        expect(a.challenge).not.toBe(b.challenge);
     });
 
     it('still honours a verification link mailed before this change, and still refuses it as a login', async () => {
