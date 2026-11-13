@@ -440,6 +440,7 @@
   "article.form.type_label": "Type :",
   "article.form.type_post": "Article",
   "article.form.type_link": "Lien",
+  "article.form.type_legacy_hint": "C'était un outil. Les outils vivent maintenant dans /tools, avec leur propre formulaire.",
   "article.form.redirect_label": "Adresse de destination :",
   "article.form.content_label": "Le texte (Markdown) :",
   "article.form.embed_label": "Intégrer une page (facultatif) :",

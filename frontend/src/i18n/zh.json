@@ -440,6 +440,7 @@
   "article.form.type_label": "类型：",
   "article.form.type_post": "文章",
   "article.form.type_link": "链接",
+  "article.form.type_legacy_hint": "这原本是一个工具。工具现在放在 /tools，有自己的表单。",
   "article.form.redirect_label": "目标地址：",
   "article.form.content_label": "正文（Markdown）：",
   "article.form.embed_label": "嵌入页面（可选）：",

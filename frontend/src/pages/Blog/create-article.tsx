@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
 import { apiErrorMessage } from '../../services/api-error';
 import { isProjectCategory } from '../../services/project-media';
+import { isToolCategory } from '../../services/tool-fields';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -73,8 +74,6 @@ const CreateArticle: React.FC = () => {
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [thumbPickerOpen, setThumbPickerOpen] = useState<boolean>(false);
     const [newTags, setNewTags] = useState<string[]>([]);
-    const [articleType, setArticleType] = useState<'post' | 'link'>('post');
-    const [redirectUrl, setRedirectUrl] = useState<string>('');
     // Why the last attempt did not go through, kept next to the submit button so
     // it is still on screen after the notification fades.
     const [formError, setFormError] = useState<string | null>(null);
@@ -132,7 +131,9 @@ const CreateArticle: React.FC = () => {
     // Everything but the portfolio. A project is not an article any more: it
     // has its own table, its own page and its own form, and leaving the
     // category here would only let someone write one that nothing ever shows.
-    const pickable = categories.filter((cat) => !isProjectCategory(cat.name));
+    const pickable = categories.filter(
+        (cat) => !isProjectCategory(cat.name) && !isToolCategory(cat.name),
+    );
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -140,7 +141,7 @@ const CreateArticle: React.FC = () => {
         // The editor starts empty and the API rejects a body-less post, so say so
         // here rather than send a request that cannot succeed. Pressing Enter in
         // the title field submits the form, which is how this happens by accident.
-        if (articleType === 'post' && content.trim() === '') {
+        if (content.trim() === '') {
             setFormError(t('article.error.no_content'));
             UIkit.notification(t('article.error.no_content'), { status: 'warning', timeout: 7000 });
             return;
@@ -149,17 +150,18 @@ const CreateArticle: React.FC = () => {
         setFormError(null);
         mutation.mutate({
             title,
-            content: articleType === 'post' ? content : '',
+            content,
             thumbnail,
             slug: slug || undefined,
             lang,
             embedUrl: embedUrl || undefined,
             embedHeight: embedHeight || 600,
-            categoryId: categoryId || null,
+            // Si solo queda una categoria posible, va puesta: sin esto el
+            // articulo nace sin categoria y /blog, que filtra por "blog", no lo
+            // ensena nunca. Un borrador invisible es peor que una pregunta.
+            categoryId: categoryId ?? (pickable.length === 1 ? pickable[0].id : null),
             tagIds: selectedTagIds,
             newTags: newTags,
-            type: articleType,
-            redirectUrl: articleType === 'link' ? redirectUrl : undefined,
         });
     };
 
@@ -268,69 +270,39 @@ const CreateArticle: React.FC = () => {
                     )}
                 </div>
 
-                <div className="uk-margin">
-                    <label className="uk-form-label" htmlFor="category">{t('article.form.category_label')}</label>
-                    <div className="uk-form-controls">
-                        <select
-                            className="uk-select"
-                            id="category"
-                            value={categoryId || ''}
-                            onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
-                        >
-                            <option value="">{t('article.form.category_none')}</option>
-                            {pickable.map((cat) => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <p className="uk-text-meta">
-                        {t('article.not_a_project')}{' '}
-                        <Link to="/create-project">{t('project.create_title')}</Link>
-                    </p>
-                </div>
-
-                <div className="uk-margin">
-                    <label className="uk-form-label">{t('article.form.type_label')}</label>
-                    <div className="uk-form-controls">
-                        <label className="uk-margin-small-right">
-                            <input
-                                className="uk-radio"
-                                type="radio"
-                                name="articleType"
-                                value="post"
-                                checked={articleType === 'post'}
-                                onChange={() => setArticleType('post')}
-                            /> {t('article.form.type_post')}
-                        </label>
-                        <label>
-                            <input
-                                className="uk-radio"
-                                type="radio"
-                                name="articleType"
-                                value="link"
-                                checked={articleType === 'link'}
-                                onChange={() => setArticleType('link')}
-                            /> {t('article.form.type_link')}
-                        </label>
-                    </div>
-                </div>
-
-                {articleType === 'link' && (
+                {/* La categoría sólo se pregunta cuando hay algo que elegir.
+                    Fuera el portfolio y las herramientas, que tienen su tabla y
+                    su formulario, queda una sola: un desplegable con una opción
+                    es una pregunta con una respuesta. Se asigna sola más abajo;
+                    si algún día hay otra categoría, el desplegable vuelve. */}
+                {pickable.length > 1 && (
                     <div className="uk-margin">
-                        <label className="uk-form-label" htmlFor="redirectUrl">{t('article.form.redirect_label')}</label>
+                        <label className="uk-form-label" htmlFor="category">{t('article.form.category_label')}</label>
                         <div className="uk-form-controls">
-                            <input
-                                className="uk-input"
-                                id="redirectUrl"
-                                type="url"
-                                value={redirectUrl}
-                                onChange={(e) => setRedirectUrl(e.target.value)}
-                                required
-                                placeholder="https://example.com"
-                            />
+                            <select
+                                className="uk-select"
+                                id="category"
+                                value={categoryId || ''}
+                                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
+                            >
+                                <option value="">{t('article.form.category_none')}</option>
+                                {pickable.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 )}
+
+                {/* Lo que esto era y ya no: un proyecto y una herramienta se dan
+                    de alta en su propio sitio, y desde aquí sólo hace falta saber
+                    por dónde se va. */}
+                <p className="uk-text-meta">
+                    {t('article.not_a_project')}{' '}
+                    <Link to="/create-project">{t('project.create_title')}</Link>
+                    {' · '}
+                    <Link to="/create-tool">{t('tool.create_title')}</Link>
+                </p>
 
                 <TagsField
                     all={tags}
@@ -338,49 +310,45 @@ const CreateArticle: React.FC = () => {
                     onChange={(next) => { setSelectedTagIds(next.tagIds); setNewTags(next.newTags); }}
                 />
 
-                {articleType === 'post' && (
-                    <>
-                        <div className="uk-margin">
-                            <label className="uk-form-label" htmlFor="content">{t('article.form.content_label')}</label>
-                            <div className="uk-form-controls">
-                                <ArticleEditor value={content} onChange={handleContentChange} />
-                            </div>
+                    <div className="uk-margin">
+                        <label className="uk-form-label" htmlFor="content">{t('article.form.content_label')}</label>
+                        <div className="uk-form-controls">
+                            <ArticleEditor value={content} onChange={handleContentChange} />
                         </div>
+                    </div>
 
+                    <div className="uk-margin">
+                        <label className="uk-form-label" htmlFor="embedUrl">{t('article.form.embed_label')}</label>
+                        <div className="uk-form-controls">
+                            <input
+                                className="uk-input"
+                                id="embedUrl"
+                                type="text"
+                                value={embedUrl}
+                                onChange={(e) => setEmbedUrl(e.target.value)}
+                                placeholder="/embeds/my-tool/"
+                            />
+                        </div>
+                        <p className="uk-text-meta">{t('article.form.embed_hint')}</p>
+                    </div>
+
+                    {embedUrl && (
                         <div className="uk-margin">
-                            <label className="uk-form-label" htmlFor="embedUrl">{t('article.form.embed_label')}</label>
+                            <label className="uk-form-label" htmlFor="embedHeight">{t('article.form.embed_height_label')}</label>
                             <div className="uk-form-controls">
                                 <input
                                     className="uk-input"
-                                    id="embedUrl"
-                                    type="text"
-                                    value={embedUrl}
-                                    onChange={(e) => setEmbedUrl(e.target.value)}
-                                    placeholder="/embeds/my-tool/"
+                                    id="embedHeight"
+                                    type="number"
+                                    value={embedHeight}
+                                    onChange={(e) => setEmbedHeight(Number(e.target.value) || 600)}
+                                    min={200}
+                                    max={2000}
+                                    style={{ width: '120px' }}
                                 />
                             </div>
-                            <p className="uk-text-meta">{t('article.form.embed_hint')}</p>
                         </div>
-
-                        {embedUrl && (
-                            <div className="uk-margin">
-                                <label className="uk-form-label" htmlFor="embedHeight">{t('article.form.embed_height_label')}</label>
-                                <div className="uk-form-controls">
-                                    <input
-                                        className="uk-input"
-                                        id="embedHeight"
-                                        type="number"
-                                        value={embedHeight}
-                                        onChange={(e) => setEmbedHeight(Number(e.target.value) || 600)}
-                                        min={200}
-                                        max={2000}
-                                        style={{ width: '120px' }}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
+                    )}
 
                 <div className="uk-margin">
                     {formError && <p className="zx-form-error">{formError}</p>}

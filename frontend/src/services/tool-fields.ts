@@ -54,3 +54,15 @@ export function isEmbeddable(input: string): boolean {
     if (value.startsWith('/') && !value.startsWith('/embeds/')) return false;
     return EMBED_URL_WHITELIST.some((prefix) => value.startsWith(prefix));
 }
+
+/** La categoría que llevaban las herramientas cuando eran artículos. */
+export const TOOL_CATEGORY = 'tool';
+
+/**
+ * Si una categoría de artículo es la de las herramientas. Se mira por nombre y
+ * no por id porque el id depende de la base, y esto decide qué se ofrece en un
+ * formulario, no qué se guarda.
+ */
+export function isToolCategory(name: string | null | undefined): boolean {
+    return (name ?? '').toLowerCase() === TOOL_CATEGORY;
+}

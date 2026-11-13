@@ -13,6 +13,7 @@ import { slugify } from '../../utils/slug';
 import { apiErrorMessage } from '../../services/api-error';
 import ProjectMediaField from '../../components/editor/ProjectMediaField';
 import { isAllowedVideoUrl, isProjectCategory } from '../../services/project-media';
+import { isToolCategory } from '../../services/tool-fields';
 
 const SUPPORTED_LANGS = [
     { code: 'es', name: 'Español' },
@@ -149,7 +150,12 @@ const EditArticle: React.FC = () => {
     // listed, though -- dropping the option would quietly move them out of
     // their own category the next time somebody saved one. Switching away is a
     // one-way door, which is what we want.
-    const pickable = categories.filter((cat) => !isProjectCategory(cat.name) || cat.id === categoryId);
+    // Lo mismo vale ahora para las herramientas, que tambien se fueron a su
+    // propia tabla: fuera de la lista para los articulos nuevos, pero las que
+    // la llevan la conservan.
+    const pickable = categories.filter(
+        (cat) => (!isProjectCategory(cat.name) && !isToolCategory(cat.name)) || cat.id === categoryId,
+    );
 
     /** Stop the save and say why, in the two places the author is looking. */
     const reject = (key: string) => {
@@ -329,31 +335,39 @@ const EditArticle: React.FC = () => {
                     />
                 )}
 
-                <div className="uk-margin">
-                    <label className="uk-form-label">{t('article.form.type_label')}</label>
-                    <div className="uk-form-controls">
-                        <label className="uk-margin-small-right">
-                            <input
-                                className="uk-radio"
-                                type="radio"
-                                name="articleType"
-                                value="post"
-                                checked={articleType === 'post'}
-                                onChange={() => setArticleType('post')}
-                            /> {t('article.form.type_post')}
-                        </label>
-                        <label>
-                            <input
-                                className="uk-radio"
-                                type="radio"
-                                name="articleType"
-                                value="link"
-                                checked={articleType === 'link'}
-                                onChange={() => setArticleType('link')}
-                            /> {t('article.form.type_link')}
-                        </label>
+                {/* El tipo sólo se pregunta a lo que ya es un enlace. Un artículo
+                    nuevo es un artículo: lo de mandar a otro sitio era el apaño de
+                    las herramientas cuando vivían aquí, y ahora tienen su propia
+                    tabla. Las dos que quedan siguen pudiendo volver a ser texto,
+                    que es una puerta de salida y no de entrada. */}
+                {articleType === 'link' && (
+                    <div className="uk-margin">
+                        <label className="uk-form-label">{t('article.form.type_label')}</label>
+                        <div className="uk-form-controls">
+                            <label className="uk-margin-small-right">
+                                <input
+                                    className="uk-radio"
+                                    type="radio"
+                                    name="articleType"
+                                    value="post"
+                                    checked={false}
+                                    onChange={() => setArticleType('post')}
+                                /> {t('article.form.type_post')}
+                            </label>
+                            <label>
+                                <input
+                                    className="uk-radio"
+                                    type="radio"
+                                    name="articleType"
+                                    value="link"
+                                    checked
+                                    onChange={() => setArticleType('link')}
+                                /> {t('article.form.type_link')}
+                            </label>
+                        </div>
+                        <p className="uk-text-meta">{t('article.form.type_legacy_hint')}</p>
                     </div>
-                </div>
+                )}
 
                 {articleType === 'link' && (
                     <div className="uk-margin">
