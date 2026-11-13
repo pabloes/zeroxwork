@@ -1,6 +1,10 @@
 import Landing from "../pages/Landing";
 import BlogList from "../pages/Blog/blog-list";
 import Tools from "../pages/Tools";
+import ToolPage from "../pages/ToolPage";
+import CreateTool from "../pages/CreateTool";
+import EditTool from "../pages/EditTool";
+import MyTools from "../pages/MyTools";
 import Portfolio from "../pages/Portfolio";
 import ProjectPage from "../pages/Project";
 import CreateProject from "../pages/CreateProject";
@@ -32,6 +36,7 @@ export const pageRoutes = [
     {RouteElement:Landing, title:`Welcome`, path:`/`, props:{}},
     {RouteElement:BlogList, title:`Blog`, path:`/blog`, props:{}},
     {RouteElement:Tools, title:`Tools`, path:`/tools`, props:{}},
+    {RouteElement:ToolPage, title:``, path:`/tools/:idOrSlug`, props:{}},
     {RouteElement:Portfolio, title:`Portfolio`, path:`/portfolio`, props:{}},
     {RouteElement:ProjectPage, title:``, path:`/portfolio/:idOrSlug`, props:{}},
     {RouteElement:Members, title:`Members`, path:`/members`, props:{}},
@@ -61,6 +66,10 @@ export const pageRoutes = [
     {RouteElement:CreateProject, title:"Create a project", path:"/create-project", props:{}, auth:true},
     {RouteElement:EditProject, title:"", path:"/edit-project/:id", props:{}, auth:true},
     {RouteElement:MyProjects, title:"My projects", path:"/my-projects", props:{}, auth:true},
+
+    {RouteElement:CreateTool, title:"Create a tool", path:"/create-tool", props:{}, auth:true},
+    {RouteElement:EditTool, title:"", path:"/edit-tool/:id", props:{}, auth:true},
+    {RouteElement:MyTools, title:"My tools", path:"/my-tools", props:{}, auth:true},
 
     {RouteElement:SpeedTest, title:"Speed Test", path:"/speed-test", props:{}},
 ]

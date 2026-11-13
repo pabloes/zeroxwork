@@ -1,3 +1,5 @@
+import { isEmbedUrlAllowed } from './embed.js';
+
 /**
  * Lo que una herramienta tiene y un articulo no: un destino, y si ese destino
  * se abre o se incrusta.
@@ -40,6 +42,7 @@ export type ToolErrorCode =
     | 'HREF_REQUIRED'
     | 'HREF_INVALID'
     | 'HREF_NOT_EMBEDDABLE'
+    | 'EMBED_HOST_NOT_ALLOWED'
     | 'MODE_INVALID'
     | 'EMBED_HEIGHT_INVALID';
 
@@ -50,6 +53,7 @@ export const TOOL_ERRORS: Record<ToolErrorCode, string> = {
     HREF_REQUIRED: 'Falta decir donde vive la herramienta.',
     HREF_INVALID: 'Eso no es ni una direccion https ni una ruta de este sitio.',
     HREF_NOT_EMBEDDABLE: 'Lo que se incrusta tiene que ser una direccion https completa.',
+    EMBED_HOST_NOT_ALLOWED: 'Ese sitio no esta en la lista de los que se pueden incrustar.',
     MODE_INVALID: 'Una herramienta se abre o se incrusta, no hay mas.',
     EMBED_HEIGHT_INVALID: `El alto tiene que estar entre ${EMBED_HEIGHT_MIN} y ${EMBED_HEIGHT_MAX} pixeles.`,
 };
@@ -119,9 +123,23 @@ export function validateHref(input: unknown, mode: ToolMode): ToolResult<string>
 
     if (!esRuta && !esHttps) return { ok: false, code: 'HREF_INVALID' };
 
-    // Incrustar una pagina nuestra dentro de otra pagina nuestra no es
-    // incrustar, es un espejo: la cabecera y el pie saldrian dos veces.
-    if (mode === 'embed' && !esHttps) return { ok: false, code: 'HREF_NOT_EMBEDDABLE' };
+    if (mode === 'embed') {
+        // Incrustar una pagina del sitio dentro del sitio no es incrustar, es
+        // un espejo: la cabecera y el pie saldrian dos veces. Lo de /embeds/ es
+        // otra cosa -- son piezas sueltas servidas para esto, no la aplicacion.
+        if (esRuta && !value.startsWith('/embeds/')) {
+            return { ok: false, code: 'HREF_NOT_EMBEDDABLE' };
+        }
+
+        // La misma lista blanca que ya aplicaban los articulos con embed, y por
+        // el mismo motivo: lo que se incrusta corre dentro de nuestra pagina, y
+        // el sandbox de iframe-sandbox.ts solo da permisos de verdad a estos
+        // origenes. Saltarsela aqui seria abrir por la puerta nueva lo que la
+        // vieja cerraba.
+        if (!isEmbedUrlAllowed(value)) {
+            return { ok: false, code: 'EMBED_HOST_NOT_ALLOWED' };
+        }
+    }
 
     return { ok: true, value };
 }

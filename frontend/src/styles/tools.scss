@@ -1,0 +1,78 @@
+// Lo que el catálogo de herramientas añade a lo que ya había.
+//
+// Las tarjetas (.zx-tool y compañía) viven en theme.scss desde antes y no se
+// tocan. Aquí sólo está lo que trae el modelo propio: la línea que explica qué
+// es la herramienta, y el marco de la que se incrusta.
+
+// La frase bajo el nombre. Antes no existía, porque un artículo no tenía
+// resumen y la tarjeta se quedaba en nombre y etiquetas.
+.zx-tool-desc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--zx-ink-dim);
+  // Tres líneas: a partir de ahí la tarjeta deja de ser una tarjeta, y las de
+  // al lado se descuadran por una frase que alguien escribió de más.
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// El marco de lo que se incrusta. El alto lo pone la propia herramienta, que
+// sabe lo que necesita: una dapp con su cartera no cabe en lo que cabe un
+// conversor de unidades.
+.zx-tool-embed {
+  margin: 28px 0;
+  border: 1px solid var(--zx-line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--zx-glass);
+
+  iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+  }
+}
+
+// En una pantalla de móvil el alto pedido sobra casi siempre: lo que no cabe a
+// lo ancho se encoge, y 1000px de iframe son diez pantallas de scroll dentro
+// de otra. Se limita a lo que se ve, y la herramienta hace su propio scroll.
+@media (max-width: 640px) {
+  .zx-tool-embed iframe {
+    height: 80vh !important;
+  }
+}
+
+// La tarjeta de /my-tools cuando la herramienta no tiene imagen, que es lo
+// normal: una ficha no es una galería. Mismo alto que la que sí la tiene, para
+// que la rejilla no quede a saltos.
+.zx-mytool-plain {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  min-height: 180px;
+  padding: 18px;
+  border: 1px solid var(--zx-line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--zx-glass), transparent);
+
+  .uk-card-title {
+    font-family: var(--zx-display);
+    font-size: 18px;
+    margin: 0;
+  }
+}
+
+// El destino puede ser una URL larga, y partirla es mejor que desbordar la
+// tarjeta o estirar la rejilla entera por una dirección.
+.zx-mytool-href {
+  margin: 0;
+  font-family: var(--zx-mono);
+  font-size: 11.5px;
+  color: var(--zx-ink-faint);
+  overflow-wrap: anywhere;
+}

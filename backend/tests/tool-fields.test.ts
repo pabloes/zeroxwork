@@ -101,6 +101,30 @@ describe('donde vive la herramienta', () => {
     it('no incrusta una ruta de nuestro propio sitio', () => {
         expect(validateHref('/speed-test', 'embed')).toEqual({ ok: false, code: 'HREF_NOT_EMBEDDABLE' });
     });
+
+    /**
+     * La lista blanca que ya aplicaban los articulos con embed. Lo que se
+     * incrusta corre dentro de nuestra pagina, y el sandbox solo da permisos de
+     * verdad a estos origenes: colarse por la puerta nueva seria abrir lo que
+     * la vieja cerraba.
+     */
+    it('solo incrusta los sitios de la lista blanca', () => {
+        expect(validateHref('https://pabloes.github.io/aave-vault-dapp/', 'embed').ok).toBe(true);
+        expect(validateHref('https://otro.github.io/app', 'embed'))
+            .toEqual({ ok: false, code: 'EMBED_HOST_NOT_ALLOWED' });
+        expect(validateHref('https://evil.example/app', 'embed'))
+            .toEqual({ ok: false, code: 'EMBED_HOST_NOT_ALLOWED' });
+    });
+
+    it('incrusta las piezas de /embeds/, que estan servidas para eso', () => {
+        expect(validateHref('/embeds/mi-tool/', 'embed')).toEqual({ ok: true, value: '/embeds/mi-tool/' });
+    });
+
+    it('pero saltar a cualquier sitio https sigue valiendo', () => {
+        // Un enlace no corre dentro de nuestra pagina: no hay nada que aislar.
+        expect(validateHref('https://otro.github.io/app', 'link'))
+            .toEqual({ ok: true, value: 'https://otro.github.io/app' });
+    });
 });
 
 describe('alto de lo que se incrusta', () => {
