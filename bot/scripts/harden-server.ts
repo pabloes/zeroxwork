@@ -30,6 +30,7 @@ import {
 } from 'discord.js';
 import dotenv from 'dotenv';
 import { HELP_CHANNEL_NAME, WELCOME_LANGS, generalChannelName, type WelcomeLang } from '../src/welcome';
+import { IMPERSONATION_PATTERNS } from '../src/automod-patterns';
 
 dotenv.config();
 
@@ -181,6 +182,13 @@ async function hardenGuild(guild: Guild) {
         plan('safety alerts channel → #mod-log');
         if (APPLY) await guild.edit({ safetyAlertsChannel: modLog.id }).catch((e) => fail(`safety alerts channel: ${e.message}`));
     } else ok('safety alerts already go to #mod-log');
+
+    // "So-and-so joined" is for the team to see, not a line in the members'
+    // chat every time somebody walks in.
+    if (modLog && guild.systemChannelId !== modLog.id) {
+        plan(`join messages: #${guild.systemChannel?.name ?? 'nowhere'} → #mod-log`);
+        if (APPLY) await guild.edit({ systemChannel: modLog.id }).catch((e) => fail(`join messages: ${e.message}`));
+    } else if (modLog) ok('join messages already go to #mod-log');
 
     if (guild.description !== SERVER_DESCRIPTION) {
         plan(`description: ${JSON.stringify(guild.description)} → ${JSON.stringify(SERVER_DESCRIPTION)}`);
@@ -534,6 +542,17 @@ async function hardenAutoMod(guild: Guild) {
                 { type: AutoModerationActionType.BlockMessage, metadata: { customMessage: LINK_BLOCK_MESSAGE } },
                 ...alertAction,
             ],
+        },
+        {
+            // "ZEROxWORK Support" writing to members in private is the scam that
+            // no message filter sees. This looks at the name itself, and whoever
+            // carries one cannot write, react or talk until they change it.
+            // Nobody is exempt: a linked member with that name is still not the team.
+            name: 'ZEROxWORK: nombres que suplantan al equipo',
+            eventType: AutoModerationRuleEventType.MemberUpdate,
+            triggerType: AutoModerationRuleTriggerType.MemberProfile,
+            triggerMetadata: { regexPatterns: IMPERSONATION_PATTERNS },
+            actions: [{ type: AutoModerationActionType.BlockMemberInteraction }, ...alertAction],
         },
     ];
 

@@ -228,6 +228,29 @@ enough to move or rename a channel the bot cannot see, so a members-only
 channel made by hand outside a category is out of the script's reach until the
 bot is added to it.
 
+Join messages go to `#mod-log`: they are for the team, not a line in the
+members' chat every time somebody walks in.
+
+## AutoMod
+
+Five rules, created by the same script and all reporting to `#mod-log`:
+
+| Rule | Stops |
+|---|---|
+| menciones masivas | more than five mentions in a message |
+| spam | what Discord itself classes as spam |
+| patrones de estafa | free nitro, "connect your wallet to", asking for a seed phrase |
+| enlaces sin vincular | links from anybody without ZEROxMEMBER |
+| nombres que suplantan al equipo | a profile such as "ZEROxWORK Support" |
+
+The last one looks at the name, not at messages: whoever carries the brand next
+to a word for staff cannot write, react or talk until they change it. The
+patterns are in `bot/src/automod-patterns.ts`, with a test of names that must
+and must not match. When there are real moderators, exempt their role.
+
+AutoMod never acts on the owner or on bots, so none of this can be tried with
+the two accounts the server has today.
+
 The bot finds `#help` and the general channels by name
 (`HELP_CHANNEL_NAME`, `generalChannelName` in `bot/src/welcome.ts`). Rename one
 by hand and the welcome falls back: to the English channel, then to `#help`.
