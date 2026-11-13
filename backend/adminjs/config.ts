@@ -218,6 +218,35 @@ const options:AdminJSOptions =  {
             },
         },
         {
+            // Una ficha del catalogo de /tools. `mode` dice como se llega:
+            // `link` salta a `href`, `embed` lo mete en un iframe dentro de
+            // /tools/<slug>, y entonces `embedHeight` significa algo.
+            resource: {
+                model: getModelByName("Tool"),
+                client: prisma,
+            },
+            options: {
+                listProperties: ['id', 'slug', 'title', 'mode', 'href', 'published', 'featured'],
+                editProperties: [
+                    'slug', 'title', 'summary', 'content', 'thumbnail',
+                    'href', 'mode', 'embedHeight', 'lang',
+                    'published', 'featured', 'createdById',
+                ],
+            },
+        },
+        {
+            // Las copias traducidas, escritas por DeepL. Se pueden corregir a
+            // mano, pero el `sourceHash` es lo que decide si estan al dia:
+            // cambiarlo de cualquier manera las condena a no refrescarse nunca.
+            resource: {
+                model: getModelByName("ToolTranslation"),
+                client: prisma,
+            },
+            options: {
+                listProperties: ['id', 'toolId', 'targetLang', 'title', 'cachedAt'],
+            },
+        },
+        {
             // Who is credited on a project. `name` is what gets shown when the
             // credit has no account behind it; filling `userId` turns the name
             // into a link to that member's page.

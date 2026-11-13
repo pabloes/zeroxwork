@@ -32,6 +32,7 @@ model User {
   articles         Article[]
   credits          ArticleCredit[]
   projects         Project[]          @relation("ProjectCreator")
+  tools            Tool[]             @relation("ToolCreator")
   projectRoles     ProjectMember[]
   socials          UserSocial[]
   discordLink      DiscordLink?
@@ -281,6 +282,7 @@ model Tag {
   updatedAt DateTime  @updatedAt
   articles  Article[]
   projects  Project[]
+  tools     Tool[]
 
   @@map("tags")
 }
@@ -393,4 +395,80 @@ model ProjectTranslation {
   @@unique([projectId, targetLang])
   @@index([projectId])
   @@map("project_translations")
+}
+
+/// Una herramienta del catalogo.
+///
+/// No es un articulo con otra etiqueta. De las tres que habia como articulos,
+/// dos no tenian ni un caracter de texto: eran un nombre, una imagen y un sitio
+/// al que ir. `Article` les daba cuerpo, creditos, historial de slugs y un
+/// editor de prosa que no usaban, y a cambio no les daba lo unico que de verdad
+/// las define -- donde vive la cosa -- que acababa metido a presion en
+/// `redirectUrl` o en `embedUrl` segun el dia.
+///
+/// Direccion: /tools, y /tools/<slug> solo para las que se incrustan. Una que
+/// solo salta no necesita pagina propia: la pagina es el sitio al que lleva.
+model Tool {
+  id           Int               @id @default(autoincrement())
+  slug         String            @unique
+  title        String
+  /// La linea de la tarjeta, y lo unico que se traduce de verdad.
+  summary      String?
+  /// Prosa opcional, encima de lo que se incrusta. Las que solo saltan no la
+  /// llegan a enseñar: nadie se queda a leerla.
+  content      String?
+  thumbnail    String?
+
+  /// A donde va: una pagina de este mismo sitio, algo de fuera, o lo que se
+  /// mete en el iframe. Validado en codigo, para que cambiar lo que se acepta
+  /// no cueste una migracion.
+  href         String
+  /// `link` salta al sitio; `embed` lo abre dentro de /tools/<slug>.
+  mode         String            @default("link")
+  /// Alto del iframe, solo para `embed`. Hay dapps que no caben en 600px.
+  embedHeight  Int?
+
+  /// Nada se publica por si solo, igual que un articulo o un proyecto.
+  published    Boolean           @default(false)
+  featured     Boolean           @default(false)
+
+  /// Quien la dio de alta, que no es quien la hizo. Nullable para que borrar
+  /// una cuenta no se lleve la ficha por delante.
+  createdById  Int?
+  createdBy    User?             @relation("ToolCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  tags         Tag[]
+  translations ToolTranslation[]
+
+  /// En que idioma esta escrito el resumen de arriba.
+  lang         String            @default("en")
+  sourceHash   String?
+
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([slug])
+  @@index([published])
+  @@index([createdById])
+  @@map("tools")
+}
+
+/// Una herramienta en otro idioma. Como la de proyectos: el titulo viaja para
+/// que el lector nunca vea uno vacio, pero es el original -- una herramienta se
+/// llama como se llama, y "Brain Wallet Tool" traducido es otra herramienta.
+model ToolTranslation {
+  id         Int      @id @default(autoincrement())
+  toolId     Int
+  tool       Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  targetLang String
+  title      String
+  summary    String?
+  content    String?
+  sourceHash String?
+  provider   String?
+  cachedAt   DateTime @default(now())
+
+  @@unique([toolId, targetLang])
+  @@index([toolId])
+  @@map("tool_translations")
 }
