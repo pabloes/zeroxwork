@@ -141,6 +141,7 @@ would do, including which database it is pointing at. `--apply` is what writes.
 | `backfill-handles.ts` | Gives every remaining account a handle (Discord -> eth name -> `member-<id>`) |
 | `backfill-translations.ts` | Translates articles that have no translations yet (costs DeepL quota) |
 | `merge-accounts.ts` | Joins several accounts of the same person into one (see below) |
+| `migrate-tools.ts` | Moves the blog's tools into the `tools` table (see below) |
 
 Order matters between `seed-handles.ts` and `backfill-handles.ts`: the first
 claims the real names, the second only fills the gaps, so running them the other
@@ -197,6 +198,34 @@ docker ps --filter ancestor=postgres --format '{{.Names}}'
 
 docker exec <that container> pg_dump -U postgres zeroxwork | gzip > copia.sql.gz
 ```
+
+## Moving the tools out of the blog
+
+`/tools` reads the `tools` table, not articles with a category on them. The
+table is created by the migration on deploy, but it starts **empty** — so
+between the deploy landing and this script running, `/tools` shows nothing. Run
+it right after the deploy, not next week.
+
+```bash
+# Inside the container. Dry run first: it writes nothing.
+npx tsx scripts/migrate-tools.ts
+npx tsx scripts/migrate-tools.ts --apply
+```
+
+It copies every article whose category is `tool` into a tool, turning what used
+to live in `redirectUrl` or `embedUrl` into `href` + `mode`, and rewrites
+`https://zeroxwork.com/speed-test` down to `/speed-test` — the domain in a link
+to ourselves is a link that breaks the day the domain changes.
+
+Then it unpublishes any published article whose slug already exists in `tools`
+or in `projects`. That condition checks the replacement is there before hiding
+the original, and nothing is deleted: re-publish from `/admin` with one click.
+An article with the `tool` category and no destination is not a tool, so it is
+left alone and listed at the end.
+
+Running it again is safe. `published` and `featured` are copied only when the
+tool is created, never on a re-run: the second half of this script unpublishes
+the source article, so copying them again would empty `/tools`.
 
 ## Joining several accounts into one
 
