@@ -313,6 +313,7 @@
   "account.badge.alt": "你的 ZEROxWORK 徽章",
   "account.badge.url_label": "直接地址",
   "account.badge.url_hint": "点一下即可复制。指向这个地址的图片会自动保持最新。",
+  "account.badge.format_hint": "SVG 在任何尺寸下都清晰，能用的地方就用它。PNG 是给不接受 SVG 的地方准备的；高分屏可以加上 ?scale=2。",
   "account.badge.copied": "已复制。",
   "account.badge.copy_failed": "没有复制成功。地址已选中，请手动复制。",
   "account.badge.download_png": "下载 PNG",

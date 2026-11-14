@@ -141,24 +141,33 @@ for pasting anywhere that is not this site.
 
 ```
 https://zeroxwork.com/api/badge/<handle>.svg
+https://zeroxwork.com/api/badge/<handle>.png
 ```
 
 ```markdown
 [![carlosmu on ZEROxWORK](https://zeroxwork.com/api/badge/carlosmu.svg)](https://zeroxwork.com/member/carlosmu)
 ```
 
+- **SVG** is the one to use where it is accepted: one file, sharp at any size.
+  **PNG** is for the places that refuse an SVG, which is a good many forums and
+  chats. It comes out at the card's own size; `?scale=2` or `?scale=3` draws it
+  bigger for a dense screen.
 - The account number works too (`/api/badge/7.svg`), and always will; the
   handle is the nicer address and can change.
 - One file, with nothing outside it: the avatar and the mark arrive inlined,
-  because an `<img>` on another domain renders an SVG with its external
-  references stripped.
+  and the words are outlines, not text. That is what makes the badge read the
+  same everywhere -- an `<img>` on another domain renders an SVG with its
+  external references stripped and no font of ours -- and what lets the PNG be
+  drawn in a container with no fonts installed.
 - Drawn from the profile as it is now, cached for five minutes. Change the
   avatar or the handle and the badge changes wherever it was pasted.
 - A member who is not there answers `404` in plain text, so a broken image is
   a broken image and not a picture saying so.
 - Where it is built: `backend/src/routes/badge.ts`, with the drawing in
-  `backend/src/services/member-badge.ts` and the avatar in `badge-avatar.ts`.
-  The mark is read from `frontend/public/zx-mark.png` at startup.
+  `backend/src/services/member-badge.ts`, the avatar in `badge-avatar.ts` and
+  the lettering in `badge-type.ts`. The mark is read from
+  `frontend/public/zx-mark.png`; Space Grotesk lives in `backend/assets/fonts`
+  under the SIL Open Font License, whose text is beside it.
 
 ## Notes for whoever maintains this
 

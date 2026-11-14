@@ -313,6 +313,7 @@
   "account.badge.alt": "Seu selo da ZEROxWORK",
   "account.badge.url_label": "Endereço direto",
   "account.badge.url_hint": "Clique para copiar. Uma imagem apontada para este endereço se mantém atualizada sozinha.",
+  "account.badge.format_hint": "O SVG fica nítido em qualquer tamanho e é o indicado onde for aceito. O PNG é para os lugares que recusam SVG; acrescente ?scale=2 para uma tela densa.",
   "account.badge.copied": "Copiado.",
   "account.badge.copy_failed": "Nada foi copiado. O endereço está selecionado: copie à mão.",
   "account.badge.download_png": "Baixar PNG",

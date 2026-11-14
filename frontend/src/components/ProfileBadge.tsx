@@ -3,8 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/axios-setup';
 import { useTranslation } from '../i18n';
 
-/** How much bigger than its own units the downloaded PNG is drawn. */
-const PNG_SCALE = 3;
+/** The two shapes the badge comes in, and what each is for. */
+type Format = 'svg' | 'png';
+
+/** The downloaded PNG is drawn at twice the card, so it survives a zoom. */
+const DOWNLOAD_SCALE = 2;
 
 interface Me {
     id: number;
@@ -17,8 +20,8 @@ interface Me {
  *
  * The address is the badge. It is served from /api/badge and drawn from what
  * the profile says right now, so a member who changes their avatar changes it
- * everywhere they pasted it, without touching any of those places. The two
- * downloads are for the places that will not take a URL.
+ * everywhere they pasted it, without touching any of those places. SVG is the
+ * better file; PNG is there because plenty of places will not take an SVG.
  */
 const ProfileBadge: React.FC<{ changes?: number }> = ({ changes = 0 }) => {
     const { t } = useTranslation();
@@ -28,6 +31,7 @@ const ProfileBadge: React.FC<{ changes?: number }> = ({ changes = 0 }) => {
         queryFn: async () => (await api.get('/user/me')).data,
     });
 
+    const [format, setFormat] = useState<Format>('svg');
     const [copied, setCopied] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -37,10 +41,17 @@ const ProfileBadge: React.FC<{ changes?: number }> = ({ changes = 0 }) => {
     // The saved handle, not the one being typed next door: the badge is a file
     // other sites already hold, and it only moves when the profile is saved.
     const name = me.handle || String(me.id);
-    const url = `${window.location.origin}/api/badge/${name}.svg`;
+    const address = `${window.location.origin}/api/badge/${name}`;
+    const url = `${address}.${format}`;
     // The preview has to show the save that just happened, and a browser that
     // has the old badge in hand would not go and ask again.
-    const preview = `${url}?v=${changes}`;
+    const preview = `${address}.svg?v=${changes}`;
+
+    const pick = (next: Format) => {
+        setFormat(next);
+        setCopied(false);
+        setError(null);
+    };
 
     /** Tabbing here selects the address but copies nothing: that needs a click. */
     const selectAll = (event: React.FocusEvent<HTMLInputElement>) => event.currentTarget.select();
@@ -71,55 +82,23 @@ const ProfileBadge: React.FC<{ changes?: number }> = ({ changes = 0 }) => {
         URL.revokeObjectURL(href);
     };
 
-    const downloadSvg = async () => {
-        setError(null);
-        setBusy(true);
-        try {
-            const response = await fetch(preview);
-            if (!response.ok) throw new Error(String(response.status));
-            save(await response.blob(), 'svg');
-        } catch {
-            setError(t('account.badge.download_error'));
-        } finally {
-            setBusy(false);
-        }
-    };
-
     /**
-     * The PNG is drawn here rather than asked of the server: the badge is text
-     * on a card, and the fonts live in this browser, not on ours.
+     * Both files come from the same address the badge lives at, so what gets
+     * downloaded is exactly what everyone else is served.
      */
-    const downloadPng = async () => {
+    const download = async (extension: Format) => {
         setError(null);
         setBusy(true);
-        let objectUrl: string | null = null;
         try {
-            const response = await fetch(preview);
+            const from = extension === 'png'
+                ? `${address}.png?scale=${DOWNLOAD_SCALE}&v=${changes}`
+                : `${address}.svg?v=${changes}`;
+            const response = await fetch(from);
             if (!response.ok) throw new Error(String(response.status));
-            const svg = await response.text();
-
-            objectUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-            const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => resolve(img);
-                img.onerror = () => reject(new Error('decode'));
-                img.src = objectUrl as string;
-            });
-
-            const canvas = document.createElement('canvas');
-            canvas.width = (image.naturalWidth || 440) * PNG_SCALE;
-            canvas.height = (image.naturalHeight || 120) * PNG_SCALE;
-            const context = canvas.getContext('2d');
-            if (!context) throw new Error('canvas');
-            context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-            const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-            if (!blob) throw new Error('blob');
-            save(blob, 'png');
+            save(await response.blob(), extension);
         } catch {
             setError(t('account.badge.download_error'));
         } finally {
-            if (objectUrl) URL.revokeObjectURL(objectUrl);
             setBusy(false);
         }
     };
@@ -133,7 +112,23 @@ const ProfileBadge: React.FC<{ changes?: number }> = ({ changes = 0 }) => {
                 <img src={preview} alt={t('account.badge.alt')} />
             </div>
 
-            <label className="zx-label" htmlFor="zx-badge-url">{t('account.badge.url_label')}</label>
+            <div className="zx-badge-head">
+                <label className="zx-label" htmlFor="zx-badge-url">{t('account.badge.url_label')}</label>
+                <div className="zx-badge-switch" role="group" aria-label={t('account.badge.url_label')}>
+                    {(['svg', 'png'] as Format[]).map((option) => (
+                        <button
+                            key={option}
+                            type="button"
+                            className={option === format ? 'is-on' : ''}
+                            aria-pressed={option === format}
+                            onClick={() => pick(option)}
+                        >
+                            {option.toUpperCase()}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <input
                 id="zx-badge-url"
                 className="zx-input zx-badge-url"
@@ -148,12 +143,13 @@ const ProfileBadge: React.FC<{ changes?: number }> = ({ changes = 0 }) => {
                 {t('account.badge.url_hint')}
                 {copied && <span className="zx-profile-ok"> {t('account.badge.copied')}</span>}
             </p>
+            <p className="zx-profile-hint">{t('account.badge.format_hint')}</p>
 
             <div className="zx-profile-actions">
-                <button type="button" className="zx-btn zx-btn-ghost" onClick={downloadPng} disabled={busy}>
+                <button type="button" className="zx-btn zx-btn-ghost" onClick={() => download('png')} disabled={busy}>
                     {busy ? t('account.badge.preparing') : t('account.badge.download_png')}
                 </button>
-                <button type="button" className="zx-btn zx-btn-ghost" onClick={downloadSvg} disabled={busy}>
+                <button type="button" className="zx-btn zx-btn-ghost" onClick={() => download('svg')} disabled={busy}>
                     {t('account.badge.download_svg')}
                 </button>
             </div>

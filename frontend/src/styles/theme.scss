@@ -1096,6 +1096,44 @@ a.uk-link-reset {
   }
 }
 
+.zx-badge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+// SVG or PNG: the same badge, two files. Small, because it is a detail of the
+// address underneath it, not a decision anybody should have to weigh.
+.zx-badge-switch {
+  display: inline-flex;
+  border: 1px solid var(--zx-line-2);
+  border-radius: 9px;
+  overflow: hidden;
+
+  button {
+    padding: 5px 12px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--zx-mono);
+    font-size: 11.5px;
+    letter-spacing: .06em;
+    color: var(--zx-ink-dim);
+
+    &:hover {
+      color: var(--zx-ink);
+      background: var(--zx-hover);
+    }
+
+    &.is-on {
+      color: var(--zx-ink);
+      background: var(--zx-line);
+    }
+  }
+}
+
 .zx-badge-url {
   font-family: var(--zx-mono);
   font-size: 12.5px;

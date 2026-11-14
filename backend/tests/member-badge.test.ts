@@ -5,7 +5,8 @@
  * also markup, and a long handle running off the card into the mark.
  */
 import { describe, it, expect } from 'vitest';
-import { buildBadge, badgeWidth, textWidth } from '../src/services/member-badge.js';
+import { buildBadge, badgeWidth, badgeLayout, textWidth } from '../src/services/member-badge.js';
+import { typeface } from '../src/services/badge-type.js';
 import { drawnAvatar } from '../src/services/badge-avatar.js';
 
 const MARK = 'data:image/png;base64,AAAA';
@@ -117,5 +118,46 @@ describe('where the avatar may come from', () => {
         // And nothing that is not a plain file name gets near the disk.
         const traversal = await badgeAvatar({ id: 1, avatarUrl: '/api/images/user-uploaded-images/..%2F..%2F.env' });
         expect(traversal.kind).toBe('drawn');
+    });
+});
+
+describe('with the real fonts', () => {
+    // How much of the card the words cannot have: the mark, its margins and
+    // the shadow's room, as member-badge.ts lays them out.
+    const KEPT_FOR_THE_MARK = 93.5 + 29 + 18 + 6;
+    const TEXT_X = 134;
+
+    it('sets the words as outlines, so the badge reads the same everywhere', async () => {
+        const type = await typeface();
+        expect(type).not.toBeNull();
+
+        const svg = buildBadge({ label: 'carlosmu', avatar: photo }, MARK, type);
+        expect(svg).not.toContain('<text');
+        expect(svg).not.toContain('font-family'); // nothing left for a reader to guess
+        expect(svg).toContain('carlosmu on ZEROxWORK.com'); // the label still names it
+        expect((svg.match(/<path d="M/g) ?? []).length).toBeGreaterThan(2);
+    });
+
+    it('measures the card from the letters it will actually draw', async () => {
+        const type = await typeface();
+        const measured = badgeLayout('carlosmu', type);
+        // The estimate is close but not the same thing; the real one wins.
+        expect(measured.labelW).toBeCloseTo(type!.width('carlosmu', 29, 'bold'), 5);
+        expect(measured.width).toBeGreaterThan(TEXT_X + measured.siteW);
+    });
+
+    it('centres the two lines on their caps', async () => {
+        const type = await typeface();
+        const box = badgeLayout('carlosmu', type);
+        const top = box.labelBase - box.labelSize * type!.capRatio;
+        expect((top + box.siteBase) / 2).toBeCloseTo(60, 1); // the card's middle
+    });
+
+    it('sets a handle that would not fit smaller instead of into the mark', async () => {
+        const type = await typeface();
+        const box = badgeLayout('x'.repeat(60), type);
+        expect(box.width).toBe(900);
+        expect(box.labelSize).toBeLessThan(29);
+        expect(TEXT_X + box.labelW).toBeLessThanOrEqual(900 - KEPT_FOR_THE_MARK + 0.5);
     });
 });

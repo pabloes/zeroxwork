@@ -82,3 +82,46 @@ describe('GET /api/badge/<handle>.svg', () => {
         expect(await response.text()).toContain('.svg');
     });
 });
+
+/** Width and height as the PNG itself declares them, from the IHDR chunk. */
+function pngSize(bytes: Buffer) {
+    expect(bytes.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
+describe('GET /api/badge/<handle>.png', () => {
+    it('answers with a real PNG, at the size of the card', async () => {
+        const response = await fetch(`${base}/api/badge/carlosmu.png`);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('content-type')).toBe('image/png');
+        expect(response.headers.get('access-control-allow-origin')).toBe('*');
+
+        const { width, height } = pngSize(Buffer.from(await response.arrayBuffer()));
+        expect(height).toBe(120);
+        expect(width).toBeGreaterThan(400);
+    });
+
+    it('draws it bigger when asked, and not without limit', async () => {
+        const [one, two, far] = await Promise.all([
+            fetch(`${base}/api/badge/carlosmu.png`).then((r) => r.arrayBuffer()),
+            fetch(`${base}/api/badge/carlosmu.png?scale=2`).then((r) => r.arrayBuffer()),
+            fetch(`${base}/api/badge/carlosmu.png?scale=99`).then((r) => r.arrayBuffer()),
+        ]);
+        expect(pngSize(Buffer.from(two)).height).toBe(240);
+        expect(pngSize(Buffer.from(far)).height).toBe(360); // capped at three
+        expect(pngSize(Buffer.from(one)).height).toBe(120);
+    });
+
+    it('treats a scale that is not a number as no scale at all', async () => {
+        const response = await fetch(`${base}/api/badge/carlosmu.png?scale=enorme`);
+        expect(pngSize(Buffer.from(await response.arrayBuffer())).height).toBe(120);
+    });
+
+    it('offers both shapes when the extension is one we do not draw', async () => {
+        const response = await fetch(`${base}/api/badge/carlosmu.jpg`);
+        expect(response.status).toBe(404);
+        const text = await response.text();
+        expect(text).toContain('.svg');
+        expect(text).toContain('.png');
+    });
+});

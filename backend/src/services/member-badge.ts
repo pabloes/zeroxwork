@@ -1,27 +1,23 @@
 /**
  * The member badge: one picture a member can paste on somebody else's site.
  *
- * It is a single SVG file with nothing outside it -- the avatar arrives
- * inlined, the mark is the site's own artwork inlined, and the text is text.
- * That is the whole point: an <img> on another domain renders an SVG with its
- * external references stripped, so anything we left pointing back here would
- * come out as a hole.
+ * It is a single file with nothing outside it -- the avatar arrives inlined,
+ * the mark is the site's own artwork inlined, and the words are the shapes of
+ * the words, drawn from Space Grotesk in badge-type.ts. That is the whole
+ * point: an <img> on another domain renders an SVG with its external
+ * references stripped, and the fonts a reader happens to have are not ours.
  *
- * Two things follow from the badge being read by renderers we do not control:
+ * Because the lettering is outlines, the same drawing rasterises to PNG on a
+ * machine with no fonts installed, which is how /api/badge/<handle>.png works
+ * at all. When the fonts cannot be read the SVG falls back to ordinary text,
+ * measured by the estimate below; the PNG, which cannot, says so instead.
  *
- *   - The fonts are whatever that machine has. Every line therefore carries a
- *     `textLength`, so the words occupy the box we measured them into even
- *     when the face underneath is a different one, and nothing ever runs into
- *     the mark.
- *   - The width is computed here, from the handle, rather than fixed: a
- *     thirty-character handle needs twice the room "pablo" does.
- *
- * The proportions come from the artwork this was drawn against: a card 108
- * high, the avatar ringed in the full spectrum on the left, the handle over
- * ZEROxWORK.com, and the mark on the right.
+ * The width is computed from the handle rather than fixed: a thirty-character
+ * handle needs twice the room "pablo" does.
  */
 
 import { BadgeAvatar, escapeXml } from './badge-avatar.js';
+import { Typeface } from './badge-type.js';
 
 /* ---------- the geometry, all in the badge's own units ---------- */
 
@@ -39,10 +35,13 @@ const AVATAR_R = RING_R - RING_W;
 
 const TEXT_X = 134;
 const LABEL_SIZE = 29;
-const LABEL_BASE = 55;
-const SITE_SIZE = 19;
-const SITE_BASE = 80;
+const SITE_SIZE = 21;
+/** Between the handle's baseline and the top of the caps underneath it. */
+const LINE_GAP = 10;
 const SITE_TEXT = 'ZEROxWORK.com';
+
+/** Cap height over em in Space Grotesk; only used when the fonts are missing. */
+const CAP_RATIO = 0.7;
 
 /** The mark keeps the artwork's 240x136 proportions. */
 const MARK_H = 53;
@@ -59,7 +58,7 @@ const MAX_WIDTH = 900;
 
 const CARD = '#FFFFFF';
 const CARD_LINE = '#D4D6DA';
-const LABEL_INK = '#0B0E12';
+const LABEL_INK = '#23282E';
 const SITE_INK = '#1A1F24';
 /** The "0" disc, ink on a light card, as --zx-zero is in the light theme. */
 const ZERO_INK = '#15222B';
@@ -90,15 +89,15 @@ const zeroRing = `M${ZERO_C.x - ZERO_C.r} ${ZERO_C.y}a${ZERO_C.r} ${ZERO_C.r} 0 
 const zeroDisc = `M${ZERO_C.x - ZERO_C.r} ${ZERO_C.y}a${ZERO_C.r} ${ZERO_C.r} 0 1 0 ${ZERO_C.r * 2} 0`
     + `a${ZERO_C.r} ${ZERO_C.r} 0 1 0 ${-ZERO_C.r * 2} 0Z`;
 
-/* ---------- measuring text without a font ---------- */
+/* ---------- measuring text when there is no font to measure with ---------- */
 
 const NARROW = new Set([...'iljtfr.,:;!|\'`-1 ']);
 const WIDE = new Set([...'mwMW@%']);
 
 /**
- * Roughly how wide a string sets, in multiples of the font size. Calibrated
- * against Space Grotesk, which is what the badge asks for first; it only has
- * to be close, because `textLength` makes the drawing agree with the number.
+ * Roughly how wide a string sets, in multiples of the font size. Only used
+ * when the fonts could not be read: then the badge falls back to <text>, and
+ * this is what keeps the words inside the card.
  */
 export function textWidth(text: string, size: number): number {
     let units = 0;
@@ -210,39 +209,87 @@ function markArt(x: number, y: number, id: string, markImage: string | null): st
         + `</g></g>`;
 }
 
+/**
+ * How the two lines are laid out: their size, where their baselines sit, and
+ * how much room they take. With the real fonts everything is measured; without
+ * them the handle is squeezed to fit instead, which is all <text> allows.
+ */
+export function badgeLayout(label: string, type: Typeface | null) {
+    const room = MAX_WIDTH - TEXT_X - TEXT_TO_MARK - MARK_W - MARK_TO_EDGE - PAD;
+
+    const measure = (text: string, size: number, bold: boolean) =>
+        type ? type.width(text, size, bold ? 'bold' : 'medium') : textWidth(text, size);
+
+    // A handle longer than the widest card allows is set smaller rather than
+    // run into the mark. Handles stop at 30 characters, so this is a guard.
+    let labelSize = LABEL_SIZE;
+    let labelW = measure(label, labelSize, true);
+    if (labelW > room) {
+        labelSize = Math.max(10, (labelSize * room) / labelW);
+        labelW = Math.min(measure(label, labelSize, true), room);
+    }
+
+    const siteW = measure(SITE_TEXT, SITE_SIZE, false);
+    const capRatio = type?.capRatio ?? CAP_RATIO;
+
+    // Centred on the caps, the way the eye reads a card like this: a line with
+    // no descenders should not look as if it is sitting high.
+    const labelCap = labelSize * capRatio;
+    const siteCap = SITE_SIZE * capRatio;
+    const top = RING_CY - (labelCap + LINE_GAP + siteCap) / 2;
+
+    return {
+        labelSize,
+        labelW,
+        siteW,
+        labelBase: top + labelCap,
+        siteBase: top + labelCap + LINE_GAP + siteCap,
+        width: Math.round(Math.min(Math.max(
+            TEXT_X + Math.max(labelW, siteW) + TEXT_TO_MARK + MARK_W + MARK_TO_EDGE + PAD,
+            MIN_WIDTH), MAX_WIDTH)),
+    };
+}
+
 /** How wide the badge comes out for a given label. */
-export function badgeWidth(label: string): number {
-    const textW = Math.max(textWidth(label, LABEL_SIZE), textWidth(SITE_TEXT, SITE_SIZE));
-    const width = TEXT_X + textW + TEXT_TO_MARK + MARK_W + MARK_TO_EDGE + PAD;
-    return Math.round(Math.min(Math.max(width, MIN_WIDTH), MAX_WIDTH));
+export function badgeWidth(label: string, type: Typeface | null = null): number {
+    return badgeLayout(label, type).width;
 }
 
 /** The badge, as a whole SVG document. */
-export function buildBadge({ label, avatar, key }: BadgeInput, markImage: string | null): string {
+export function buildBadge(
+    { label, avatar, key }: BadgeInput,
+    markImage: string | null,
+    type: Typeface | null = null,
+): string {
     const id = `zx${(key ?? label).replace(/[^a-z0-9]/gi, '').slice(0, 20) || 'badge'}`;
-    const width = badgeWidth(label);
+    const box = badgeLayout(label, type);
 
-    const labelW = Math.min(textWidth(label, LABEL_SIZE), width - TEXT_X - TEXT_TO_MARK - MARK_W - MARK_TO_EDGE - PAD);
-    const siteW = textWidth(SITE_TEXT, SITE_SIZE);
-    const markX = width - PAD - MARK_TO_EDGE - MARK_W;
+    const markX = box.width - PAD - MARK_TO_EDGE - MARK_W;
     const markY = RING_CY - MARK_H / 2;
     const alt = `${label} on ZEROxWORK.com`;
 
-    const font = `'Space Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif`;
+    // Outlines when we have the fonts; ordinary text, pinned to the width we
+    // guessed, when we do not.
+    const words = type
+        ? `<path d="${type.line(label, box.labelSize, 'bold', TEXT_X, box.labelBase).d}" fill="${LABEL_INK}"/>`
+          + `<path d="${type.line(SITE_TEXT, SITE_SIZE, 'medium', TEXT_X, box.siteBase).d}" fill="${SITE_INK}"/>`
+        : `<text x="${TEXT_X}" y="${box.labelBase.toFixed(1)}" textLength="${box.labelW.toFixed(1)}"`
+          + ` lengthAdjust="spacingAndGlyphs" font-family="'Space Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif"`
+          + ` font-size="${box.labelSize.toFixed(1)}" font-weight="700" fill="${LABEL_INK}">${escapeXml(label)}</text>`
+          + `<text x="${TEXT_X}" y="${box.siteBase.toFixed(1)}" textLength="${box.siteW.toFixed(1)}"`
+          + ` lengthAdjust="spacingAndGlyphs" font-family="'Space Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif"`
+          + ` font-size="${SITE_SIZE}" font-weight="500" fill="${SITE_INK}">${SITE_TEXT}</text>`;
 
     return `<svg xmlns="http://www.w3.org/2000/svg"`
-        + ` width="${width}" height="${HEIGHT}" viewBox="0 0 ${width} ${HEIGHT}" role="img" aria-label="${escapeXml(alt)}">`
+        + ` width="${box.width}" height="${HEIGHT}" viewBox="0 0 ${box.width} ${HEIGHT}" role="img" aria-label="${escapeXml(alt)}">`
         + `<title>${escapeXml(alt)}</title>`
         + `<defs><filter id="${id}-shadow" x="-10%" y="-20%" width="120%" height="150%">`
         + `<feDropShadow dx="0" dy="3" stdDeviation="4.5" flood-color="#0B0F13" flood-opacity="0.16"/></filter></defs>`
-        + `<rect x="${PAD}" y="${PAD}" width="${width - PAD * 2}" height="${PILL_H}" rx="${PILL_H / 2}"`
+        + `<rect x="${PAD}" y="${PAD}" width="${box.width - PAD * 2}" height="${PILL_H}" rx="${PILL_H / 2}"`
         + ` fill="${CARD}" stroke="${CARD_LINE}" stroke-width="1" filter="url(#${id}-shadow)"/>`
         + spectrumRing(id)
         + avatarArt(avatar, id)
-        + `<text x="${TEXT_X}" y="${LABEL_BASE}" textLength="${labelW.toFixed(1)}" lengthAdjust="spacingAndGlyphs"`
-        + ` font-family="${font}" font-size="${LABEL_SIZE}" font-weight="700" fill="${LABEL_INK}">${escapeXml(label)}</text>`
-        + `<text x="${TEXT_X}" y="${SITE_BASE}" textLength="${siteW.toFixed(1)}" lengthAdjust="spacingAndGlyphs"`
-        + ` font-family="${font}" font-size="${SITE_SIZE}" font-weight="500" fill="${SITE_INK}">${SITE_TEXT}</text>`
+        + words
         + markArt(markX, markY, id, markImage)
         + `</svg>`;
 }
