@@ -2,6 +2,7 @@ import AccountQuota from "../components/AccountQuota";
 import AccountSecurity from "../components/AccountSecurity";
 import BindDiscord from "../components/BindDiscord";
 import BindWallet from "../components/BindWallet";
+import ProfileBadge from "../components/ProfileBadge";
 import ProfileForm from "../components/ProfileForm";
 import {useState} from "react";
 import {Link} from "react-router-dom";
@@ -22,6 +23,10 @@ const AccountPage: React.FC = () => {
 
                 <div className="zx-wrap zx-account-section">
                     <ProfileForm onSaved={() => setChanges(changes + 1)} />
+                </div>
+
+                <div className="zx-wrap zx-account-section">
+                    <ProfileBadge changes={changes} />
                 </div>
 
                 <AccountQuota changes={changes} />

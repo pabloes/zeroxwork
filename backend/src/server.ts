@@ -17,6 +17,7 @@ import blogRoutes from "./routes/blog";
 import projectRoutes from './routes/project.js';
 import toolRoutes from './routes/tool.js';
 import publicApiRoutes from './routes/public-api.js';
+import badgeRoutes from './routes/badge.js';
 import discordRoutes from "./routes/discord";
 import speedtestRoutes from "./routes/speedtest";
 import logsRoutes from "./routes/logs";
@@ -59,6 +60,10 @@ const run = async () => {
     // site's CORS sends Allow-Credentials, and a browser refuses that header
     // next to a wildcard origin, so the two cannot both run on one response.
     app.use('/api/public', cors({ origin: '*', methods: ['GET'], credentials: false }), publicApiRoutes);
+
+    // The member badge is a picture somebody else's page loads, so it belongs
+    // on this side of the CORS line for the same reason the public API does.
+    app.use('/api/badge', cors({ origin: '*', methods: ['GET'], credentials: false }), badgeRoutes);
 
     const allowedOrigins = process.env.NODE_ENV === 'production'
         ? ['https://zeroxwork.com', 'https://www.zeroxwork.com', 'https://zerox3.zeroxwork.com']

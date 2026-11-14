@@ -1078,6 +1078,30 @@ a.uk-link-reset {
   color: var(--zx-red);
 }
 
+// the badge (ProfileBadge.tsx): the member's card as one picture, shown here
+// exactly as another site would get it, on a ground that is neither of the
+// two themes so the white card reads the same in both.
+.zx-badge-preview {
+  margin: 16px 0 18px;
+  padding: 18px;
+  border: 1px solid var(--zx-line);
+  border-radius: 14px;
+  background: var(--zx-bg-2);
+  overflow-x: auto;
+
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.zx-badge-url {
+  font-family: var(--zx-mono);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
 // cookie notice (CookieBanner.tsx); the consent script lives in index.html
 .zx-cookie {
   position: fixed;
