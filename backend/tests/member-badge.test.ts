@@ -142,7 +142,7 @@ describe('with the real fonts', () => {
         const type = await typeface();
         const measured = badgeLayout('carlosmu', type);
         // The estimate is close but not the same thing; the real one wins.
-        expect(measured.labelW).toBeCloseTo(type!.width('carlosmu', 29, 'bold'), 5);
+        expect(measured.labelW).toBeCloseTo(type!.width('carlosmu', measured.labelSize, 'bold'), 5);
         expect(measured.width).toBeGreaterThan(TEXT_X + measured.siteW);
     });
 
@@ -157,7 +157,47 @@ describe('with the real fonts', () => {
         const type = await typeface();
         const box = badgeLayout('x'.repeat(60), type);
         expect(box.width).toBe(900);
-        expect(box.labelSize).toBeLessThan(29);
+        expect(box.labelSize).toBeLessThan(badgeLayout('carlosmu', type).labelSize);
         expect(TEXT_X + box.labelW).toBeLessThanOrEqual(900 - KEPT_FOR_THE_MARK + 0.5);
+    });
+});
+
+/**
+ * opentype.js 2.0.0 rounds path coordinates by writing the number as a string
+ * and appending an exponent to it, which yields NaN for anything small enough
+ * to print as 1e-7. Whether a glyph lands on such a coordinate depends on the
+ * font size, so it showed up as a letter missing at one size and nothing wrong
+ * at the next. badge-type.ts writes the path data itself because of it; this
+ * is the net that catches it coming back.
+ */
+describe('the lettering is always drawable', () => {
+    const SIZES: number[] = [];
+    for (let size = 8; size <= 40; size += 0.25) SIZES.push(size);
+
+    it('never lands a NaN in the path data, at any size the card may use', async () => {
+        const type = await typeface();
+        const lines: Array<[string, 'bold' | 'medium']> = [
+            ['abcdefghijklmnopqrstuvwxyz0123456789-', 'bold'],
+            ['ZEROxWORK.com', 'medium'],
+            ['member-1', 'bold'],
+            ['carlosmu', 'bold'],
+        ];
+
+        for (const size of SIZES) {
+            for (const [text, weight] of lines) {
+                const line = type!.line(text, size, weight, 134, 60);
+                expect(line, `${text} at ${size}`).not.toBeNull();
+                expect(line!.d, `${text} at ${size}`).not.toContain('NaN');
+            }
+        }
+    });
+
+    it('builds a badge with nothing unreadable in it', async () => {
+        const type = await typeface();
+        for (const label of ['member-1', 'carlosmu', 'ana', 'una-handle-muy-larga-de-30c']) {
+            const svg = buildBadge({ label, avatar: photo }, MARK, type);
+            expect(svg, label).not.toContain('NaN');
+            expect(svg, label).not.toContain('undefined');
+        }
     });
 });

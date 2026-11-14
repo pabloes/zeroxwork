@@ -34,10 +34,10 @@ const RING_W = 7;
 const AVATAR_R = RING_R - RING_W;
 
 const TEXT_X = 134;
-const LABEL_SIZE = 29;
-const SITE_SIZE = 21;
+const LABEL_SIZE = 33;
+const SITE_SIZE = 24;
 /** Between the handle's baseline and the top of the caps underneath it. */
-const LINE_GAP = 10;
+const LINE_GAP = 11;
 const SITE_TEXT = 'ZEROxWORK.com';
 
 /** Cap height over em in Space Grotesk; only used when the fonts are missing. */
@@ -269,10 +269,13 @@ export function buildBadge(
     const alt = `${label} on ZEROxWORK.com`;
 
     // Outlines when we have the fonts; ordinary text, pinned to the width we
-    // guessed, when we do not.
-    const words = type
-        ? `<path d="${type.line(label, box.labelSize, 'bold', TEXT_X, box.labelBase).d}" fill="${LABEL_INK}"/>`
-          + `<path d="${type.line(SITE_TEXT, SITE_SIZE, 'medium', TEXT_X, box.siteBase).d}" fill="${SITE_INK}"/>`
+    // guessed, when we do not -- or when the shapes come back unusable.
+    const labelLine = type?.line(label, box.labelSize, 'bold', TEXT_X, box.labelBase) ?? null;
+    const siteLine = type?.line(SITE_TEXT, SITE_SIZE, 'medium', TEXT_X, box.siteBase) ?? null;
+
+    const words = labelLine && siteLine
+        ? `<path d="${labelLine.d}" fill="${LABEL_INK}"/>`
+          + `<path d="${siteLine.d}" fill="${SITE_INK}"/>`
         : `<text x="${TEXT_X}" y="${box.labelBase.toFixed(1)}" textLength="${box.labelW.toFixed(1)}"`
           + ` lengthAdjust="spacingAndGlyphs" font-family="'Space Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif"`
           + ` font-size="${box.labelSize.toFixed(1)}" font-weight="700" fill="${LABEL_INK}">${escapeXml(label)}</text>`
