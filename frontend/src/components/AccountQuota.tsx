@@ -1,43 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import UIkit from 'uikit';
-import {formatFileSize} from "../services/format-file-size";
-import {api} from "../services/axios-setup";
+import React, { useEffect, useState } from 'react';
+import { formatFileSize } from '../services/format-file-size';
+import { api } from '../services/axios-setup';
+import { useTranslation } from '../i18n';
 
-const AccountQuota: React.FC<any> = ({add = 0, changes = 0}) => {
-    const [usedQuota, setUsedQuota] = useState<number>(0);
-    const [maxQuota, setMaxQuota] = useState<number>(0);
-    const [loading, setLoading] = useState<boolean>(true);
+interface QuotaProps {
+    /** Bytes about to be uploaded, so the bar can show what they would cost. */
+    add?: number;
+    /** Bumped by whoever changed something that moves the quota. */
+    changes?: number;
+}
+
+/**
+ * How much of the image quota is gone. Shown on the account page, and again on
+ * the upload page with `add` set, where it answers the only question that
+ * matters there: does this file still fit.
+ */
+const AccountQuota: React.FC<QuotaProps> = ({ add = 0, changes = 0 }) => {
+    const { t } = useTranslation();
+    const [used, setUsed] = useState(0);
+    const [max, setMax] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [failed, setFailed] = useState(false);
 
     useEffect(() => {
-        const fetchQuota = async () => {
-            try {
-                const response = await api.get('/user/quota');
-                setUsedQuota(response.data.usedQuota);
-                setMaxQuota(response.data.maxQuota + response.data.extraQuota);
-            } catch (error) {
-                UIkit.notification({ message: 'Failed to load quota information.', status: 'danger' });
-            } finally {
-                setLoading(false);
-            }
-        };
+        let gone = false;
 
-        fetchQuota();
+        (async () => {
+            try {
+                const { data } = await api.get('/user/quota');
+                if (gone) return;
+                setUsed(data.usedQuota);
+                setMax(data.maxQuota + data.extraQuota);
+                setFailed(false);
+            } catch {
+                if (!gone) setFailed(true);
+            } finally {
+                if (!gone) setLoading(false);
+            }
+        })();
+
+        return () => { gone = true; };
     }, [changes]);
 
     if (loading) {
-        return <div>Loading quota...</div>;
+        return (
+            <section className="zx-panel">
+                <h3 className="zx-panel-title">{t('account.quota.title')}</h3>
+                <p className="zx-profile-hint">{t('account.quota.loading')}</p>
+            </section>
+        );
     }
 
+    if (failed) {
+        return (
+            <section className="zx-panel">
+                <h3 className="zx-panel-title">{t('account.quota.title')}</h3>
+                <p className="zx-profile-error">{t('account.quota.error')}</p>
+            </section>
+        );
+    }
+
+    const taken = used + add;
+    const over = taken > max;
+    // A quota of zero would otherwise read as NaN%, and nothing fits in it
+    // anyway, so it is full by definition.
+    const percent = max > 0 ? Math.min(Math.round((taken / max) * 100), 999) : 100;
+
     return (
-        <div className="uk-container">
-            <div className="uk-card uk-card-default uk-card-body">
-                <h3 className="uk-card-title">Image upload quota Information</h3>
-                <div  className={(usedQuota+add) >maxQuota?"uk-alert-danger":""}>
-                    <strong >Used Space:</strong>  {Math.floor( 100 * (usedQuota+add)/maxQuota )}% ( {formatFileSize(usedQuota+add)} / {formatFileSize( maxQuota)} )
+        <section className="zx-panel">
+            <h3 className="zx-panel-title">{t('account.quota.title')}</h3>
+            <p className="zx-panel-sub">{t('account.quota.sub')}</p>
+
+            <div className={`zx-quota${over ? ' is-over' : ''}`}>
+                <div className="zx-quota-bar">
+                    <span style={{ width: `${Math.min(percent, 100)}%` }} />
                 </div>
-                <progress style={{outline:"1px solid grey"}} className="uk-progress" value={usedQuota+add} max={maxQuota}></progress>
+                <p className="zx-quota-line">
+                    {t('account.quota.used')
+                        .replace('{percent}', String(percent))
+                        .replace('{used}', formatFileSize(taken))
+                        .replace('{max}', formatFileSize(max))}
+                </p>
+                {over && <p className="zx-profile-error">{t('account.quota.over')}</p>}
             </div>
-        </div>
+        </section>
     );
 };
 

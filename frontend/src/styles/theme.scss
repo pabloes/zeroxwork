@@ -943,16 +943,45 @@ a.uk-link-reset {
 
 /* ---------- public profile form (ProfileForm.tsx) ---------- */
 
-.zx-account-section {
-  padding-top: 24px;
-  padding-bottom: 24px;
+// /account (Account.tsx): a column of panels, each one a thing you came to
+// change. The page sets the rhythm so no block has to bring its own margins.
+.zx-account {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-top: 34px;
+  padding-bottom: 70px;
 }
 
-.zx-profile {
-  padding: 22px 24px 24px;
-  border: 1px solid var(--zx-line);
-  border-radius: 14px;
-  background: linear-gradient(180deg, var(--zx-glass), transparent);
+.zx-account-head {
+  margin-bottom: 2px;
+}
+
+.zx-account-title {
+  font-family: var(--zx-display);
+  font-weight: 600;
+  font-size: clamp(30px, 4vw, 42px);
+  letter-spacing: -.02em;
+  margin: 0 0 8px;
+}
+
+.zx-account-sub {
+  color: var(--zx-ink-dim);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 46em;
+}
+
+.zx-account-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  .zx-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+  }
 }
 
 .zx-profile-title {
@@ -1344,6 +1373,168 @@ a.uk-link-reset {
 
   .zx-panel-status {
     margin: 6px 0 0;
+  }
+}
+
+// the image quota (AccountQuota.tsx), here and on the upload page
+.zx-quota {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zx-quota-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--zx-bg-2);
+  border: 1px solid var(--zx-line-2);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--zx-spectrum);
+    transition: width .3s ease;
+  }
+}
+
+.zx-quota-line {
+  margin: 0;
+  font-family: var(--zx-mono);
+  font-size: 12.5px;
+  color: var(--zx-ink-dim);
+}
+
+.zx-quota.is-over .zx-quota-bar span {
+  background: var(--zx-red);
+}
+
+// wallets and their names (BindWallet.tsx)
+.zx-wallet-current {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+
+.zx-wallet-address {
+  font-family: var(--zx-mono);
+  font-size: 12px;
+  color: var(--zx-ink);
+  word-break: break-all;
+}
+
+.zx-wallet-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.zx-wallet {
+  border: 1px solid var(--zx-line);
+  border-radius: 12px;
+  padding: 14px 16px 16px;
+  background: var(--zx-hover);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.zx-wallet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.zx-wallet-names {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  p {
+    margin: 0;
+  }
+}
+
+.zx-wallet-kind {
+  font-family: var(--zx-mono);
+  font-size: 11.5px;
+  letter-spacing: .05em;
+  color: var(--zx-ink-faint);
+  min-width: 104px;
+}
+
+.zx-wallet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+// a name you can put on: pressed means it is the one the site shows
+.zx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border: 1px solid var(--zx-line-2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--zx-ink);
+  font-family: var(--zx-body);
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+
+  &:hover {
+    border-color: var(--zx-ink-dim);
+    background: var(--zx-hover);
+  }
+
+  &.is-on {
+    border-color: color-mix(in srgb, var(--zx-mint) 55%, transparent);
+    background: color-mix(in srgb, var(--zx-mint) 10%, transparent);
+  }
+}
+
+.zx-chip-note {
+  font-family: var(--zx-mono);
+  font-size: 10.5px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--zx-ok);
+}
+
+.zx-wallet-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--zx-line);
+
+  img {
+    border-radius: 50%;
+    border: 1px solid var(--zx-line-2);
+    background: var(--zx-bg-2);
+    object-fit: cover;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  strong {
+    font-family: var(--zx-display);
+    font-size: 19px;
+    font-weight: 600;
   }
 }
 

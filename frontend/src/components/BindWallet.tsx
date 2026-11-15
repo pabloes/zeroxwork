@@ -1,20 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAccount, useConnect, useSignMessage, useDisconnect } from 'wagmi';
 import { api } from '../services/axios-setup';
-import 'uikit/dist/css/uikit.min.css';
 import UIkit from 'uikit';
-import ConfirmActionModal from './ConfirmActionModal'; // Import the confirmation modal
+import ConfirmActionModal from './ConfirmActionModal';
 import { useQuery } from '@tanstack/react-query';
-import {OnchainKitProvider} from "@coinbase/onchainkit";
-import {base} from "viem/chains";
-import {getNameAvatarImage} from "../services/get-name-avatar-image"; // Import React Query
+import { OnchainKitProvider } from '@coinbase/onchainkit';
+import { base } from 'viem/chains';
+import { getNameAvatarImage } from '../services/get-name-avatar-image';
+import { useTranslation } from '../i18n';
 
 interface BindWalletProps {
     onAddWallet: () => void;
     onRemoveWallet: () => void;
 }
 
+/** Where a name of each kind is bought, for the member who has none yet. */
+const WHERE_TO_GET: Record<'dcl' | 'base', string> = {
+    dcl: 'https://decentraland.org/marketplace/names/claim',
+    base: 'https://www.base.org/names',
+};
+
 const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) => {
+    const { t } = useTranslation();
     const { address, isConnected } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
@@ -75,7 +82,7 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
             signMessage({ message: wanted.message });
         } catch (error) {
             console.error('Error signing message:', error);
-            UIkit.notification('Failed to bind wallet', { status: 'danger' });
+            UIkit.notification(t('account.wallet.bound_error'), { status: 'danger' });
         }
     };
 
@@ -92,12 +99,12 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
                 code: proof.code,
             });
             proofRef.current = null;
-            await UIkit.notification('Wallet bound successfully!');
+            UIkit.notification(t('account.wallet.bound_ok'), { status: 'success' });
             refetchWallets(); // Refetch wallets after binding
             if (onAddWallet) onAddWallet();
         } catch (error) {
             console.error('Failed to bind wallet', error);
-            UIkit.notification('Failed to bind wallet', { status: 'danger' });
+            UIkit.notification(t('account.wallet.bound_error'), { status: 'danger' });
         }
     };
 
@@ -111,10 +118,10 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
             setSelectedName(name); // Update selected name
             setSelectedWallet(walletAddress); // Update wallet
 
-            UIkit.notification('Default digital identity set successfully!', { status: 'success' });
+            UIkit.notification(t('account.wallet.name_ok'), { status: 'success' });
         } catch (error) {
             console.error('Failed to set default name', error);
-            UIkit.notification('Failed to set default digital identity', { status: 'danger' });
+            UIkit.notification(t('account.wallet.name_error'), { status: 'danger' });
         }
     };
 
@@ -140,132 +147,152 @@ const BindWallet: React.FC<BindWalletProps> = ({ onAddWallet, onRemoveWallet }) 
             }
 
             refetchWallets(); // Refetch the wallets after deletion
-            UIkit.notification('Wallet removed successfully!', { status: 'success' });
+            UIkit.notification(t('account.wallet.removed_ok'), { status: 'success' });
             if (onRemoveWallet) onRemoveWallet();
         } catch (error) {
             console.error('Failed to remove wallet', error);
-            UIkit.notification('Failed to remove wallet', { status: 'danger' });
+            UIkit.notification(t('account.wallet.removed_error'), { status: 'danger' });
         }
         closeDeleteWalletModal(); // Close the confirmation modal
     };
 
-    return (
+    /**
+     * The names of one kind on a wallet, each a button that makes it the public
+     * name. With none, where to get one -- which is the only useful thing to
+     * say to somebody who has just linked an empty wallet.
+     */
+    const nameGroup = (wallet: any, kind: 'dcl' | 'base') => {
+        const names = (wallet.walletNames ?? []).filter((name: any) => name.subdomain === kind);
+        const label = kind === 'dcl' ? t('account.wallet.dcl_names') : t('account.wallet.base_names');
 
-        <div className="uk-container">
+        return (
+            <div className="zx-wallet-names">
+                <span className="zx-wallet-kind">{label}</span>
+                {names.length === 0 ? (
+                    <p className="zx-profile-hint">
+                        {kind === 'dcl' ? t('account.wallet.no_dcl') : t('account.wallet.no_base')}{' '}
+                        <a href={WHERE_TO_GET[kind]} target="_blank" rel="noreferrer">
+                            {t('account.wallet.get_name')} →
+                        </a>
+                    </p>
+                ) : (
+                    <div className="zx-wallet-chips">
+                        {names.map((nameNFT: any) => {
+                            const inUse = nameNFT.id === defaultIdentity;
+                            return (
+                                <button
+                                    key={nameNFT.id}
+                                    type="button"
+                                    className={`zx-chip${inUse ? ' is-on' : ''}`}
+                                    aria-pressed={inUse}
+                                    onClick={() => setDefaultName(nameNFT.id, nameNFT.name, wallet.address)}
+                                >
+                                    {nameNFT.name}
+                                    {inUse && <span className="zx-chip-note">{t('account.wallet.in_use')}</span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <section className="zx-panel">
+            <h3 className="zx-panel-title">{t('account.wallet.title')}</h3>
+            <p className="zx-panel-sub">{t('account.wallet.sub')}</p>
+
             {!isConnected ? (
                 <button
-                    className="uk-button uk-button-primary uk-margin-small-right"
+                    type="button"
+                    className="zx-btn zx-btn-primary"
                     onClick={() => connect({ connector: connectors[0] })}
                 >
-                    Connect Wallet
+                    {t('account.wallet.connect')}
                 </button>
             ) : (
-                <>
-                    <div className="uk-card uk-card-default uk-card-body uk-margin-top">
-                        <h3 className="uk-card-title">Account Details</h3>
-                        <p>Connected as <span className="uk-label">{address}</span></p>
-                        <button
-                            className="uk-button uk-button-secondary uk-margin-small-right"
-                            onClick={handleSignMessage}
-                            disabled={isPending}
-                        >
-                            {isPending ? 'Signing...' : 'Bind Wallet'}
-                        </button>
-                        <button className="uk-button uk-button-danger" onClick={() => disconnect()}>
-                            Disconnect
-                        </button>
+                <OnchainKitProvider chain={base as any}>
+                    <div className="zx-wallet-current">
+                        <p className="zx-profile-hint">
+                            {t('account.wallet.connected_as')} <span className="zx-wallet-address">{address}</span>
+                        </p>
+                        <div className="zx-profile-actions">
+                            <button
+                                type="button"
+                                className="zx-btn zx-btn-primary"
+                                onClick={handleSignMessage}
+                                disabled={isPending}
+                            >
+                                {isPending ? t('account.wallet.signing') : t('account.wallet.bind')}
+                            </button>
+                            <button type="button" className="zx-btn zx-btn-ghost" onClick={() => disconnect()}>
+                                {t('account.wallet.disconnect')}
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="uk-card uk-card-default uk-card-body uk-margin-top">
-                        <h3 className="uk-card-title">Linked Wallets with names</h3>
-                        {isLoadingWallets ? (
-                            <p>Loading wallets...</p>
-                        ) : (
-                            <ul className="uk-list uk-list-divider">
-                                {wallets?.map((wallet: any) => (
-                                    <li key={wallet.id}>
-                                        <span className="uk-label uk-label-success">{wallet.address}</span>
+                    <h4 className="zx-security-form-title">{t('account.wallet.linked_title')}</h4>
+
+                    {isLoadingWallets && <p className="zx-profile-hint">{t('account.wallet.loading')}</p>}
+                    {!isLoadingWallets && !wallets?.length && (
+                        <p className="zx-profile-hint">{t('account.wallet.none')}</p>
+                    )}
+
+                    {!isLoadingWallets && wallets?.length > 0 && (
+                        <ul className="zx-wallet-list">
+                            {wallets.map((wallet: any) => (
+                                <li key={wallet.id} className="zx-wallet">
+                                    <div className="zx-wallet-head">
+                                        <span className="zx-wallet-address">{wallet.address}</span>
                                         <button
-                                            className="uk-icon-button uk-border-circle uk-button-danger uk-margin-left"
-                                            uk-icon="trash"
+                                            type="button"
+                                            className="zx-profile-remove"
                                             onClick={() => openDeleteWalletModal(wallet)}
-                                        ></button>
-                                        <p>
-                                            <div className="uk-card uk-card-default">
-                                                <label><b>Select Digital Identity Name:</b></label>
-                                                <br/><br/>
-                                                <div className="uk-card uk-card-default">
-                                                    <b >Decentraland names:</b>
-                                                    {wallet.walletNames?.filter((w:any)=>w.subdomain==="dcl").map((nameNFT: any) => (
-                                                    <button
-                                                        key={nameNFT.id}
-                                                        className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
-                                                        onClick={() => setDefaultName(nameNFT.id, nameNFT.name, wallet.address)}
-                                                        style={{ cursor: 'pointer', marginRight: '5px' }}
-                                                    >
-                                                        {nameNFT.name}
-                                                    </button>
-                                                    ))}
-                                                    {wallet.walletNames?.filter((w:any)=>w.subdomain==="dcl").length === 0 && <span> No Decentraland name found, get your name at <a href={"https://decentraland.org/marketplace/names/claim"}>https://decentraland.org/marketplace/names/claim</a></span>}
-                                                </div>
-                                                <br/>
-                                                <div className="uk-card uk-card-default">
-                                                    <b>Basenames:</b> {wallet.walletNames?.filter((w:any) => w.subdomain === "base").map((nameNFT: any) => (
-                                                    <button
-                                                        key={nameNFT.id}
-                                                        className={`uk-button ${nameNFT.id === defaultIdentity ? 'uk-button-primary' : 'uk-button-default'}`}
-                                                        onClick={() => setDefaultName(nameNFT.id, nameNFT.name, wallet.address)}
-                                                        style={{cursor: 'pointer', marginRight: '5px'}}
-                                                    >
-                                                        {nameNFT.name}
-                                                    </button>
-                                                ))}
-                                                    {wallet.walletNames?.filter((w:any)=>w.subdomain==="dcl").length === 0 && <span> No Basenames found, get your name at <a href={"https://www.base.org/names"}>https://www.base.org/names</a></span>}
-                                                </div>
-                                            </div>
+                                        >
+                                            {t('account.wallet.remove')}
+                                        </button>
+                                    </div>
 
+                                    <span className="zx-label">{t('account.wallet.names_label')}</span>
+                                    {nameGroup(wallet, 'dcl')}
+                                    {nameGroup(wallet, 'base')}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
 
-                                        </p>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-                    <OnchainKitProvider chain={base as any}>
-                        {/* Display the Decentraland avatar and selected name */}
-                        {selectedWallet && selectedName && (
-                            <div className="uk-card uk-card-default uk-card-body uk-margin-top uk-flex uk-flex-center uk-padding">
-                                <div className="uk-flex uk-flex-middle uk-flex-column uk-text-center">
-                                    <h3 className="uk-card-title">Digital Identity</h3>
-                                    <img
-                                        src={getNameAvatarImage({name:selectedName, address:selectedWallet})}
-                                        alt="Decentraland Avatar"
-                                        className="uk-border-circle"
-                                        style={{ width: '150px', height: '150px', marginBottom: '15px', border: '3px solid #e5e5e5' }}
-                                    />
-                                    <p className="uk-margin-top uk-text-large uk-text-bold">{selectedName}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Confirmation Modal for Deleting Wallet */}
-                        {walletToDelete && (
-                            <ConfirmActionModal
-                                show={showDeleteWalletModal}
-                                onClose={closeDeleteWalletModal}
-                                onConfirm={() => handleDeleteWallet(walletToDelete.address)}
-                                title="Confirm Wallet Deletion"
-                                message="Are you sure you want to delete this wallet? This action cannot be undone."
-                                confirmButtonText="Delete"
-                                cancelButtonText="Cancel"
-                                wordToType="delete"
+                    {selectedWallet && selectedName && (
+                        <div className="zx-wallet-identity">
+                            <img
+                                src={getNameAvatarImage({ name: selectedName, address: selectedWallet })}
+                                alt=""
+                                width={72}
+                                height={72}
                             />
-                        )}
-                    </OnchainKitProvider>
+                            <div>
+                                <span className="zx-label">{t('account.wallet.identity_title')}</span>
+                                <strong>{selectedName}</strong>
+                            </div>
+                        </div>
+                    )}
 
-                </>
+                    {/* Removing a wallet can be undone by linking it again, so it
+                        asks once and does not make anybody type a word. */}
+                    {walletToDelete && (
+                        <ConfirmActionModal
+                            show={showDeleteWalletModal}
+                            onClose={closeDeleteWalletModal}
+                            onConfirm={() => handleDeleteWallet(walletToDelete.address)}
+                            title={t('account.wallet.delete_title')}
+                            message={t('account.wallet.delete_message')}
+                            confirmButtonText={t('account.wallet.remove')}
+                            cancelButtonText={t('project.delete_cancel')}
+                        />
+                    )}
+                </OnchainKitProvider>
             )}
-        </div>
+        </section>
     );
 };
 

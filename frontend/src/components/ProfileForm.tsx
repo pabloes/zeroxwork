@@ -132,9 +132,9 @@ const ProfileForm: React.FC<{ onSaved?: () => void }> = ({ onSaved }) => {
     }
 
     return (
-        <section className="zx-profile">
-            <h3 className="zx-profile-title">{t('account.profile_title')}</h3>
-            <p className="zx-profile-hint">{t('account.profile_hint')}</p>
+        <section className="zx-panel">
+            <h3 className="zx-panel-title">{t('account.profile_title')}</h3>
+            <p className="zx-panel-sub">{t('account.profile_hint')}</p>
 
             <div className="zx-profile-grid">
                 <div className="zx-profile-avatar">

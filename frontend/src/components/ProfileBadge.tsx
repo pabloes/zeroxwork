@@ -36,7 +36,16 @@ const ProfileBadge: React.FC<{ changes?: number }> = ({ changes = 0 }) => {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    if (!me) return null;
+    // The block stays on the page while the profile is on its way: a panel that
+    // simply is not there reads as a feature that is not there.
+    if (!me) {
+        return (
+            <section className="zx-panel zx-badge">
+                <h3 className="zx-panel-title">{t('account.badge.title')}</h3>
+                <p className="zx-profile-hint">{t('common.loading')}</p>
+            </section>
+        );
+    }
 
     // The saved handle, not the one being typed next door: the badge is a file
     // other sites already hold, and it only moves when the profile is saved.
@@ -104,9 +113,9 @@ const ProfileBadge: React.FC<{ changes?: number }> = ({ changes = 0 }) => {
     };
 
     return (
-        <section className="zx-profile zx-badge">
-            <h3 className="zx-profile-title">{t('account.badge.title')}</h3>
-            <p className="zx-profile-hint">{t('account.badge.hint')}</p>
+        <section className="zx-panel zx-badge">
+            <h3 className="zx-panel-title">{t('account.badge.title')}</h3>
+            <p className="zx-panel-sub">{t('account.badge.hint')}</p>
 
             <div className="zx-badge-preview">
                 <img src={preview} alt={t('account.badge.alt')} />
