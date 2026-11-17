@@ -44,6 +44,9 @@ if (!token || !guildId || !memberRoleId) {
     process.exit(1);
 }
 
+/** The one invite there is. The website links to the same one (frontend/src/constants/links.ts). */
+const OFFICIAL_INVITE = 'https://discord.gg/MMXaM4VgWd';
+
 interface ChannelSpec {
     name: string;
     /** The name it had before; a channel still called this is renamed, never duplicated. */
@@ -91,7 +94,8 @@ const GENERAL_TOPICS: Record<WelcomeLang, string> = {
  * English is the server's first language.
  */
 const CHANNELS: ChannelSpec[] = [
-    { name: 'welcome', was: 'bienvenida', tier: 0, topic: 'What ZEROxWORK is and how to get in. Nobody from the team will ever DM you first.' },
+    // Members no longer have an Invite button, so the link to pass on is here.
+    { name: 'welcome', was: 'bienvenida', tier: 0, topic: `What ZEROxWORK is and how to get in. Nobody from the team will ever DM you first. Invite a friend: ${OFFICIAL_INVITE}` },
     { name: 'announcements', was: 'anuncios', tier: 0, topic: 'News. Only admins post here.', announcement: true },
     // The only place someone who has not linked can write: without it, a person
     // stuck at the door would have nowhere to say so.
@@ -117,8 +121,16 @@ const MEMBER_PRIVILEGES = [
     PermissionFlagsBits.EmbedLinks,
     PermissionFlagsBits.AttachFiles,
     PermissionFlagsBits.UseExternalEmojis,
-    PermissionFlagsBits.CreateInstantInvite,
 ];
+
+/**
+ * Nobody but the owner creates invites. An invite drops whoever uses it in
+ * the channel it was made from, and Discord has no setting to change that: a
+ * member's link from a chat channel lands a newcomer there, past the welcome
+ * that says how to get in. One official invite, to #welcome, is the only door,
+ * and it can be paused if a raid comes through it.
+ */
+const OWNER_ONLY = [PermissionFlagsBits.CreateInstantInvite];
 
 /** Patterns, not words: "wallet" or "airdrop" alone are normal talk here. */
 const SCAM_PATTERNS = [
@@ -199,7 +211,7 @@ async function hardenGuild(guild: Guild) {
 async function hardenRoles(guild: Guild) {
     console.log('\n[roles]');
     const everyone = guild.roles.everyone;
-    const toDeny = [...MEMBER_PRIVILEGES, PermissionFlagsBits.MentionEveryone].filter((flag) => everyone.permissions.has(flag));
+    const toDeny = [...MEMBER_PRIVILEGES, ...OWNER_ONLY, PermissionFlagsBits.MentionEveryone].filter((flag) => everyone.permissions.has(flag));
 
     if (toDeny.length) {
         plan(`@everyone loses ${toDeny.length} permission(s) including mentioning everyone and posting links`);
@@ -219,10 +231,22 @@ async function hardenRoles(guild: Guild) {
     } else if (toGrant.some((flag) => !me.permissions.has(flag))) {
         // Discord refuses to let a bot hand out permissions it does not hold
         fail(`${member.name} is missing ${toGrant.length} permission(s) the bot cannot grant because it does not hold them. `
-            + `Tick them by hand: Server Settings → Roles → ${member.name} → Embed Links, Attach Files, Use External Emoji, Create Invite.`);
+            + `Tick them by hand: Server Settings → Roles → ${member.name} → Embed Links, Attach Files, Use External Emoji.`);
     } else {
-        plan(`${member.name} gets back links, files, external emoji and invites`);
+        plan(`${member.name} gets back links, files and external emoji`);
         if (APPLY) await member.setPermissions(member.permissions.add(toGrant)).catch((e) => fail(`${member.name}: ${e.message}`));
+    }
+
+    // every role but the bot's own, which Discord manages and which never had it
+    for (const role of guild.roles.cache.values()) {
+        if (role.managed || role.id === everyone.id) continue;
+        const held = OWNER_ONLY.filter((flag) => role.permissions.has(flag));
+        if (held.length === 0) continue;
+        plan(`${role.name} loses Create Invite: invites are the owner's`);
+        if (APPLY) {
+            await role.setPermissions(role.permissions.remove(held))
+                .catch((e) => fail(`${role.name}: ${e.message}. Untick it by hand: Server Settings → Roles → ${role.name} → Create Invite.`));
+        }
     }
 }
 

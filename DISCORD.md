@@ -228,6 +228,23 @@ enough to move or rename a channel the bot cannot see, so a members-only
 channel made by hand outside a category is out of the script's reach until the
 bot is added to it.
 
+## Invites
+
+There is one invite, to `#welcome`, it does not expire, and only the owner can
+create more. That is on purpose: Discord drops whoever joins in the channel the
+invite was made from and has no setting for a default channel, so an invite
+made from any other channel lands a newcomer past the welcome that explains how
+to get in.
+
+- The website links to it (`frontend/src/constants/links.ts`), and so does the
+  topic of `#welcome`, which is where a member finds the link to pass on now
+  that they have no Invite button. The script holds the same link in
+  `OFFICIAL_INVITE`. Replace the invite and all three change.
+- Create Invite is off for `@everyone` and for ZEROxMEMBER. The script removes
+  it from `@everyone`; it cannot remove it from ZEROxMEMBER, because a bot may
+  not change a permission it does not hold itself, so that one is unticked by
+  hand in Server Settings → Roles.
+
 Join messages go to `#mod-log`: they are for the team, not a line in the
 members' chat every time somebody walks in.
 
