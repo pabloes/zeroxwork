@@ -34,8 +34,7 @@ async function getGuild() {
 }
 
 /**
- * Links touched since their last sync. Covers new links and changed grants;
- * unlinks are caught by the full reconcile, since a deleted row cannot be polled.
+ * Links touched since their last sync: new ones the queue missed. Only adds.
  */
 async function fastPass(): Promise<void> {
     const guild = await getGuild();
@@ -62,13 +61,14 @@ async function fastPass(): Promise<void> {
 
 /**
  * Drain what the website queued. This is what makes linking and unlinking feel
- * immediate; the reconcile below stays as the backstop.
+ * immediate, and it is the only place a role is ever taken away: an unlink or
+ * an edited grant, for the account the row names.
  */
 async function drainQueue(): Promise<void> {
     const jobs = await prisma.discordSyncJob.findMany({
         orderBy: { createdAt: 'asc' },
         take: 50,
-        select: { id: true, discordId: true, attempts: true },
+        select: { id: true, discordId: true, attempts: true, reason: true },
     });
     if (jobs.length === 0) return;
 
@@ -78,7 +78,7 @@ async function drainQueue(): Promise<void> {
 
     if (plan.giveUp.length) {
         await prisma.discordSyncJob.deleteMany({ where: { id: { in: plan.giveUp } } });
-        await log(`Gave up on ${plan.giveUp.length} sync job(s); the reconcile will pick them up`);
+        await log(`Gave up on ${plan.giveUp.length} sync job(s). A link among them gets its role on the next reconcile; an unlink does not lose it, and has to be taken off by hand`);
     }
     if (managed.size === 0) return;
 
@@ -92,7 +92,7 @@ async function drainQueue(): Promise<void> {
             continue;
         }
 
-        const outcome = await syncMember(member, prisma, config, managed);
+        const outcome = await syncMember(member, prisma, config, managed, plan.mayRemove.has(discordId));
         if (outcome.error) {
             await prisma.discordSyncJob.updateMany({
                 where: { id: { in: rows } },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MAX_ATTEMPTS, planJobs } from '../src/queue.js';
+import { MAX_ATTEMPTS, REMOVAL_REASONS, planJobs } from '../src/queue.js';
 
 describe('planJobs', () => {
     it('collapses several rows for the same account into one sync', () => {
@@ -45,5 +45,36 @@ describe('planJobs', () => {
             { id: 2, discordId: 'A', attempts: 0 },
         ]);
         expect(plan.discordIds).toEqual(['B', 'A']);
+    });
+
+    it('lets a role be taken away only from accounts the website said to', () => {
+        const plan = planJobs([
+            { id: 1, discordId: 'linked', attempts: 0, reason: 'linked' },
+            { id: 2, discordId: 'unlinked', attempts: 0, reason: 'unlinked' },
+            { id: 3, discordId: 'grant', attempts: 0, reason: 'grant_changed' },
+            { id: 4, discordId: 'old-row', attempts: 0 },
+            { id: 5, discordId: 'odd', attempts: 0, reason: 'something-else' },
+        ]);
+        expect([...plan.mayRemove].sort()).toEqual(['grant', 'unlinked']);
+        expect(plan.discordIds).toHaveLength(5);
+    });
+
+    it('allows it when one row among several for the account is an unlink', () => {
+        const plan = planJobs([
+            { id: 1, discordId: 'A', attempts: 0, reason: 'linked' },
+            { id: 2, discordId: 'A', attempts: 0, reason: 'unlinked' },
+        ]);
+        expect(plan.mayRemove.has('A')).toBe(true);
+    });
+
+    it('does not count a row it has given up on', () => {
+        const plan = planJobs([{ id: 1, discordId: 'A', attempts: MAX_ATTEMPTS, reason: 'unlinked' }]);
+        expect(plan.mayRemove.size).toBe(0);
+        expect(plan.giveUp).toEqual([1]);
+    });
+
+    it('treats a new link as a reason to add, never to remove', () => {
+        expect(REMOVAL_REASONS.has('linked')).toBe(false);
+        expect(REMOVAL_REASONS.has('unlinked')).toBe(true);
     });
 });

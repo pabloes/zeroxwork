@@ -1,14 +1,19 @@
 import { prisma } from '../db';
 
-/** Why a member needs looking at. Informational: the bot always recomputes from scratch. */
+/**
+ * Why a member needs looking at. It matters: the bot only takes a role away for
+ * 'unlinked' and 'grant_changed', and only from the account the row names. A
+ * role nobody queued a removal for is never touched, so one given by hand in
+ * Discord stays.
+ */
 export type SyncReason = 'linked' | 'unlinked' | 'grant_changed';
 
 /**
  * Ask the bot to re-check one Discord account.
  *
- * Never throws: queueing is a convenience on top of the periodic reconcile, so
- * a queue problem must not break linking for the person doing it. Worst case
- * the role lands on the next reconcile instead of in a few seconds.
+ * Never throws: a queue problem must not break linking for the person doing
+ * it. A link that fails to queue still gets its role on the bot's next pass.
+ * An unlink that fails to queue does not lose it: nothing else removes roles.
  */
 export async function enqueueDiscordSync(discordId: string, reason: SyncReason): Promise<void> {
     try {

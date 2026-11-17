@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BASE_ROLE_KEY, desiredRoleIds, isNoop, roleDiff } from '../src/roles.js';
+import { BASE_ROLE_KEY, desiredRoleIds, isNoop, roleDiff, withRemovalPolicy } from '../src/roles.js';
 
 const ROLE_IDS = new Map([
     [BASE_ROLE_KEY, '100'],
@@ -68,5 +68,24 @@ describe('roleDiff', () => {
     it('manages nothing when no role id is configured, so a misconfigured bot is harmless', () => {
         const diff = roleDiff(['100', MODERATOR], new Set(), new Set());
         expect(isNoop(diff)).toBe(true);
+    });
+});
+
+describe('when a role may be taken away', () => {
+    const diff = { add: ['member'], remove: ['creator'] };
+
+    it('keeps the removals when the website asked for them', () => {
+        expect(withRemovalPolicy(diff, true)).toEqual(diff);
+    });
+
+    it('drops the removals otherwise, and still adds', () => {
+        expect(withRemovalPolicy(diff, false)).toEqual({ add: ['member'], remove: [] });
+    });
+
+    it('leaves a role given by hand alone: nothing to add, nothing allowed to go', () => {
+        const managed = new Set(['member']);
+        const handGiven = roleDiff(['member'], desiredRoleIds(null, new Map([['zeroxwork', 'member']])), managed);
+        expect(handGiven.remove).toEqual(['member']);
+        expect(isNoop(withRemovalPolicy(handGiven, false))).toBe(true);
     });
 });

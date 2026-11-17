@@ -111,7 +111,8 @@ crash there must not take the website down with it.
 - Grants the base `ZEROxWORK` role to any linked member.
 - Grants the CRASH CITY roles listed for that user in `discord_role_grants`,
   which an admin fills in by hand from `/admin`.
-- Takes roles back when the link or the grant disappears.
+- Takes a role back only when the website says so: somebody unlinked, or a
+  grant was edited in `/admin`. A role given by hand in Discord is left alone.
 - Applies roles the moment a linked user joins the server.
 - Keeps the multilingual welcome message in the rules channel (see below).
 
@@ -119,17 +120,35 @@ Four passes, because each catches something the others cannot:
 
 | Pass | When | Catches |
 |---|---|---|
-| queue | every 5 seconds | what the website just did: link, unlink, grant change |
+| queue | every 5 seconds | what the website just did: link, unlink, grant change. The only pass that removes a role |
 | `guildMemberAdd` | on join | someone who linked before joining |
-| fast pass | every 5 minutes | new links and changed grants the queue missed |
-| full reconcile | every 15 minutes, and at boot | unlinks, manual role edits, anything missed |
+| fast pass | every 5 minutes | new links the queue missed. Adds only |
+| full reconcile | every 15 minutes, and at boot | a link made while the bot was down. Adds only |
 
 The queue is the `discord_sync_jobs` table: the website writes a row, the bot
 drains it. It is what makes linking feel immediate; the other passes are the
 backstop for a row that never got written.
 
-The unlink case is why the full reconcile exists: a deleted row leaves nothing
-to poll for, so roles are reconciled against the member list instead.
+### When a role is taken away
+
+Only when the website queued it, for the account the row names: reason
+`unlinked` or `grant_changed`. The periodic passes add what is missing and
+never remove.
+
+It was not always so. The full reconcile used to strip the member role from
+anybody without a link, to catch unlinks the queue had missed, and that also
+undid every role the owner gave by hand to somebody who had not linked. A bot
+that takes away what the owner just gave is working against its own server.
+
+The price is that an unlink nobody queued leaves the role in place. So the
+website does not rely on each route remembering to queue it: the database
+client is watched (`backend/src/services/discord-unlink-watch.ts`, wired in
+`backend/src/db/index.ts`), and a row is written whenever a link goes away, by
+whatever road: the unlink button, a link or a user deleted in `/admin`, a
+script, or the same user linking a different Discord account, which leaves the
+old one without.
+
+To take the role from somebody who never linked, remove it by hand in Discord.
 
 ## The safety rule
 

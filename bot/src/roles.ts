@@ -2,8 +2,16 @@
  * Role decisions, with no network and no database: everything here is a pure
  * function of the state passed in, which is what makes it testable.
  *
- * The rule that matters: the bot only ever removes roles it manages. A member's
- * moderator role, or anything handed out by another bot, is invisible to it.
+ * Two rules that matter.
+ *
+ * The bot only ever touches roles it manages. A member's moderator role, or
+ * anything handed out by another bot, is invisible to it.
+ *
+ * And it only takes a role away when the website says something changed for
+ * that person: they unlinked, or a grant was edited. It never removes one just
+ * because it cannot tell why the member has it. The owner gives the member
+ * role by hand to people who have not linked, and a bot that undid that every
+ * quarter of an hour was a bot working against its own server.
  */
 
 export interface LinkState {
@@ -20,8 +28,9 @@ export interface RoleDiff {
 export const BASE_ROLE_KEY = 'zeroxwork';
 
 /**
- * Which Discord role ids a member should end up with.
- * No link means no roles: that is what makes unlinking revoke them.
+ * Which Discord role ids the website says a member should have.
+ * No link means none. Whether the ones they hold beyond that are taken away
+ * is a separate decision: see withRemovalPolicy.
  */
 export function desiredRoleIds(link: LinkState | null | undefined, roleIds: Map<string, string>): Set<string> {
     const desired = new Set<string>();
@@ -57,6 +66,14 @@ export function roleDiff(currentRoleIds: Iterable<string>, desired: Set<string>,
     }
 
     return { add, remove };
+}
+
+/**
+ * Removals only go through when something on the website asked for them.
+ * Additions always do: a link that the bot missed is still a link.
+ */
+export function withRemovalPolicy(diff: RoleDiff, mayRemove: boolean): RoleDiff {
+    return mayRemove ? diff : { add: diff.add, remove: [] };
 }
 
 export function isNoop(diff: RoleDiff): boolean {

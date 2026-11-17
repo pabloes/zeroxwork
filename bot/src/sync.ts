@@ -1,6 +1,6 @@
 import { Guild, GuildMember, PermissionFlagsBits } from 'discord.js';
 import type { PrismaClient } from './db';
-import { desiredRoleIds, isNoop, roleDiff, type RoleDiff } from './roles';
+import { desiredRoleIds, isNoop, roleDiff, withRemovalPolicy, type RoleDiff } from './roles';
 import type { BotConfig } from './config';
 
 export interface SyncOutcome {
@@ -41,13 +41,18 @@ export function hasRolePermission(guild: Guild): boolean {
 }
 
 /**
- * Bring one member in line with the database.
+ * Give one member the roles the database says they should have.
+ *
+ * `mayRemove` is false unless the website queued an unlink or a grant change
+ * for this very person. Without it nothing is taken away, so a role the owner
+ * gave by hand stays.
  */
 export async function syncMember(
     member: GuildMember,
     prisma: PrismaClient,
     config: BotConfig,
     managed: Set<string>,
+    mayRemove = false,
 ): Promise<SyncOutcome> {
     const link = await prisma.discordLink.findUnique({
         where: { discordId: member.id },
@@ -59,7 +64,7 @@ export async function syncMember(
         config.roleIds,
     );
 
-    const diff = roleDiff(member.roles.cache.keys(), desired, managed);
+    const diff = withRemovalPolicy(roleDiff(member.roles.cache.keys(), desired, managed), mayRemove);
     const outcome: SyncOutcome = { discordId: member.id, applied: { add: [], remove: [] }, skipped: [] };
 
     if (isNoop(diff)) {
@@ -93,9 +98,12 @@ async function touchSynced(prisma: PrismaClient, linkId: number): Promise<void> 
 }
 
 /**
- * Walk every member of the guild. This is the pass that catches unlinks: a
- * deleted row leaves no trace to poll for, so the roles are reconciled from the
- * member list instead.
+ * Walk every member of the guild and give out what is missing: a link made
+ * while the bot was down, a queue row that never got written.
+ *
+ * It never takes a role away. It used to, to catch unlinks the queue missed,
+ * and in doing so it stripped the member role from anybody the owner had let
+ * in by hand. Removals now come only from the queue.
  */
 export async function reconcileGuild(
     guild: Guild,
