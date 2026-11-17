@@ -12,15 +12,16 @@ interface Props {
 }
 
 /**
- * Who made a project, as chips with a face.
+ * Who made something, as chips with a face.
  *
  * Underlined names in a row read as a bibliography; a project is made by
  * people, and people have faces. Somebody with an account gets their photo and
  * an arrow to their page; somebody credited by name alone gets a disc with
  * their initials and no arrow, because a link to nowhere is worse than none.
  *
- * Articles keep CreditList: an article has an author and a byline reads right
- * there. This is for the project page, where the list is the point.
+ * The project page lists its people this way, and the article page uses the
+ * same chip twice: once for the author in the byline, once for whoever else
+ * is credited.
  */
 const MemberList: React.FC<Props> = ({ members, linked = true }) => {
     if (members.length === 0) return null;

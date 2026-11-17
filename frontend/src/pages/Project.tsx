@@ -5,6 +5,7 @@ import { useProject } from "../services/use-projects";
 import PageTitle from "../components/PageTitle";
 import ProjectGallery from "../components/ProjectGallery";
 import MemberList from "../components/MemberList";
+import FichaSlot from "../components/FichaSlot";
 import { statusKey } from "../services/project-fields";
 
 /** The year range a project ran for, or nothing when neither date is set. */
@@ -14,16 +15,6 @@ function years(startedAt: string | null, endedAt: string | null): string | null 
     if (from && to) return from === to ? `${from}` : `${from}–${to}`;
     return from ? `${from}–` : to ? `${to}` : null;
 }
-
-/** One block of the ficha. Rendered only when it has something in it. */
-const Slot: React.FC<{ label: string; note?: string | null; children: React.ReactNode }> =
-    ({ label, note, children }) => (
-        <div className="zx-ficha-slot">
-            <p className="zx-ficha-label">{label}</p>
-            {children}
-            {note && <p className="zx-ficha-note">{note}</p>}
-        </div>
-    );
 
 /**
  * One portfolio item at /portfolio/<slug>, or /portfolio/<id>, which always
@@ -64,37 +55,37 @@ const ProjectPage: React.FC = () => {
     // Built as a list so the count can decide the layout further down.
     const slots = [
         project.members.length > 0 && (
-            <Slot
+            <FichaSlot
                 key="credits"
                 label={t('project.credits')}
                 note={project.members.length > 1 ? t('project.credits_order') : null}
             >
                 <MemberList members={project.members} />
-            </Slot>
+            </FichaSlot>
         ),
         project.tags.length > 0 && (
-            <Slot key="tags" label={t('project.tags')}>
+            <FichaSlot key="tags" label={t('project.tags')}>
                 <div className="zx-pcard-chips">
                     {project.tags.map((tag) => (
                         <span className="zx-chip" key={tag.id}>{tag.name}</span>
                     ))}
                 </div>
-            </Slot>
+            </FichaSlot>
         ),
         ran && (
-            <Slot key="period" label={t('project.period')}>
+            <FichaSlot key="period" label={t('project.period')}>
                 <p className="zx-ficha-fact">{ran}</p>
-            </Slot>
+            </FichaSlot>
         ),
         status && (
-            <Slot key="state" label={t('project.state')}>
+            <FichaSlot key="state" label={t('project.state')}>
                 <div className="zx-pcard-chips">
                     <span className={`zx-chip zx-chip--${project.status}`}>{t(status)}</span>
                 </div>
-            </Slot>
+            </FichaSlot>
         ),
         links && (
-            <Slot key="links" label={t('project.links')}>
+            <FichaSlot key="links" label={t('project.links')}>
                 <div className="zx-ficha-btns">
                     {project.siteUrl && (
                         <a
@@ -117,7 +108,7 @@ const ProjectPage: React.FC = () => {
                         </a>
                     )}
                 </div>
-            </Slot>
+            </FichaSlot>
         ),
     ].filter(Boolean);
 

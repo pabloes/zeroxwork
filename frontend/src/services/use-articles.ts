@@ -32,6 +32,8 @@ export interface Article {
     authorDisplayName?: string | null;
     /** Optional avatar the author uploaded on /account. */
     authorAvatar?: string | null;
+    /** The author's member handle, when they picked one: /member/<handle>. */
+    authorHandle?: string | null;
     tags?: ArticleTag[];
     /** Everyone credited on the work, in display order. Projects use this. */
     credits?: ArticleCredit[];

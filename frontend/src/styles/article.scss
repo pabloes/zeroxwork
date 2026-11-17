@@ -1,0 +1,88 @@
+// The article page, at /view-article/<slug>.
+//
+// Most of what that page looks like is not here: it wears the portfolio's
+// layout (cover, two columns, ficha, person chips) with the portfolio's own
+// classes, from portfolio.scss, because an article and a project are the same
+// shape of page and one set of rules is easier to keep honest than two that
+// drift apart. This file holds only what an article has and a project does
+// not: the byline, the notices above the title, and the donation slot.
+
+/* ------------------------------------------------------------- byline ---- */
+
+// Who and when, right under the title. The who is a person chip, the same one
+// the portfolio uses for its credits; the dates sit beside it in mono.
+.zx-byline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    font-family: var(--zx-mono);
+    font-size: 11.5px;
+    letter-spacing: .06em;
+    color: var(--zx-ink-faint);
+    margin: 0 0 26px;
+}
+
+// Smaller and quieter than the publication date: it is a footnote to it.
+.zx-byline-upd {
+    font-size: 10px;
+    text-transform: uppercase;
+    opacity: .85;
+}
+
+/* ------------------------------------------------------------ notices ---- */
+
+// One line above the title: this is a draft, this is a translation, there is
+// one in your language. A rule on the left instead of a filled box, so three
+// of them stacked do not outweigh the article they sit on.
+.zx-note {
+    border: 1px solid var(--zx-line);
+    border-left: 3px solid var(--zx-cyan);
+    background: var(--zx-surface);
+    color: var(--zx-ink-dim);
+    font-size: 13.5px;
+    line-height: 1.45;
+    padding: 10px 14px;
+    margin: 0 0 12px;
+
+    // The link is the whole point of the notice, so it has to read as one in
+    // both themes without leaning on an underline.
+    a {
+        color: var(--zx-cyan);
+        font-weight: 600;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    &.zx-note--draft {
+        border-left-color: var(--zx-orange);
+
+        a {
+            color: var(--zx-orange);
+        }
+    }
+}
+
+/* --------------------------------------------------------------- body ---- */
+
+// The portfolio caps its paragraphs at a readable measure and leaves lists
+// alone, because a project write-up is prose. An article can be mostly lists
+// -- a set of rules is nothing else -- and when the ficha becomes a strip the
+// text has the whole page to run across.
+.zx-article-body li {
+    max-width: 66ch;
+}
+
+/* ----------------------------------------------------------- donation ---- */
+
+// A slot of the ficha, so it brings no box of its own.
+.zx-donate {
+    font-size: 13px;
+    color: var(--zx-ink-dim);
+    // A connected wallet prints its address here: one 42-character word that
+    // would otherwise push the column wider than the ficha.
+    overflow-wrap: anywhere;
+}

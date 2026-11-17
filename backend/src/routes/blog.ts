@@ -75,6 +75,9 @@ const authorFields = (user: any) => ({
     // Discord or on-chain one, so no byline has to read "Anonymous".
     authorDisplayName: user ? resolvePublicName(user) : null,
     authorAvatar: user?.avatarUrl || null,
+    // What turns the byline into a link to /member/<handle>. Null for an author
+    // who never picked one, and the page then shows the name without a link.
+    authorHandle: user?.handle ?? null,
 });
 
 /**
