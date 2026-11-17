@@ -4,13 +4,13 @@
  */
 /**
  * Tiene que ser una invitacion a #welcome. Discord deja a quien entra en el
- * canal de la invitacion que uso, y la anterior llevaba a #help: la gente
- * aterrizaba ahi, sin el mensaje que explica como registrarse y vincular la
- * cuenta, y parecia que el servidor no hacia nada.
+ * canal de la invitacion que uso, y no hay ajuste del servidor que lo cambie:
+ * una que llevaba a #help dejaba a la gente en un canal vacio, sin el mensaje
+ * que explica como registrarse y vincular la cuenta.
  *
- * Esta CADUCA el 17 de diciembre de 2026. Cuando haya una que no caduque
- * (clic derecho en #welcome > Invitar > Editar enlace > No caduca nunca),
- * se cambia aqui y nada mas.
+ * Esta no caduca ni tiene limite de usos. Si se borra en Discord, el enlace
+ * del pie y de la portada se rompe: hay que crear otra a #welcome y ponerla
+ * aqui.
  */
-export const DISCORD_INVITE_URL = 'https://discord.gg/sea6AqWw4';
+export const DISCORD_INVITE_URL = 'https://discord.gg/MMXaM4VgWd';
 export const X_PROFILE_URL = 'https://x.com/zeroxwork';
