@@ -22,6 +22,7 @@ import discordRoutes from "./routes/discord";
 import speedtestRoutes from "./routes/speedtest";
 import logsRoutes from "./routes/logs";
 import adminBackupRoutes from "./routes/admin-backup";
+import { socialPreview } from "./routes/social-preview.js";
 import { ROLE } from './constants/roles';
 import { installConsoleCapture } from './services/log-store';
 import requestLogger from './middleware/requestLogger';
@@ -128,6 +129,13 @@ const run = async () => {
     const frontendDistPath = path.join(__dirname, '../../frontend/dist');
 
     app.use(express.static(frontendDistPath));
+
+    // El index.html con las etiquetas OpenGraph de la pieza que se pide, para
+    // que un enlace compartido no se vea siempre con el logo de la portada.
+    // Aqui y no antes: /portfolio/<algo>.jpg es un fichero de verdad y lo tiene
+    // que servir el estatico. Lo que no tenga pieza detras cae al comodin.
+    app.use(socialPreview(path.join(frontendDistPath, 'index.html')));
+
     app.get('*', (req, res) => {
         console.log("*", req.hostname, req.url)
         res.sendFile(path.join(frontendDistPath, 'index.html'));
