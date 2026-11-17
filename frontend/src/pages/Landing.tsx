@@ -7,6 +7,8 @@ import { useProjects } from "../services/use-projects";
 import ArticleCard from "../components/ArticleCard";
 import ProjectCard from "../components/ProjectCard";
 import ZxMark from "../components/ZxMark";
+import DiscordIcon from "../components/DiscordIcon";
+import { DISCORD_INVITE_URL } from "../constants/links";
 
 // one row each: the rest lives on /portfolio and /blog
 const PROJECTS_IN_ROW = 3;
@@ -255,9 +257,20 @@ const Landing: React.FC = () => {
                                 {t('landing.cta_title_b')} <span className="zx-spectrum-text">{t('landing.cta_title_accent')}</span>
                             </h2>
                             <p>{t('landing.cta_text')}</p>
-                            <Link className="zx-btn zx-btn-primary" to="/register">
-                                {t('landing.cta_button')} <span className="arr">→</span>
-                            </Link>
+                            <div className="zx-cta-row zx-cta-row-center">
+                                <Link className="zx-btn zx-btn-primary" to="/register">
+                                    {t('landing.cta_button')} <span className="arr">→</span>
+                                </Link>
+                                <a
+                                    className="zx-btn zx-btn-ghost"
+                                    href={DISCORD_INVITE_URL}
+                                    target="_blank"
+                                    rel="noreferrer noopener"
+                                >
+                                    <DiscordIcon size={18} />
+                                    {t('landing.cta_discord')}
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </section>

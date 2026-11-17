@@ -76,6 +76,11 @@
   align-items: center;
 }
 
+/* en el cierre la caja va centrada, asi que los botones tambien */
+.zx-cta-row-center {
+  justify-content: center;
+}
+
 .zx-hero-visual {
   position: relative;
   display: flex;
