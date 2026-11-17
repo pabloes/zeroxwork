@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import {api} from "../../services/axios-setup";
-import {useParams, Link} from 'react-router-dom';
+import {useParams, useLocation, Link, Navigate} from 'react-router-dom';
 import PageTitle from "../../components/PageTitle";
 import {useAuth} from "../../context/AuthContext";
 import {useQuery} from "@tanstack/react-query";
@@ -26,7 +26,22 @@ const LANG_NAMES: Record<string, string> = {
 };
 
 /**
+ * Crawlers that run JavaScript. They are never sent to another language: most
+ * of them browse "in English" whatever they are reading, so redirecting them
+ * would turn every translation into a redirect to the original, and a search
+ * engine drops a URL that only redirects. Each language has to stay reachable
+ * at its own address for them.
+ */
+const IS_CRAWLER = /bot|crawl|spider|slurp|facebookexternalhit|preview/i.test(navigator.userAgent);
+
+/**
  * One article at /view-article/<slug>, or /view-article/<id>.
+ *
+ * A slug belongs to one language, and a link is usually shared by somebody
+ * who reads another: the reader is taken to the article in their own language
+ * when it exists (see the redirect below). /view-article/<id> is the article
+ * as it was written and never redirects -- the API sends no language map for
+ * it -- which is what the author's own pages link to.
  *
  * It wears the portfolio page's layout on purpose: cover first, then the
  * write-up beside a ficha of facts, with the same classes (portfolio.scss).
@@ -42,6 +57,7 @@ const ArticlePage: React.FC = () => {
     const {user} = useAuth();
     const {t, lang} = useTranslation();
     const {id} = useParams<{ id: string }>();
+    const location = useLocation();
     // Fetch the article using useQuery
     const { data: article } = useQuery({
         queryKey: ['article', id], // Unique key based on the article ID
@@ -64,6 +80,30 @@ const ArticlePage: React.FC = () => {
     // Find if there's a translation in user's language
     const userLangTranslation = hreflang.find((h) => h.lang === userLang);
     const showTranslationAvailable = article.lang !== userLang && userLangTranslation;
+
+    // Arriving at the article in a language that is not the reader's -- a link
+    // from X, from Discord, from somebody who reads something else -- goes to
+    // the reader's own, when there is one. `replace`, so Back leaves the
+    // article instead of bouncing off the redirect, and the query and the hash
+    // travel along so a campaign link keeps its tags.
+    //
+    // Two readers stay where they are. One asked for this language on purpose,
+    // by following "the original is in..." from a translation: that link says
+    // so in its state, and says for which interface language, so changing
+    // language afterwards redirects again. The other is a crawler.
+    const keptOnPurpose = location.state?.keepLang === userLang;
+    if (showTranslationAvailable && userLangTranslation.slug !== id && !keptOnPurpose && !IS_CRAWLER) {
+        return (
+            <Navigate
+                to={{
+                    pathname: `/view-article/${userLangTranslation.slug}`,
+                    search: location.search,
+                    hash: location.hash,
+                }}
+                replace
+            />
+        );
+    }
 
     // Check if this is a translation
     const {isTranslation, originalLang, originalSlug} = article;
@@ -140,7 +180,9 @@ const ArticlePage: React.FC = () => {
             )}
 
             {/* Language notices. The link is the language's own name, so the
-                sentence before it needs no placeholder to be translated. */}
+                sentence before it needs no placeholder to be translated. The
+                first one is only ever seen by a reader who chose to stay on
+                another language: everybody else was redirected above. */}
             {showTranslationAvailable && (
                 <div className="zx-note">
                     {t('article.translation_available')}{' '}
@@ -153,7 +195,9 @@ const ArticlePage: React.FC = () => {
             {isTranslation && originalLang && originalSlug && originalLang !== userLang && (
                 <div className="zx-note">
                     {t('article.is_translation')}{' '}
-                    <Link to={`/view-article/${originalSlug}`}>
+                    {/* The state is what stops the redirect from sending the
+                        reader straight back here. */}
+                    <Link to={`/view-article/${originalSlug}`} state={{ keepLang: userLang }}>
                         {LANG_NAMES[originalLang] || originalLang}
                     </Link>
                 </div>
