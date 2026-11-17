@@ -212,8 +212,7 @@ everybody.
 | `#welcome`, `#announcements` | everyone | admins |
 | | | `#announcements` is an announcement channel: other servers can follow it |
 | `#help` | everyone | everyone, 30 s slowmode |
-| `#🇬🇧-general`, `#🇪🇸-general`, `#🇧🇷-general`, `#🇨🇳-general`, `#🇫🇷-general` | everyone | ZEROxMEMBER |
-| ZEROxWORK (`#tools`, `#projects`, `#feedback`), ZEROxPLAY, voice | ZEROxMEMBER | ZEROxMEMBER |
+| General (`#🇬🇧-general`, `#🇪🇸-general`, `#🇧🇷-general`, `#🇨🇳-general`, `#🇫🇷-general`), ZEROxWORK (`#tools`, `#projects`, `#feedback`), ZEROxPLAY, voice | ZEROxMEMBER | ZEROxMEMBER |
 | `#mod-log` | staff and the bot | staff and the bot |
 
 `#help` is the only place someone without the role can write, so that a person
@@ -221,8 +220,13 @@ who cannot get in has somewhere to say so. AutoMod blocks links there for
 anyone without ZEROxMEMBER. The flags are the ones of the website's language
 selector.
 
-`#tools`, `#projects` and `#feedback` carry no permissions of their own: they
-stay in sync with the ZEROxWORK category, which is where who gets in is set.
+Somebody who has not linked sees three channels: `#welcome`, `#announcements`
+and `#help`. The language channels were readable by everyone at first, and a
+newcomer took five chats they could not write in for the server itself.
+
+The channels of the General and ZEROxWORK categories carry no permissions of
+their own: they stay in sync with their category, which is where who gets in
+is set.
 The category lets the bot in by name. That matters: Manage Channels is not
 enough to move or rename a channel the bot cannot see, so a members-only
 channel made by hand outside a category is out of the script's reach until the

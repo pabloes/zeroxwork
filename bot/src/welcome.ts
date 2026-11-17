@@ -27,8 +27,8 @@ export const LANG_FLAGS: Record<WelcomeLang, string> = {
 };
 
 /**
- * Each language has its own general channel, told apart by its flag. Everyone
- * can read them; only linked members write.
+ * Each language has its own general channel, told apart by its flag. They are
+ * for linked members: somebody who has not linked does not see them.
  */
 export function generalChannelName(lang: WelcomeLang): string {
     return `${LANG_FLAGS[lang]}-general`;

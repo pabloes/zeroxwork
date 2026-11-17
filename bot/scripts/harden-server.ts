@@ -51,11 +51,9 @@ interface ChannelSpec {
     name: string;
     /** The name it had before; a channel still called this is renamed, never duplicated. */
     was?: string;
-    tier: 0 | 1 | 2 | 3 | 4;
+    tier: 0 | 1 | 2 | 3;
     /** null: whatever topic the channel has is left alone. */
     topic: string | null;
-    /** Created next to the first open channel, in its category. */
-    lobby?: boolean;
     /**
      * An announcement channel: other servers can follow it, and a post reaches
      * them once published. Only Community servers have the type.
@@ -74,22 +72,19 @@ interface ChannelSpec {
  * is let in by name so it can keep the channels in order: Manage Channels is
  * not enough on a channel it cannot see.
  */
-const CATEGORIES = ['ZEROxWORK'] as const;
+const CATEGORIES = ['General', 'ZEROxWORK'] as const;
 
-/**
- * Each in its own language. Whoever has not linked reads these channels without
- * being able to write, and the topic is where they find out why.
- */
+/** Each in its own language. Only members see them, so there is nothing to explain about getting in. */
 const GENERAL_TOPICS: Record<WelcomeLang, string> = {
-    en: 'General chat in English. To write here, link your account at zeroxwork.com/account.',
-    es: 'Chat general en español. Para escribir aquí, vincula tu cuenta en zeroxwork.com/account.',
-    'pt-br': 'Chat geral em português. Para escrever aqui, vincule sua conta em zeroxwork.com/account.',
-    zh: '中文综合聊天。要在这里发言，请先在 zeroxwork.com/account 绑定账号。',
-    fr: 'Discussion générale en français. Pour écrire ici, liez votre compte sur zeroxwork.com/account.',
+    en: 'General chat in English.',
+    es: 'Chat general en español.',
+    'pt-br': 'Chat geral em português.',
+    zh: '中文综合聊天。',
+    fr: 'Discussion générale en français.',
 };
 
 /**
- * Tiers 0, 1 and 4 are visible to everyone; tier 2 is the reason to link.
+ * Tiers 0 and 1 are visible to everyone; tier 2 is the reason to link.
  * Names and topics are in English: a channel has one name for everybody, and
  * English is the server's first language.
  */
@@ -100,14 +95,17 @@ const CHANNELS: ChannelSpec[] = [
     // The only place someone who has not linked can write: without it, a person
     // stuck at the door would have nowhere to say so.
     { name: HELP_CHANNEL_NAME, tier: 1, topic: 'Trouble linking your account or getting in? Ask here, in any language.' },
-    // A general channel per language. Everyone reads, linked members write.
+    // A general channel per language, for members only: somebody who has not
+    // linked sees the welcome, the announcements and #help, and nothing else.
+    // They were readable by everyone at first, and a newcomer took five chats
+    // they could not write in for the server itself.
     // English keeps the channel that used to be the only #general.
     ...WELCOME_LANGS.map((lang): ChannelSpec => ({
         name: generalChannelName(lang),
         ...(lang === 'en' ? { was: 'general' } : {}),
-        tier: 4,
+        tier: 2,
         topic: GENERAL_TOPICS[lang],
-        lobby: true,
+        category: 'General',
     })),
     // in the order they are listed in the server
     { name: 'tools', was: 'herramientas', tier: 2, topic: 'The community\'s tools.', category: 'ZEROxWORK' },
@@ -331,18 +329,10 @@ async function hardenChannels(guild: Guild) {
     // tier 1: everyone reads and writes, slowed down
     // tier 2: members only
     // tier 3: staff and the bot, which posts the AutoMod alerts there
-    // tier 4: everyone reads, members write
     const desiredFor = (tier: number): { desired: Desired[]; slowmode: number } => {
         switch (tier) {
             case 0: return { desired: [{ ...everyone, set: { SendMessages: false } }], slowmode: 0 };
             case 1: return { desired: [], slowmode: 30 };
-            case 4: return {
-                desired: [
-                    { ...member, set: { SendMessages: true } },
-                    { ...everyone, set: { SendMessages: false } },
-                ],
-                slowmode: 0,
-            };
             case 2: return {
                 desired: [
                     { ...member, set: { ViewChannel: true, SendMessages: true } },
@@ -371,12 +361,6 @@ async function hardenChannels(guild: Guild) {
     }
     const canAnnounce = guild.features.includes(GuildFeature.Community);
 
-    // The language channels sit together, in whatever category the first one is in.
-    const firstLobby = CHANNELS.find((spec) => spec.lobby);
-    const lobbyParentId = firstLobby
-        ? (textByName.get(firstLobby.name) ?? (firstLobby.was ? textByName.get(firstLobby.was) : undefined))?.parentId ?? null
-        : null;
-
     // Categories first: the channels below are moved into them and take their permissions.
     const categories = new Map<string, CategoryChannel>();
     for (const name of CATEGORIES) {
@@ -400,6 +384,17 @@ async function hardenChannels(guild: Guild) {
             }
         } else {
             await reconcileChannel(category, `category ${name}`, closed, 0);
+            // Read it back before any channel copies from it. Syncing a channel
+            // takes the category's permissions as this process remembers them,
+            // and what it remembers only changes when Discord's own notice
+            // arrives. Once it had not yet: the first channel copied an empty
+            // set and was left open to everyone until the next run.
+            if (APPLY) {
+                category = await guild.channels.fetch(category.id, { force: true })
+                    .then((fresh) => (fresh?.type === ChannelType.GuildCategory ? fresh : undefined))
+                    .catch(() => undefined);
+                if (!category) fail(`category ${name}: could not be read back; its channels were left as they are`);
+            }
         }
         if (category) categories.set(name, category);
     }
@@ -412,13 +407,13 @@ async function hardenChannels(guild: Guild) {
         const home = spec.category ? categories.get(spec.category) : undefined;
 
         if (!found) {
-            plan(`create #${spec.name} (${['escaparate', 'abierto', 'miembros', 'staff', 'leen todos, escriben miembros'][spec.tier]})`);
+            plan(`create #${spec.name} (${['escaparate', 'abierto', 'miembros', 'staff'][spec.tier]})`);
             if (APPLY) {
                 await guild.channels.create({
                     name: spec.name,
                     type: asAnnouncement ? ChannelType.GuildAnnouncement : ChannelType.GuildText,
                     topic: spec.topic ?? undefined,
-                    parent: home ? home.id : spec.lobby ? lobbyParentId : null,
+                    parent: home ? home.id : null,
                     ...(asAnnouncement ? {} : { rateLimitPerUser: slowmode }),
                     // inside a category it inherits; rules of its own would take it out of sync
                     ...(home ? {} : { permissionOverwrites: toCreateOverwrites(desired) }),
@@ -466,6 +461,13 @@ async function hardenChannels(guild: Guild) {
                 }).catch((e) => { fail(`#${found!.name}: ${e.message}`); return null; });
                 // the type change hands back a different object; the rest works on that one
                 if (edited) found = edited;
+                // not taken on trust: see the note where the category is read back
+                if (edited && move && home) {
+                    const fresh = await guild.channels.fetch(found.id, { force: true }).catch(() => null);
+                    if (!fresh || !('permissionsLocked' in fresh) || !fresh.permissionsLocked) {
+                        fail(`#${spec.name}: did not end up in sync with ${spec.category}. Run this again and check who can see it.`);
+                    }
+                }
             }
         }
 
@@ -511,6 +513,36 @@ async function hardenChannels(guild: Guild) {
             { ...everyone, set: { ViewChannel: false, SendMessages: null } },
         ], 0);
     }
+}
+
+/**
+ * The check that does not depend on how we got here: what can somebody with no
+ * role at all see and write in, right now? Anything outside the short list of
+ * public channels must be invisible to them, whoever made it and however.
+ */
+async function checkDoors(guild: Guild) {
+    console.log('\n[puertas]');
+    const everyone = guild.roles.everyone;
+    const fresh = await guild.channels.fetch(undefined, { force: true });
+    const publicTier = new Map(CHANNELS.filter((spec) => spec.tier <= 1).map((spec) => [spec.name, spec.tier]));
+    let wrong = 0;
+
+    for (const channel of fresh.values()) {
+        if (!channel || channel.type === ChannelType.GuildCategory) continue;
+        const can = channel.permissionsFor(everyone);
+        const sees = can.has(PermissionFlagsBits.ViewChannel);
+        const writes = sees && can.has(PermissionFlagsBits.SendMessages);
+        const tier = publicTier.get(channel.name);
+
+        const problem = tier === undefined
+            ? (sees ? `is visible to somebody without the role${writes ? ', who can also write in it' : ''}` : null)
+            : !sees ? 'is hidden from newcomers and should not be'
+            : tier === 0 && writes ? 'lets anybody write and should be read-only'
+            : tier === 1 && !writes ? 'does not let newcomers write and should'
+            : null;
+        if (problem) { wrong++; fail(`#${channel.name} ${problem}`); }
+    }
+    if (wrong === 0) ok(`without the role: ${[...publicTier.keys()].map((name) => `#${name}`).join(', ')} and nothing else`);
 }
 
 async function hardenAutoMod(guild: Guild) {
@@ -609,6 +641,9 @@ client.once('clientReady', async () => {
         await hardenRoles(guild);
         await hardenChannels(guild);
         await hardenAutoMod(guild);
+        // In a dry run with changes pending the doors are, by definition, not
+        // yet as wanted: checking them would only repeat the plan as failures.
+        if (APPLY || changes.length === 0) await checkDoors(guild);
 
         console.log(`\n${APPLY ? 'applied' : 'would change'}: ${changes.length} | already fine: ${skipped.length} | failed: ${failures.length} | by hand: ${manual.length}`);
         if (manual.length) console.log(`To do by hand, the bot cannot see these channels:\n${manual.map((line) => `  - ${line}`).join('\n')}`);
