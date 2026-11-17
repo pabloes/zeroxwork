@@ -769,6 +769,17 @@ a:hover {
         color: var(--zx-ink);
       }
     }
+
+    /* los enlaces con marca llevan su icono pegado al texto */
+    a.zx-foot-social {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+
+      svg {
+        flex: none;
+      }
+    }
   }
 
   .zx-foot-c {

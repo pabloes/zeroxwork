@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from "../i18n";
 import ZxMark from "./ZxMark";
+import DiscordIcon from "./DiscordIcon";
+import { DISCORD_INVITE_URL, X_PROFILE_URL } from "../constants/links";
 
 const Footer: React.FC = () => {
     const { t } = useTranslation();
@@ -20,7 +22,16 @@ const Footer: React.FC = () => {
                     <Link to="/members">{t('nav.members')}</Link>
                     <Link to="/terms">{t('footer.terms')}</Link>
                     <Link to="/privacy">{t('footer.privacy')}</Link>
-                    <a href="https://x.com/zeroxwork" target="_blank" rel="noreferrer noopener">X / Twitter</a>
+                    <a href={X_PROFILE_URL} target="_blank" rel="noreferrer noopener">X / Twitter</a>
+                    <a
+                        className="zx-foot-social"
+                        href={DISCORD_INVITE_URL}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                    >
+                        <DiscordIcon size={15} />
+                        Discord
+                    </a>
                 </div>
 
                 <div className="zx-foot-c">© {new Date().getFullYear()} ZEROxWORK · {t('footer.rights')}</div>
