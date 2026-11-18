@@ -768,30 +768,9 @@ router.get('/articles/by-slug/:slug', optionalAuth, async (req, res) => {
             where: { slug },
         });
 
-        if (!slugRecord) {
-            return res.status(404).json({ message: 'Article not found' });
-        }
-
-        // Check if this slug is the most recent for this article+lang
-        const currentSlug = await prisma.articleSlug.findFirst({
-            where: {
-                articleId: slugRecord.articleId,
-                lang: slugRecord.lang,
-            },
-            orderBy: { createdAt: 'desc' },
-        });
-
-        // If slug is not current, redirect to current slug
-        if (currentSlug && currentSlug.id !== slugRecord.id) {
-            return res.status(301).json({
-                redirect: true,
-                slug: currentSlug.slug,
-            });
-        }
-
-        // Load the base article
+        // The original can have a canonical slug without a history entry.
         const article = await prisma.article.findUnique({
-            where: { id: slugRecord.articleId },
+            where: slugRecord ? { id: slugRecord.articleId } : { slug },
             include,
         });
 
@@ -803,24 +782,27 @@ router.get('/articles/by-slug/:slug', optionalAuth, async (req, res) => {
             return res.status(404).json({ message: 'Article not found' });
         }
 
-        // If requesting base language, return base article
-        if (slugRecord.lang === article.lang) {
-            // Get all current slugs for hreflang (most recent per lang)
-            const allSlugsRaw = await prisma.articleSlug.findMany({
-                where: { articleId: article.id },
-                orderBy: { createdAt: 'desc' },
-            });
-            const currentSlugs = Object.values(
-                allSlugsRaw.reduce((acc, s) => {
-                    if (!acc[s.lang]) acc[s.lang] = s;
-                    return acc;
-                }, {} as Record<string, typeof allSlugsRaw[0]>)
-            );
+        const requestedLang = slugRecord?.lang ?? article.lang;
+        const slugHistory = await prisma.articleSlug.findMany({
+            where: { articleId: article.id },
+            orderBy: { createdAt: 'desc' },
+        });
+        const currentSlugs = new Map([[article.lang, article.slug]]);
+        for (const entry of slugHistory) {
+            if (!currentSlugs.has(entry.lang)) currentSlugs.set(entry.lang, entry.slug);
+        }
+        const hreflang = Array.from(currentSlugs, ([lang, slug]) => ({ lang, slug }));
 
+        const currentSlug = currentSlugs.get(requestedLang);
+        if (currentSlug && currentSlug !== slug) {
+            return res.status(301).json({ redirect: true, slug: currentSlug });
+        }
+
+        if (requestedLang === article.lang) {
             return res.status(200).json({
                 ...article,
                 ...publicFields(article),
-                hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
+                hreflang,
             });
         }
 
@@ -829,25 +811,13 @@ router.get('/articles/by-slug/:slug', optionalAuth, async (req, res) => {
             where: {
                 articleId_targetLang: {
                     articleId: article.id,
-                    targetLang: slugRecord.lang,
+                    targetLang: requestedLang,
                 },
             },
         });
 
         // If translation exists and is up to date, return it
         if (translation && translation.sourceHash === article.sourceHash) {
-            // Get all current slugs for hreflang (most recent per lang)
-            const allSlugsRaw = await prisma.articleSlug.findMany({
-                where: { articleId: article.id },
-                orderBy: { createdAt: 'desc' },
-            });
-            const currentSlugs = Object.values(
-                allSlugsRaw.reduce((acc, s) => {
-                    if (!acc[s.lang]) acc[s.lang] = s;
-                    return acc;
-                }, {} as Record<string, typeof allSlugsRaw[0]>)
-            );
-
             return res.status(200).json({
                 id: article.id,
                 title: translation.title,
@@ -871,26 +841,15 @@ router.get('/articles/by-slug/:slug', optionalAuth, async (req, res) => {
                 isTranslation: true,
                 originalLang: article.lang,
                 originalSlug: article.slug,
-                hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
+                hreflang,
             });
         }
 
         // Fallback to base article
-        const allSlugsRaw = await prisma.articleSlug.findMany({
-            where: { articleId: article.id },
-            orderBy: { createdAt: 'desc' },
-        });
-        const currentSlugs = Object.values(
-            allSlugsRaw.reduce((acc, s) => {
-                if (!acc[s.lang]) acc[s.lang] = s;
-                return acc;
-            }, {} as Record<string, typeof allSlugsRaw[0]>)
-        );
-
         return res.status(200).json({
             ...article,
             ...publicFields(article),
-            hreflang: currentSlugs.map(s => ({ lang: s.lang, slug: s.slug })),
+            hreflang,
             fallback: true,
         });
     } catch (error) {
