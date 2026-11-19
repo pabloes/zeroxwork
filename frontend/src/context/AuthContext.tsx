@@ -24,10 +24,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (token) {
             try {
                 const decodedUser:any = jwtDecode(token); // Decode the JWT
-                setUser(decodedUser);
+                // A token past its expiry is no session, so it names no user
+                // either. It used to: `user` was filled in from the stale
+                // token while `isAuthenticated` said false, and whatever asked
+                // "is this the author, or an admin?" by looking at `user` got a
+                // yes -- the article page showed its Edit button under a
+                // header that said "Log in".
                 if((decodedUser?.exp * 1000) < Date.now()){
                     setIsAuthenticated(false);
                 }else{
+                    setUser(decodedUser);
                     setIsAuthenticated(true);
                 }
 
