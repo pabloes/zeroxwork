@@ -1,5 +1,8 @@
+# El orden importa: hay rastreadores que se quedan con la primera regla que
+# encaja y otros con la mas larga, asi que lo concreto va antes que el Allow: /
+# del final y las dos lecturas dan lo mismo.
 User-agent: *
-Allow: /
+Allow: /api/images/
 Disallow: /admin
 Disallow: /api/
 Disallow: /account
@@ -11,5 +14,37 @@ Disallow: /edit-article
 Disallow: /uploaded-image-page
 Disallow: /verify
 Disallow: /old-brain-wallet
+Allow: /
+
+# La previsualizacion de un enlace pide la imagen de la pieza, y esa vive bajo
+# /api/images/. Con solo el Disallow: /api/ de arriba el rastreador leia bien
+# las etiquetas de la pagina pero dejaba la imagen sin pedir, y el enlace salia
+# con un recuadro vacio en vez de la imagen grande. Van nombrados uno a uno
+# porque varios atienden solo al grupo con su nombre, y porque el de X no se
+# fia de Allow: hay que dejarle un Disallow vacio, que es "nada prohibido".
+# Ninguno indexa nada, solo dibuja la tarjeta del enlace que alguien ha pegado.
+User-agent: Twitterbot
+Disallow:
+
+User-agent: facebookexternalhit
+Disallow:
+
+User-agent: LinkedInBot
+Disallow:
+
+User-agent: Slackbot
+Disallow:
+
+User-agent: Slackbot-LinkExpanding
+Disallow:
+
+User-agent: Discordbot
+Disallow:
+
+User-agent: TelegramBot
+Disallow:
+
+User-agent: WhatsApp
+Disallow:
 
 Sitemap: https://zeroxwork.com/sitemap.xml
