@@ -11,7 +11,9 @@ import {
     metaDescription,
     ogLocale,
     plainExcerpt,
+    SOCIAL_IMAGE_PATH,
     socialImage,
+    uploadedFileName,
 } from '../src/services/page-meta.js';
 import { SITE_URL } from '../src/config/site.js';
 
@@ -81,6 +83,33 @@ describe('la imagen', () => {
 
     it('una imagen de otro sitio se deja como esta', () => {
         expect(socialImage('https://otra-web.com/foto.png')).toBe('https://otra-web.com/foto.png');
+    });
+
+    it('un webp nuestro sale por su copia en jpg, que es la que se dibuja', () => {
+        expect(socialImage('/api/images/user-uploaded-images/cartel.webp'))
+            .toBe(`${SITE_URL}${SOCIAL_IMAGE_PATH}/cartel.webp.jpg`);
+        // Las filas viejas lo tienen escrito entero y son la misma imagen.
+        expect(socialImage(`${SITE_URL}/api/images/user-uploaded-images/cartel.webp`))
+            .toBe(`${SITE_URL}${SOCIAL_IMAGE_PATH}/cartel.webp.jpg`);
+    });
+
+    it('lo que ya se dibuja no da ninguna vuelta', () => {
+        for (const name of ['cartel.jpg', 'cartel.JPEG', 'cartel.png', 'cartel.gif']) {
+            expect(socialImage(`/api/images/user-uploaded-images/${name}`))
+                .toBe(`${SITE_URL}/api/images/user-uploaded-images/${name}`);
+        }
+    });
+
+    it('un webp de otro sitio no es nuestro para convertirlo', () => {
+        expect(socialImage('https://otra-web.com/foto.webp')).toBe('https://otra-web.com/foto.webp');
+    });
+
+    it('solo una subida cuenta como nuestra', () => {
+        expect(uploadedFileName('/api/images/user-uploaded-images/cartel.webp')).toBe('cartel.webp');
+        expect(uploadedFileName('/zeroxwork-logo.png')).toBeNull();
+        expect(uploadedFileName('https://otra-web.com/foto.webp')).toBeNull();
+        expect(uploadedFileName('/api/images/user-uploaded-images/../../secreto.webp')).toBeNull();
+        expect(uploadedFileName(null)).toBeNull();
     });
 });
 

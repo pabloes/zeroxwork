@@ -91,9 +91,54 @@ export function metaDescription(
     return plainExcerpt(line !== '' ? line : body, DESCRIPTION_MAX);
 }
 
-/** La imagen de la pieza escrita entera, o el logo si no hay ninguna. */
+/** De donde sale la copia en jpg de una subida nuestra. */
+export const SOCIAL_IMAGE_PATH = '/api/images/social';
+
+/**
+ * Los formatos que un previsualizador dibuja sin pensarselo.
+ *
+ * X documenta que acepta webp; la prueba dice que no lo dibuja. Con el logo,
+ * que es png, la tarjeta salia con su imagen grande, y con el cartel de un
+ * articulo, que es webp, salia el hueco vacio. Lo que no este en esta lista se
+ * manda por /api/images/social, que devuelve la misma imagen en jpg.
+ */
+const SAFE_FORMATS = /\.(jpe?g|png|gif)$/i;
+
+/** Un nombre de subida: letras, numeros y poco mas. Ni barras ni dos puntos. */
+const SAFE_NAME = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * El nombre del fichero si la imagen es una subida nuestra, y si no null.
+ *
+ * El cartel de una pieza se guarda como /api/images/user-uploaded-images/<x>,
+ * pero las filas viejas lo tienen escrito entero. La portada de un proyecto
+ * puede estar en casa de otro, y esa no es nuestra para convertirla.
+ */
+export function uploadedFileName(thumbnail: string | null | undefined): string | null {
+    const absolute = absoluteUrl(thumbnail);
+    if (absolute === null || !absolute.startsWith(`${SITE_URL}/`)) return null;
+
+    const asked = absolute.slice(SITE_URL.length);
+    const name = /^\/api\/images\/user-uploaded-images\/([^/?#]+)$/.exec(asked)?.[1];
+
+    return name && SAFE_NAME.test(name) && !name.includes('..') ? name : null;
+}
+
+/**
+ * La imagen de la pieza escrita entera, o el logo si no hay ninguna.
+ *
+ * Una subida nuestra en un formato que la tarjeta no dibuja sale por su copia
+ * en jpg. La de otro sitio se deja como esta: no esta en nuestro disco y no
+ * hay nada que convertir.
+ */
 export function socialImage(thumbnail: string | null | undefined): string {
-    return absoluteUrl(thumbnail) ?? FALLBACK_IMAGE;
+    const absolute = absoluteUrl(thumbnail);
+    if (absolute === null) return FALLBACK_IMAGE;
+
+    const name = uploadedFileName(absolute);
+    if (name === null || SAFE_FORMATS.test(name)) return absolute;
+
+    return `${SITE_URL}${SOCIAL_IMAGE_PATH}/${name}.jpg`;
 }
 
 /**

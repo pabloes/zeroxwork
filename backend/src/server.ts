@@ -23,6 +23,7 @@ import speedtestRoutes from "./routes/speedtest";
 import logsRoutes from "./routes/logs";
 import adminBackupRoutes from "./routes/admin-backup";
 import { socialPreview } from "./routes/social-preview.js";
+import { socialImageRoutes } from "./routes/social-image.js";
 import { ROLE } from './constants/roles';
 import { installConsoleCapture } from './services/log-store';
 import requestLogger from './middleware/requestLogger';
@@ -113,6 +114,10 @@ const run = async () => {
     app.use(admin.options.rootPath, router);
 
     app.use('/api/images/user-uploaded-images', express.static('public/user-uploaded-images'));
+    // Antes del router de imagenes, que se queda con todo lo que cuelga de
+    // /api/images. Es la misma imagen en jpg, para la tarjeta de un enlace:
+    // ver routes/social-image.ts.
+    app.use('/api/images/social', socialImageRoutes());
     app.use('/api/auth', authRoutes);
     app.use('/api/images', imageRoutes);
     app.use('/api/user', userRoutes);
