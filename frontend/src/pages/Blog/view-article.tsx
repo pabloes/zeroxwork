@@ -203,9 +203,17 @@ const ArticlePage: React.FC = () => {
                 </div>
             )}
 
+            {/* By the article's id, never by the address in the bar. On a
+                translation that address is the translation's slug, and the
+                form it opens loads what that slug serves: the translated
+                text, in the translated language. Saving it replaced the
+                original with its own translation and made every other
+                language a translation of a translation, which is how the
+                contest rules lost their English text on 18/11/2026. The id
+                always opens the article as it was written. */}
             {canEdit && (
                 <p>
-                    <Link className="uk-button uk-button-secondary" to={`/edit-article/${id}`}>
+                    <Link className="uk-button uk-button-secondary" to={`/edit-article/${article.id}`}>
                         {t('article.edit')}
                     </Link>
                 </p>
@@ -295,7 +303,13 @@ async function fetchArticleById (idOrSlug: string) {
         ? `/blog/articles/${idOrSlug}`
         : `/blog/articles/by-slug/${idOrSlug}`;
 
-    const response = await api.get(endpoint);
+    // A slug that was replaced answers 301 with the current one in the body,
+    // and no Location header for the browser to follow. axios takes anything
+    // outside 2xx for a failure, so without this the redirect below never ran
+    // and an old link sat on "Loading..." for good.
+    const response = await api.get(endpoint, {
+        validateStatus: (status) => (status >= 200 && status < 300) || status === 301,
+    });
 
     // Handle 301 redirect
     if (response.data.redirect && response.data.slug) {

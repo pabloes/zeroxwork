@@ -3,8 +3,11 @@
 Create an original comic titled **ZEROxCITY**, inspired by the metaverse. Tell any story you want: science fiction, comedy, adventure, horror, fantasy, or drama.
 
 **Organized by:** ZEROxWORK.com
+
 **Prize:** 100 USDC
+
 **Submission Deadline:** December 21, 2026
+
 **Entry Fee:** Free
 
 ## 1. Theme and Creativity
