@@ -72,6 +72,9 @@ const ProjectForm: React.FC<Props> = ({ initial, submitting, error, onSubmit }) 
     const [videoUrl, setVideoUrl] = useState(initial?.videoUrl ?? '');
     const [siteUrl, setSiteUrl] = useState(initial?.siteUrl ?? '');
     const [repoUrl, setRepoUrl] = useState(initial?.repoUrl ?? '');
+    // Shown unless the owner says otherwise, which is what every project did
+    // before the choice existed.
+    const [repoUrlPublic, setRepoUrlPublic] = useState(initial?.repoUrlPublic ?? true);
     const [startedAt, setStartedAt] = useState(asDateValue(initial?.startedAt));
     const [endedAt, setEndedAt] = useState(asDateValue(initial?.endedAt));
     const [status, setStatus] = useState(initial?.status ?? '');
@@ -141,6 +144,7 @@ const ProjectForm: React.FC<Props> = ({ initial, submitting, error, onSubmit }) 
             videoUrl: videoUrl.trim(),
             siteUrl: siteUrl.trim(),
             repoUrl: repoUrl.trim(),
+            repoUrlPublic,
             startedAt: startedAt || '',
             endedAt: endedAt || '',
             status,
@@ -356,10 +360,23 @@ const ProjectForm: React.FC<Props> = ({ initial, submitting, error, onSubmit }) 
                         aria-invalid={!isAllowedRepoUrl(repoUrl)}
                     />
                 </div>
+                <div className="uk-margin-small-top">
+                    <label>
+                        <input
+                            className="uk-checkbox"
+                            type="checkbox"
+                            checked={repoUrlPublic}
+                            onChange={(event) => setRepoUrlPublic(event.target.checked)}
+                        />{' '}
+                        {t('project.repo_public')}
+                    </label>
+                </div>
                 <p className="uk-text-meta">
-                    {isAllowedRepoUrl(repoUrl)
-                        ? `${t('project.repo_hint')} ${REPO_HOSTS.join(', ')}`
-                        : t('project.error.repo_url')}
+                    {!isAllowedRepoUrl(repoUrl)
+                        ? t('project.error.repo_url')
+                        : repoUrlPublic
+                            ? `${t('project.repo_hint')} ${REPO_HOSTS.join(', ')}`
+                            : t('project.repo_private_hint')}
                 </p>
             </div>
 

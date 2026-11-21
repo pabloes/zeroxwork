@@ -24,8 +24,11 @@ export interface Project {
     videoUrl: string | null;
     /** Where to go see or play the thing itself. */
     siteUrl: string | null;
-    /** A GitHub or GitLab repository, when the project is open. */
+    /** A GitHub or GitLab repository, when the project is open. Null when the
+     *  owner wrote one down but chose not to show it. */
     repoUrl: string | null;
+    /** Whether the repository is shown on the page. Only the owner is told. */
+    repoUrlPublic?: boolean;
     startedAt: string | null;
     endedAt: string | null;
     status: string | null;
@@ -102,6 +105,7 @@ export interface ProjectPayload {
     videoUrl?: string;
     siteUrl?: string;
     repoUrl?: string;
+    repoUrlPublic?: boolean;
     startedAt?: string;
     endedAt?: string;
     status?: string;

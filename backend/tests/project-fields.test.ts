@@ -12,6 +12,7 @@ import {
     SUMMARY_MAX,
     TITLE_MAX,
     PROJECT_STATUSES,
+    visibleRepoUrl,
 } from '../src/config/project-fields.js';
 
 describe('title and body', () => {
@@ -137,5 +138,28 @@ describe('a slug that would be read as an id', () => {
     it('leaves a slug with a letter in it alone', () => {
         expect(slugWithLetter('golfcraft')).toBe('golfcraft');
         expect(slugWithLetter('claim-bite-2')).toBe('claim-bite-2');
+    });
+});
+
+describe('visibleRepoUrl', () => {
+    const repo = 'https://github.com/pabloes/x-race';
+
+    it('shows the repository the owner chose to show', () => {
+        expect(visibleRepoUrl({ repoUrl: repo, repoUrlPublic: true })).toBe(repo);
+    });
+
+    it('hides the one the owner chose to keep to themselves', () => {
+        expect(visibleRepoUrl({ repoUrl: repo, repoUrlPublic: false })).toBeNull();
+    });
+
+    it('still shows it to whoever may edit the project', () => {
+        // Otherwise the owner would open their own form and find the field
+        // empty, and saving would wipe what the devlog watcher follows.
+        expect(visibleRepoUrl({ repoUrl: repo, repoUrlPublic: false }, true)).toBe(repo);
+    });
+
+    it('has nothing to show when no repository was written down', () => {
+        expect(visibleRepoUrl({ repoUrl: null, repoUrlPublic: true })).toBeNull();
+        expect(visibleRepoUrl({ repoUrl: null, repoUrlPublic: false }, true)).toBeNull();
     });
 });

@@ -343,6 +343,14 @@ read, and how far the bot has already reported.
 Only GitHub is watched. The portfolio also accepts GitLab, and such a project
 simply never gets a devlog.
 
+**The repository does not have to be on the page.** The project form has a
+"Show the repository on the project page" tick next to the address; unticked,
+the address is still saved and the watcher still follows it, but neither the
+portfolio page nor the public API gives it out. Whoever may edit the project
+always sees it, or they could not change what they cannot read
+(`visibleRepoUrl` in `backend/src/config/project-fields.ts`, one decision for
+both APIs).
+
 ## Setting one up
 
 1. The project must be **published** and carry its GitHub URL in `repoUrl`.

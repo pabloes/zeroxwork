@@ -184,3 +184,20 @@ export const FIELD_ERRORS: Record<FieldErrorCode, string> = {
     DATES_BACKWARDS: 'The end date is before the start date.',
     MEMBERS_REQUIRED: 'A project needs at least one member.',
 };
+
+/**
+ * The repository address as a given reader may see it.
+ *
+ * An owner writes the repository down so the devlog watcher can follow it,
+ * which is a different thing from putting a link to it on the page. Both the
+ * portfolio API and the public API ask this, so the choice is made once:
+ * whoever may edit the project always sees the address, because they could not
+ * change what they cannot read, and everybody else sees it only when the owner
+ * said to show it.
+ */
+export function visibleRepoUrl(
+    project: { repoUrl: string | null; repoUrlPublic: boolean },
+    canEdit = false,
+): string | null {
+    return canEdit || project.repoUrlPublic ? project.repoUrl : null;
+}

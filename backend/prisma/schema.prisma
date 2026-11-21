@@ -323,6 +323,12 @@ model Project {
   videoUrl     String?
   siteUrl      String?
   repoUrl      String?
+  /// Whether the repository is shown on the portfolio page. It is written down
+  /// either way: the devlog watcher reads `repoUrl` straight from here, so an
+  /// owner can have the bot follow a repository without putting a link to it
+  /// in front of readers. Defaults to true, which is what every project did
+  /// before the choice existed.
+  repoUrlPublic Boolean             @default(true)
 
   /// A portfolio reads in order, and "when" is part of what a project says.
   startedAt    DateTime?

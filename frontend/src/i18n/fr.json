@@ -550,6 +550,8 @@
   "project.site_label": "Où le voir (facultatif) :",
   "project.repo_label": "Dépôt (facultatif) :",
   "project.repo_hint": "Un dépôt sur",
+  "project.repo_public": "Afficher le dépôt sur la page du projet",
+  "project.repo_private_hint": "Enregistré mais non affiché. Le bot Discord peut quand même le suivre pour le devlog hebdomadaire.",
   "project.tags_label": "Étiquettes :",
   "project.tags_new_placeholder": "Nouvelle étiquette...",
   "project.content_label": "Le texte (Markdown) :",

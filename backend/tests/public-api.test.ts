@@ -25,6 +25,7 @@ function row(overrides: Partial<ProjectRow> = {}): ProjectRow {
         videoUrl: 'https://youtube.com/watch?v=xyz',
         siteUrl: 'https://moneygrass.example',
         repoUrl: null,
+        repoUrlPublic: true,
         startedAt: new Date('2025-03-01T00:00:00.000Z'),
         endedAt: null,
         status: 'live',
@@ -181,5 +182,25 @@ describe('readPaging', () => {
         expect(readPaging({ limit: '0' }).limit).toBe(PAGE_DEFAULT);
         expect(readPaging({ offset: 'siguiente' }).offset).toBe(0);
         expect(readPaging({ offset: '-10' }).offset).toBe(0);
+    });
+});
+
+
+describe('a repository the owner chose not to show', () => {
+    it('comes out of the public API when it is shown', () => {
+        const shaped = publicProject(row({ repoUrl: 'https://github.com/pabloes/x-race', repoUrlPublic: true }), null);
+        expect(shaped.repoUrl).toBe('https://github.com/pabloes/x-race');
+    });
+
+    it('never comes out of the public API when it is hidden', () => {
+        // The point of the field: the devlog watcher reads the repository
+        // straight from the database, and the public API is read by anyone.
+        const shaped = publicProject(row({ repoUrl: 'https://github.com/pabloes/x-race', repoUrlPublic: false }), null);
+        expect(shaped.repoUrl).toBeNull();
+    });
+
+    it('does not leak the address anywhere else in the payload', () => {
+        const shaped = publicProject(row({ repoUrl: 'https://github.com/pabloes/x-race', repoUrlPublic: false }), null, { content: true });
+        expect(JSON.stringify(shaped)).not.toContain('x-race');
     });
 });

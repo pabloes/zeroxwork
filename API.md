@@ -97,6 +97,10 @@ The portfolio. Featured projects first, then newest first.
 The listing has no `content`: a page of thirty projects would be mostly prose
 nobody asked for. Ask for the project itself to get it.
 
+`repoUrl` is `null` both when a project has no repository and when its owner
+wrote one down but chose not to show it. The two cases look the same from out
+here on purpose: a repository kept off the page is kept off the API too.
+
 ## `GET /projects/{idOrSlug}`
 
 One project, the same object plus `content`: the body text as Markdown, in the

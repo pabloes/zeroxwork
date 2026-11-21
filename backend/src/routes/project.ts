@@ -22,6 +22,7 @@ import {
     validateStatus,
     validateSiteUrl,
     validateRepoUrl,
+    visibleRepoUrl,
     validateDates,
     slugWithLetter,
     FIELD_ERRORS,
@@ -46,7 +47,7 @@ const router = express.Router();
 
 const LISTED = {
     id: true, slug: true, title: true, summary: true, content: true, lang: true,
-    thumbnail: true, screenshots: true, videoUrl: true, siteUrl: true, repoUrl: true,
+    thumbnail: true, screenshots: true, videoUrl: true, siteUrl: true, repoUrl: true, repoUrlPublic: true,
     startedAt: true, endedAt: true, status: true,
     published: true, featured: true, createdAt: true, updatedAt: true, createdById: true,
     tags: { select: { id: true, name: true } },
@@ -93,6 +94,7 @@ function inLanguage(project: Listed, lang: string | null, viewer?: any) {
         : null;
 
     const { translations, createdById, ...rest } = project;
+    const canEdit = viewer ? mayWrite(viewer, project) : false;
 
     return {
         ...rest,
@@ -101,12 +103,13 @@ function inLanguage(project: Listed, lang: string | null, viewer?: any) {
         title: project.title,
         summary: translation?.summary ?? project.summary,
         content: translation?.content ?? project.content,
+        repoUrl: visibleRepoUrl(project, canEdit),
         readingLang: translation ? translation.targetLang : project.lang,
         availableLangs: [project.lang, ...project.translations.map((t) => t.targetLang)],
         members: publicMembers(project.members),
         // Whether the page should offer to edit and publish. Sent instead of
         // createdById so the frontend never has to know who owns what.
-        canEdit: viewer ? mayWrite(viewer, project) : false,
+        canEdit,
     };
 }
 
@@ -207,6 +210,12 @@ function validateBody(body: any, { creating }: { creating: boolean }) {
     const repoUrl = validateRepoUrl(body.repoUrl);
     if (!repoUrl.ok) return repoUrl;
 
+    // A checkbox the owner ticks. Left out of the body it stays undefined,
+    // which Prisma reads as "the default" when creating and "leave it alone"
+    // when updating -- so a client that does not know about the field cannot
+    // silently publish a repository its owner had hidden.
+    const repoUrlPublic = typeof body.repoUrlPublic === 'boolean' ? body.repoUrlPublic : undefined;
+
     const dates = validateDates(body.startedAt, body.endedAt);
     if (!dates.ok) return dates;
 
@@ -228,6 +237,7 @@ function validateBody(body: any, { creating }: { creating: boolean }) {
             status: status.value,
             siteUrl: siteUrl.value,
             repoUrl: repoUrl.value,
+            repoUrlPublic,
             startedAt: dates.value.startedAt,
             endedAt: dates.value.endedAt,
             thumbnail: cover.value,

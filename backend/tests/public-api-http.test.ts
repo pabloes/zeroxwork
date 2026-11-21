@@ -15,7 +15,7 @@ const projectRow = {
     content: '# Money Grass\n\nTexto largo.', lang: 'es',
     thumbnail: '/api/images/user-uploaded-images/abc.jpg',
     screenshots: ['/api/images/user-uploaded-images/uno.jpg'],
-    videoUrl: 'https://youtube.com/watch?v=xyz', siteUrl: null, repoUrl: null,
+    videoUrl: 'https://youtube.com/watch?v=xyz', siteUrl: null, repoUrl: null, repoUrlPublic: true,
     startedAt: new Date('2025-03-01'), endedAt: null, status: 'live', featured: true,
     createdAt: new Date('2025-04-01'), updatedAt: new Date('2025-04-02'),
     tags: [{ id: 1, name: 'comic' }],

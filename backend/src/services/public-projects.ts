@@ -12,13 +12,14 @@
  * without a database.
  */
 
+import { visibleRepoUrl } from '../config/project-fields.js';
 import { resolvePublicName } from '../config/public-name.js';
 import { SITE_URL, absoluteUrl } from '../config/site.js';
 
 /** What the public API reads. Anything not listed here cannot leak out of it. */
 export const PUBLIC_PROJECT_SELECT = {
     id: true, slug: true, title: true, summary: true, content: true, lang: true,
-    thumbnail: true, screenshots: true, videoUrl: true, siteUrl: true, repoUrl: true,
+    thumbnail: true, screenshots: true, videoUrl: true, siteUrl: true, repoUrl: true, repoUrlPublic: true,
     startedAt: true, endedAt: true, status: true, featured: true,
     createdAt: true, updatedAt: true,
     tags: { select: { id: true, name: true } },
@@ -53,6 +54,7 @@ export interface ProjectRow {
     videoUrl: string | null;
     siteUrl: string | null;
     repoUrl: string | null;
+    repoUrlPublic: boolean;
     startedAt: Date | null;
     endedAt: Date | null;
     status: string | null;
@@ -178,7 +180,8 @@ export function publicProject(
         screenshots: project.screenshots.map(absoluteUrl).filter((url): url is string => url !== null),
         video: project.videoUrl,
         siteUrl: project.siteUrl,
-        repoUrl: project.repoUrl,
+        // The public API is read by anyone, so there is never an editor here.
+        repoUrl: visibleRepoUrl(project),
         tags: project.tags.map((tag) => tag.name),
         authors: authors(project.members),
     };
