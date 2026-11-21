@@ -7,4 +7,4 @@
  * changes there is a single line to fix.
  */
 export { PrismaClient } from '../../backend/node_modules/@prisma/client/index.js';
-export type { DiscordLink, DiscordRoleGrant, User } from '../../backend/node_modules/@prisma/client/index.js';
+export type { DiscordLink, DiscordRoleGrant, RepoWatch, User } from '../../backend/node_modules/@prisma/client/index.js';

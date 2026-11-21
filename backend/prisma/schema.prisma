@@ -344,6 +344,7 @@ model Project {
   tags         Tag[]
   members      ProjectMember[]
   translations ProjectTranslation[]
+  repoWatch    RepoWatch?
 
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
@@ -471,4 +472,39 @@ model ToolTranslation {
   @@unique([toolId, targetLang])
   @@index([toolId])
   @@map("tool_translations")
+}
+
+/// A portfolio project the bot watches on GitHub.
+///
+/// The repository itself is not here: it is `Project.repoUrl`, so the portfolio
+/// stays the one place a repository is written down. This row only holds what
+/// the portfolio has no business knowing -- which Discord channel the game's
+/// players read, and how far the bot has already reported.
+model RepoWatch {
+  id            Int       @id @default(autoincrement())
+  projectId     Int       @unique
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// The game's channel in the ZEROxWORK server, under ZEROxPLAY.
+  channelId     String
+  /// null: whatever GitHub reports as the repository's default branch.
+  branch        String?
+
+  /// The last commit already covered by a post. null: the first run looks at
+  /// the seven days before the newest commit, instead of the whole history.
+  lastSha       String?
+  /// Moved only by a post that actually went out. A week with nothing
+  /// substantial leaves it where it was, so the next one carries what piled up.
+  lastPostedAt  DateTime?
+  /// Moved by every run, posted or not: this is what paces the weekly cadence,
+  /// and it survives the restart that every deploy causes.
+  lastCheckedAt DateTime?
+  lastError     String?
+
+  enabled       Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([enabled])
+  @@map("repo_watches")
 }

@@ -324,3 +324,130 @@ the other granted.
 
 Adding roles later needs no migration: add the entry to
 `backend/src/constants/discord-roles.ts` and set its environment variable.
+
+---
+
+# Weekly devlogs
+
+Once a week the bot looks at what landed in a game's repository and, if any of
+it is worth a player's attention, posts a devlog in that game's channel.
+
+## Where the repository comes from
+
+Nowhere in the bot. It is the portfolio item's own `repoUrl`
+(`/admin` → Projects), so a project's repository is written down in exactly one
+place and it is the same one the website shows. A `repo_watches` row adds only
+what the portfolio has no business knowing: which channel the game's players
+read, and how far the bot has already reported.
+
+Only GitHub is watched. The portfolio also accepts GitLab, and such a project
+simply never gets a devlog.
+
+## Setting one up
+
+1. The project must be **published** and carry its GitHub URL in `repoUrl`.
+2. `/admin` → **Repo watches** → new: pick the project id, paste the channel id
+   (right click the channel in Discord → Copy ID), leave `branch` empty for the
+   repository's default branch.
+3. Leave `lastSha` empty. The first run then looks at the **seven days before
+   the newest commit**, not the whole history: a repository that has been quiet
+   for a month still gets its last active week, which is what a first devlog
+   should cover.
+
+The ZEROxPLAY channels as they stand:
+
+| Channel | Id |
+|---|---|
+| `#elon-race` | `1570144963843596394` |
+| `#golfcraft` | `1570144958034485288` |
+| `#portal-lake` | `1570144959514808340` |
+| `#claim-bite` | `1570144960928423959` |
+| `#cryocene` | `1572255664942612520` |
+| `#flagtag` | `1572256479384174785` |
+| `#flappy-roadster` | `1570144965919768656` |
+
+## What counts as worth posting
+
+The pass asks GitHub for one comparison between the last reported commit and
+the newest one, which carries the commits and the changed files together, and
+then decides (`bot/src/repo-watch.ts`, pure, covered by tests):
+
+- merge commits are dropped: whatever they brought in is already in the range;
+- `design/`, `docs/`, `.github/`, `.claude/`, any `.md`, `.pdf`, `.txt` or
+  lockfile is noise;
+- a week with no file left outside the noise is not announced, however many
+  commits it holds;
+- what is left must reach either 60 changed lines or 3 changed files.
+
+**A quiet week does not move `lastSha`.** Next week's post therefore carries
+what piled up, instead of the quiet week swallowing it.
+
+This gate is the whole point. The real week of 29 Oct – 5 Nov in
+`pabloes/x-race` is three commits that add a GDD and its concept art: a naive
+watcher announces an update for three commits of markdown, and this one says
+nothing. That week is the fixture in `bot/tests/repo-watch.test.ts`.
+
+## Who writes the post
+
+Claude, through the Messages API (`bot/src/devlog.ts`), from the commit
+subjects and the changed file paths. The prompt asks for bullets that say what
+changed **for the person playing**, and forbids commits, SHAs, branches and
+invented features. Commit subjects are treated as data, never as instructions.
+
+Roughly one call per repository per week, so the cost is cents. Server-side
+fallback is on, so a policy decline does not lose the week.
+
+Without `ANTHROPIC_API_KEY`, or when the call fails, the post is the plain list
+of commit subjects instead. That reads like a changelog, which is the point: a
+list of real changes beats silence or an invention.
+
+A post never mentions anybody: `allowedMentions` is empty, so an `@everyone`
+in generated text cannot go out.
+
+## Dry run
+
+**On by default.** The draft goes to `DISCORD_LOG_CHANNEL_ID` (and to the
+console when there is none), marked as a dry run and naming the channel it was
+meant for. Nothing is marked as reported, so the same week can be read,
+corrected and run again. Set `REPO_WATCH_DRY_RUN=false` when the posts have
+been worth reading for a few weeks.
+
+## Cadence
+
+Every hour the bot looks for a repository whose week is up; the week is counted
+from `lastCheckedAt` in the database, not from a timer. That is deliberate: the
+bot restarts on every deploy, and an interval started at boot would either skip
+a week or fire on every restart.
+
+A failure (a bad token, a channel the bot cannot write in) leaves
+`lastCheckedAt` alone, so the next hourly pass retries instead of waiting a
+week. The log says so once, when the error changes, and then stays quiet.
+
+## Environment variables
+
+| Variable | Required | Notes |
+|---|---|---|
+| `GITHUB_TOKEN` | for private repositories | Fine-grained PAT, read-only **Contents** + **Metadata**, limited to the repositories being watched. A public repository works without one, at 60 requests an hour |
+| `ANTHROPIC_API_KEY` | no | Without it the posts are the plain list of commit subjects |
+| `DEVLOG_MODEL` | no | Default `claude-opus-5-5` |
+| `REPO_WATCH_DRY_RUN` | no | Default `true`. `false` posts to the game channel |
+| `REPO_WATCH_EVERY_MS` | no | Default 7 days |
+| `REPO_WATCH_PASS_MS` | no | Default 3600000 |
+
+A fine-grained PAT expires. Set it for a year and put the renewal in the
+calendar; a GitHub App would not expire but is more to set up.
+
+## Database
+
+Migration `20261121203500_add_repo_watch` creates `repo_watches`: a new table
+and a foreign key to `projects`, nothing existing is touched. It applies in
+production with the `prisma migrate deploy` that already runs on container
+start.
+
+It was written with `prisma migrate diff --from-schema-datasource`, for the
+reason recorded above: `prisma migrate dev` cannot replay this repository's
+history in a shadow database. The diff also reported two pre-existing drifts
+between the local database and the schema — `articles.lang` is nullable in the
+database and `NOT NULL` in the schema, and `article_slugs_createdat_idx` is
+spelled differently — which are **not** part of this migration and are still
+there to look at.

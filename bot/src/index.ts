@@ -6,6 +6,7 @@ import { isNoop } from './roles';
 import { planJobs } from './queue';
 import { parseWelcomeCustomId, pickAskChannel, renderWelcome } from './welcome';
 import { ensureWelcomeMessage } from './welcome-publish';
+import { repoWatchPass } from './repo-watch-run.js';
 
 const config = loadConfig();
 const prisma = new PrismaClient();
@@ -109,6 +110,11 @@ async function drainQueue(): Promise<void> {
     }
 }
 
+async function runRepoWatch(): Promise<void> {
+    await repoWatchPass(client, prisma, config, log)
+        .catch((error) => console.error('Repo watch failed:', error instanceof Error ? error.message : 'unknown error'));
+}
+
 async function fullReconcile(): Promise<void> {
     const guild = await getGuild();
     const { changed, failed } = await reconcileGuild(guild, prisma, config);
@@ -142,6 +148,12 @@ client.once(Events.ClientReady, async (ready) => {
     }
 
     await fullReconcile();
+    // Independent of the roles: the devlog watcher only reads the portfolio,
+    // GitHub and one channel, so it runs whatever the role situation is. It
+    // paces itself from the database, which is why starting it at boot is
+    // safe however often a deploy restarts the bot.
+    void runRepoWatch();
+    setInterval(() => void runRepoWatch(), config.repoWatch.passMs);
     setInterval(() => void drainQueue().catch((e) => console.error('Queue drain failed:', e.message)), config.queueMs);
     setInterval(() => void fastPass().catch((e) => console.error('Fast pass failed:', e.message)), config.fastPassMs);
     setInterval(() => void fullReconcile().catch((e) => console.error('Reconcile failed:', e.message)), config.reconcileMs);

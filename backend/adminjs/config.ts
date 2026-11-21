@@ -296,6 +296,32 @@ const options:AdminJSOptions =  {
                 },
                 listProperties: ['id', 'userId', 'roleKey', 'note', 'createdAt'],
             },
+        },
+        {
+            // Which portfolio projects the bot writes a weekly devlog about.
+            // The repository is not here: it is the project's own `repoUrl`,
+            // so there is one place a repository is written down. This row
+            // only says which channel the game's players read.
+            //
+            // `lastSha` is the last commit already reported. Clearing it makes
+            // the next run start from the week before the newest commit again,
+            // which is how a post is replayed after a bad one.
+            resource: {
+                model: getModelByName("RepoWatch"),
+                client: prisma,
+            },
+            options: {
+                navigation: { name: 'Discord' },
+                properties: {
+                    channelId: { description: 'The game channel id under ZEROxPLAY. Right click the channel in Discord to copy it.' },
+                    branch: { description: 'Leave empty for the repository default branch.' },
+                    lastSha: { description: 'Last commit already posted. Clear it to replay the latest week.' },
+                    lastError: { isVisible: { edit: false, new: false, list: true, show: true } },
+                    lastPostedAt: { isVisible: { edit: false, new: false, list: true, show: true } },
+                    lastCheckedAt: { isVisible: { edit: false, new: false, list: true, show: true } },
+                },
+                listProperties: ['id', 'projectId', 'channelId', 'enabled', 'lastPostedAt', 'lastCheckedAt', 'lastError'],
+            },
         }
     ],
     rootPath: '/admin',
