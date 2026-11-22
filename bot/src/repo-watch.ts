@@ -108,7 +108,18 @@ export function assess(range: RepoRange, thresholds: Thresholds = DEFAULT_THRESH
             reason: `only ${codeLines} line(s) across ${codeFiles.length} file(s): too small to announce`,
         };
     }
-    return { ...base, worthPosting: true, reason: `${commits.length} commit(s), ${codeLines} line(s) of code` };
+
+    // GitHub stops a comparison at 300 files, and a comparison it cut short
+    // comes back with every line count at zero -- so a very busy week reads as
+    // "0 lines of code" unless the reason says what happened. The decision
+    // above is unaffected: a week that wide passes on its file count alone.
+    const size = !range.truncated
+        ? `${codeLines} line(s) of code`
+        : codeLines > 0
+            // partial counts: real, but only for the part GitHub returned
+            ? `at least ${codeLines} line(s) across ${codeFiles.length} file(s), cut short by GitHub`
+            : `${codeFiles.length} file(s) of code, too wide for GitHub to count the lines`;
+    return { ...base, worthPosting: true, reason: `${commits.length} commit(s), ${size}` };
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

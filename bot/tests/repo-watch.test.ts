@@ -129,6 +129,38 @@ describe('assess', () => {
         expect(result.reason).toContain('too small');
     });
 
+    it('says why a week GitHub cut short reports no lines', () => {
+        // The real Golfcraft week of 30 Oct - 6 Nov: 94 commits over 300 files,
+        // which GitHub returns with every line count at zero.
+        const wide = range(
+            [commit('Ranked with friends: the room plays at the host level')],
+            Array.from({ length: 120 }, (_, i) => file(`scene/src/part-${i}.ts`, 0, 0)),
+        );
+        wide.truncated = true;
+        const result = assess(wide);
+
+        expect(result.worthPosting).toBe(true);
+        expect(result.codeLines).toBe(0);
+        expect(result.reason).toContain('too wide for GitHub');
+        expect(result.reason).not.toContain('0 line(s) of code');
+    });
+
+    it('keeps the partial count when GitHub returned one', () => {
+        // The real Portal Lake week of 6-13 Nov: cut short at 300 files, but
+        // the files it did return carry genuine counts. "At least" is the
+        // honest word for that; hiding the number would lose real information.
+        const wide = range(
+            [commit('Seven rarities and the portal visitors')],
+            [file('scene/src/fish.ts', 3000, 2197), ...Array.from({ length: 10 }, (_, i) => file(`scene/src/a-${i}.ts`, 0, 0))],
+        );
+        wide.truncated = true;
+        const result = assess(wide);
+
+        expect(result.worthPosting).toBe(true);
+        expect(result.reason).toContain('at least 5197 line(s)');
+        expect(result.reason).toContain('cut short by GitHub');
+    });
+
     it('counts a wide change as substantial even when it is few lines', () => {
         const result = assess(range(
             [commit('Rename the boost pad across the scene')],
