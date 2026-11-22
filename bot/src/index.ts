@@ -6,6 +6,7 @@ import { isNoop } from './roles';
 import { planJobs } from './queue';
 import { parseWelcomeCustomId, pickAskChannel, renderWelcome } from './welcome';
 import { ensureWelcomeMessage } from './welcome-publish';
+import { sendJoinMail } from './join-mail.js';
 import { repoWatchPass } from './repo-watch-run.js';
 
 const config = loadConfig();
@@ -159,9 +160,31 @@ client.once(Events.ClientReady, async (ready) => {
     setInterval(() => void fullReconcile().catch((e) => console.error('Reconcile failed:', e.message)), config.reconcileMs);
 });
 
-// someone linked on the site before joining: give them their roles on arrival
+// Somebody new walked in: mail the owner, and if they had linked on the site
+// before joining, give them their roles on arrival.
 client.on(Events.GuildMemberAdd, async (member) => {
     if (member.guild.id !== config.guildId || member.user.bot) return;
+
+    // The mail is for every arrival, linked or not, and it goes before the
+    // roles and on its own: a dead SMTP must not cost somebody their roles,
+    // and a role out of reach must not cost the notice.
+    const link = await prisma.discordLink
+        .findUnique({ where: { discordId: member.id }, select: { id: true } })
+        .catch(() => null);
+
+    const mailed = await sendJoinMail({
+        tag: member.user.tag,
+        id: member.id,
+        guildName: member.guild.name,
+        accountCreatedAt: member.user.createdAt ?? null,
+        joinedAt: member.joinedAt,
+        memberCount: member.guild.memberCount ?? null,
+        linked: Boolean(link),
+    }, (message) => void log(message));
+    if (mailed === 'sent') {
+        await log(`${member.user.tag} joined the server, notice mailed`);
+    }
+
     const { managed } = manageableRoleIds(member.guild, config);
     if (managed.size === 0) return;
 

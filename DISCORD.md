@@ -114,6 +114,7 @@ crash there must not take the website down with it.
 - Takes a role back only when the website says so: somebody unlinked, or a
   grant was edited in `/admin`. A role given by hand in Discord is left alone.
 - Applies roles the moment a linked user joins the server.
+- Mails the owner every time somebody new joins the server (see below).
 - Keeps the multilingual welcome message in the rules channel (see below).
 
 Four passes, because each catches something the others cannot:
@@ -187,10 +188,33 @@ because Discord answers 403 for those no matter how many times you retry.
 | `DISCORD_QUEUE_MS` | no | Default 5000 |
 | `DISCORD_FAST_PASS_MS` | no | Default 300000 |
 | `DISCORD_RECONCILE_MS` | no | Default 900000 |
+| `ADMIN_NOTIFY_EMAIL` | no | Mailbox for the new-member notice. Unset means no notice |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | for the notice | Same values the web app uses. All three or nothing |
+| `SMTP_PORT`, `SMTP_SECURE` | no | Default 587 and `false`. `465` goes with `true` |
 
 A role whose variable is missing is left alone entirely. That is deliberate: the
 alternative, treating it as "nobody should have this role", would strip it from
 everyone on a typo.
+
+## Mail when somebody joins
+
+Every arrival in the server sends one mail to `ADMIN_NOTIFY_EMAIL`: who it was,
+their id, when the Discord account itself was created and how long ago, whether
+their ZEROxWORK account was already linked, and the member count. Bots joining
+do not send one.
+
+- Code: `bot/src/join-mail.ts`, called from the `guildMemberAdd` handler.
+- **Off by default.** No `ADMIN_NOTIFY_EMAIL`, or incomplete `SMTP_*`, and there
+  is no mail, no error, one line in the log channel.
+- It never throws, and it runs before and apart from the role sync: a dead SMTP
+  server must not cost somebody their roles, and a role out of reach must not
+  cost the notice.
+- The bot has its own mailer instead of importing the website's: its image only
+  copies `backend/prisma` and `backend/src/constants`, and its `node_modules`
+  is its own. It reads the same variable names, so the bot's CapRover app takes
+  the same values the web app already has.
+- One mail per arrival, which on a raid means one mail per account. If that ever
+  becomes a problem, the place to put a limit is `sendJoinMail`.
 
 ## Welcome message
 
