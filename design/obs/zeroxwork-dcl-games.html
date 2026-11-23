@@ -83,7 +83,15 @@
     white-space: nowrap;
   }
 
+  /* Una sola pieza: el gap del flex solo separa la marca de la palabra. */
+  .brand .word { white-space: nowrap; }
+
   .brand strong { font-weight: 800; }
+
+  .brand em {
+    font-style: normal;
+    color: var(--muted);
+  }
 
   .brand-mark {
     width: 50px;
@@ -309,7 +317,7 @@
 <body>
   <div class="card">
     <header class="masthead">
-      <div class="brand"><i class="brand-mark"></i>ZERO<strong>x</strong>WORK<span style="color:var(--muted)">.com</span></div>
+      <div class="brand"><i class="brand-mark"></i><span class="word">ZEROx<strong>WORK</strong><em>.com</em></span></div>
       <div class="kicker" id="kicker">Decentraland games</div>
     </header>
 
