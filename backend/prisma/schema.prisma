@@ -329,6 +329,11 @@ model Project {
   /// in front of readers. Defaults to true, which is what every project did
   /// before the choice existed.
   repoUrlPublic Boolean             @default(true)
+  /// The game's Discord channel, where the weekly devlog is posted. Only an
+  /// admin may set or read it: it is operational configuration, never part of
+  /// what the portfolio shows, and it is not in the public API's select at
+  /// all, so it cannot leave through there.
+  discordChannelId String?
 
   /// A portfolio reads in order, and "when" is part of what a project says.
   startedAt    DateTime?
@@ -480,19 +485,17 @@ model ToolTranslation {
   @@map("tool_translations")
 }
 
-/// A portfolio project the bot watches on GitHub.
+/// How far the devlog watcher has got with one portfolio project.
 ///
-/// The repository itself is not here: it is `Project.repoUrl`, so the portfolio
-/// stays the one place a repository is written down. This row only holds what
-/// the portfolio has no business knowing -- which Discord channel the game's
-/// players read, and how far the bot has already reported.
+/// Nothing here is configuration. The repository and the channel are both on
+/// the project (`repoUrl`, `discordChannelId`), so a game is set up in one
+/// form and there is one place to look. The bot writes this row itself the
+/// first time it sees a project carrying both.
 model RepoWatch {
   id            Int       @id @default(autoincrement())
   projectId     Int       @unique
   project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  /// The game's channel in the ZEROxWORK server, under ZEROxPLAY.
-  channelId     String
   /// null: whatever GitHub reports as the repository's default branch.
   branch        String?
 

@@ -29,6 +29,10 @@ export interface Project {
     repoUrl: string | null;
     /** Whether the repository is shown on the page. Only the owner is told. */
     repoUrlPublic?: boolean;
+    /** The game's Discord channel for the weekly devlog. Only an admin is sent it. */
+    discordChannelId?: string | null;
+    /** Whether the viewer may change the admin-only fields. */
+    canAdmin?: boolean;
     startedAt: string | null;
     endedAt: string | null;
     status: string | null;
@@ -106,6 +110,7 @@ export interface ProjectPayload {
     siteUrl?: string;
     repoUrl?: string;
     repoUrlPublic?: boolean;
+    discordChannelId?: string;
     startedAt?: string;
     endedAt?: string;
     status?: string;

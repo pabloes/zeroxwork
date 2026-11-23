@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/axios-setup';
 import { useTranslation } from '../../i18n';
+import { useAuth } from '../../context/AuthContext';
 import { slugify } from '../../utils/slug';
 import ArticleEditor from './ArticleEditor';
 import ImagePicker from './ImagePicker';
@@ -16,6 +17,7 @@ import {
     SUMMARY_MAX,
     isAllowedRepoUrl,
     isAllowedSiteUrl,
+    isValidChannelId,
 } from '../../services/project-fields';
 import type { Project, ProjectPayload } from '../../services/use-projects';
 
@@ -75,6 +77,11 @@ const ProjectForm: React.FC<Props> = ({ initial, submitting, error, onSubmit }) 
     // Shown unless the owner says otherwise, which is what every project did
     // before the choice existed.
     const [repoUrlPublic, setRepoUrlPublic] = useState(initial?.repoUrlPublic ?? true);
+    // Admin-only, and only for showing the field: the server decides who may
+    // actually set it, and ignores the value from anybody else.
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'ADMIN';
+    const [discordChannelId, setDiscordChannelId] = useState(initial?.discordChannelId ?? '');
     const [startedAt, setStartedAt] = useState(asDateValue(initial?.startedAt));
     const [endedAt, setEndedAt] = useState(asDateValue(initial?.endedAt));
     const [status, setStatus] = useState(initial?.status ?? '');
@@ -145,6 +152,7 @@ const ProjectForm: React.FC<Props> = ({ initial, submitting, error, onSubmit }) 
             siteUrl: siteUrl.trim(),
             repoUrl: repoUrl.trim(),
             repoUrlPublic,
+            ...(isAdmin ? { discordChannelId: discordChannelId.trim() } : {}),
             startedAt: startedAt || '',
             endedAt: endedAt || '',
             status,
@@ -379,6 +387,29 @@ const ProjectForm: React.FC<Props> = ({ initial, submitting, error, onSubmit }) 
                             : t('project.repo_private_hint')}
                 </p>
             </div>
+
+            {isAdmin && (
+                <div className="uk-margin">
+                    <label className="uk-form-label" htmlFor="discordChannelId">{t('project.discord_channel_label')}</label>
+                    <div className="uk-form-controls">
+                        <input
+                            className="uk-input"
+                            id="discordChannelId"
+                            type="text"
+                            inputMode="numeric"
+                            value={discordChannelId}
+                            onChange={(event) => setDiscordChannelId(event.target.value)}
+                            placeholder="1570144963843596394"
+                            aria-invalid={!isValidChannelId(discordChannelId)}
+                        />
+                    </div>
+                    <p className="uk-text-meta">
+                        {isValidChannelId(discordChannelId)
+                            ? t('project.discord_channel_hint')
+                            : t('project.error.discord_channel')}
+                    </p>
+                </div>
+            )}
 
             <TagsField
                 all={tags}

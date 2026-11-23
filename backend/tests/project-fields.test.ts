@@ -13,6 +13,7 @@ import {
     TITLE_MAX,
     PROJECT_STATUSES,
     visibleRepoUrl,
+    validateDiscordChannelId,
 } from '../src/config/project-fields.js';
 
 describe('title and body', () => {
@@ -161,5 +162,33 @@ describe('visibleRepoUrl', () => {
     it('has nothing to show when no repository was written down', () => {
         expect(visibleRepoUrl({ repoUrl: null, repoUrlPublic: true })).toBeNull();
         expect(visibleRepoUrl({ repoUrl: null, repoUrlPublic: false }, true)).toBeNull();
+    });
+});
+
+
+describe('validateDiscordChannelId', () => {
+    it('takes a real channel id', () => {
+        // #elon-race in the ZEROxWORK server
+        expect(validateDiscordChannelId('1570144963843596394')).toEqual({ ok: true, value: '1570144963843596394' });
+    });
+
+    it('reads an empty field as no channel, which means no devlog', () => {
+        expect(validateDiscordChannelId('')).toEqual({ ok: true, value: null });
+        expect(validateDiscordChannelId('   ')).toEqual({ ok: true, value: null });
+        expect(validateDiscordChannelId(undefined)).toEqual({ ok: true, value: null });
+    });
+
+    it('refuses anything that is not a snowflake', () => {
+        // The mistake this catches is a devlog posted in the wrong game's
+        // channel, which cannot be taken back once people have read it.
+        for (const bad of ['#elon-race', '157014496384359639x', '12345', 'https://discord.com/channels/1/2']) {
+            expect(validateDiscordChannelId(bad), bad).toEqual({ ok: false, code: 'DISCORD_CHANNEL_INVALID' });
+        }
+    });
+
+    it('allows the length snowflakes will grow into', () => {
+        expect(validateDiscordChannelId('1'.repeat(17)).ok).toBe(true);
+        expect(validateDiscordChannelId('1'.repeat(20)).ok).toBe(true);
+        expect(validateDiscordChannelId('1'.repeat(21)).ok).toBe(false);
     });
 });

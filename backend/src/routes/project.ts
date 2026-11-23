@@ -21,6 +21,7 @@ import {
     validateSummary,
     validateStatus,
     validateSiteUrl,
+    validateDiscordChannelId,
     validateRepoUrl,
     visibleRepoUrl,
     validateDates,
@@ -48,6 +49,7 @@ const router = express.Router();
 const LISTED = {
     id: true, slug: true, title: true, summary: true, content: true, lang: true,
     thumbnail: true, screenshots: true, videoUrl: true, siteUrl: true, repoUrl: true, repoUrlPublic: true,
+    discordChannelId: true,
     startedAt: true, endedAt: true, status: true,
     published: true, featured: true, createdAt: true, updatedAt: true, createdById: true,
     tags: { select: { id: true, name: true } },
@@ -93,11 +95,16 @@ function inLanguage(project: Listed, lang: string | null, viewer?: any) {
         ? project.translations.find((t) => t.targetLang.toLowerCase() === wanted)
         : null;
 
-    const { translations, createdById, ...rest } = project;
+    const { translations, createdById, discordChannelId, ...rest } = project;
     const canEdit = viewer ? mayWrite(viewer, project) : false;
+    const canAdmin = viewer?.user?.role === ROLE.ADMIN;
 
     return {
         ...rest,
+        // Operational configuration, not part of the project: it is sent only
+        // to whoever may change it, and left out of everybody else's payload
+        // entirely rather than nulled, so nothing hints that it is there.
+        ...(canAdmin ? { discordChannelId } : {}),
         // The title deliberately survives translation: a project is called what
         // it is called. Only the prose changes language.
         title: project.title,
@@ -107,6 +114,7 @@ function inLanguage(project: Listed, lang: string | null, viewer?: any) {
         readingLang: translation ? translation.targetLang : project.lang,
         availableLangs: [project.lang, ...project.translations.map((t) => t.targetLang)],
         members: publicMembers(project.members),
+        canAdmin,
         // Whether the page should offer to edit and publish. Sent instead of
         // createdById so the frontend never has to know who owns what.
         canEdit,
@@ -191,7 +199,7 @@ const isSupportedLang = (lang: string) =>
  * entered, and not again -- the projects that came over from the blog have no
  * screenshots, and an edit is how they get some.
  */
-function validateBody(body: any, { creating }: { creating: boolean }) {
+function validateBody(body: any, { creating, isAdmin }: { creating: boolean; isAdmin: boolean }) {
     const title = validateTitle(body.title);
     if (!title.ok) return title;
 
@@ -209,6 +217,12 @@ function validateBody(body: any, { creating }: { creating: boolean }) {
 
     const repoUrl = validateRepoUrl(body.repoUrl);
     if (!repoUrl.ok) return repoUrl;
+
+    // Only an admin may point a project at a Discord channel. For anybody
+    // else this stays undefined, which Prisma reads as "leave it alone", so a
+    // member saving their own project cannot clear or move the devlog.
+    const channel = validateDiscordChannelId(body.discordChannelId);
+    if (!channel.ok) return channel;
 
     // A checkbox the owner ticks. Left out of the body it stays undefined,
     // which Prisma reads as "the default" when creating and "leave it alone"
@@ -238,6 +252,7 @@ function validateBody(body: any, { creating }: { creating: boolean }) {
             siteUrl: siteUrl.value,
             repoUrl: repoUrl.value,
             repoUrlPublic,
+            discordChannelId: isAdmin ? channel.value : undefined,
             startedAt: dates.value.startedAt,
             endedAt: dates.value.endedAt,
             thumbnail: cover.value,
@@ -329,7 +344,7 @@ router.get('/:idOrSlug', optionalAuth, async (req: any, res: Response) => {
  */
 router.post('/', verifyToken, async (req: any, res: Response) => {
     try {
-        const checked = validateBody(req.body, { creating: true });
+        const checked = validateBody(req.body, { creating: true, isAdmin: req.user?.role === ROLE.ADMIN });
         if (!checked.ok) return refuseBody(res, checked);
         const fields = checked.value;
 
@@ -391,7 +406,7 @@ router.put('/:id', verifyToken, async (req: any, res: Response) => {
             return res.status(403).json({ error: 'Not authorized to edit this project' });
         }
 
-        const checked = validateBody(req.body, { creating: false });
+        const checked = validateBody(req.body, { creating: false, isAdmin: req.user?.role === ROLE.ADMIN });
         if (!checked.ok) return refuseBody(res, checked);
         const fields = checked.value;
 

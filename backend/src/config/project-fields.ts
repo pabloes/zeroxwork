@@ -180,6 +180,7 @@ export const FIELD_ERRORS: Record<FieldErrorCode, string> = {
     SITE_URL_INVALID: 'The project link is not a valid https URL.',
     REPO_URL_INVALID: 'The repository link is not a valid https URL.',
     REPO_HOST_NOT_ALLOWED: `A repository must be on ${REPO_HOSTS.join(' or ')}.`,
+    DISCORD_CHANNEL_INVALID: 'A Discord channel id is 17 to 20 digits. Right click the channel in Discord to copy it.',
     DATE_INVALID: 'That is not a date we can read.',
     DATES_BACKWARDS: 'The end date is before the start date.',
     MEMBERS_REQUIRED: 'A project needs at least one member.',
@@ -200,4 +201,23 @@ export function visibleRepoUrl(
     canEdit = false,
 ): string | null {
     return canEdit || project.repoUrlPublic ? project.repoUrl : null;
+}
+
+
+/**
+ * A Discord channel id: a snowflake, which is digits and nothing else.
+ *
+ * Validated rather than taken on trust because the mistake it catches is
+ * expensive -- a wrong id is a devlog posted in the wrong game's channel, and
+ * that cannot be taken back once people have read it. Discord snowflakes are
+ * 17 to 20 digits today; the range is deliberately loose because the length
+ * grows with time, and too strict a rule here would reject a real channel
+ * years from now.
+ */
+export function validateDiscordChannelId(input: unknown): FieldResult<string | null> {
+    const raw = asText(input);
+    if (raw === '') return { ok: true, value: null };
+    return /^[0-9]{17,20}$/.test(raw)
+        ? { ok: true, value: raw }
+        : { ok: false, code: 'DISCORD_CHANNEL_INVALID' };
 }

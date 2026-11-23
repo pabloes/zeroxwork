@@ -356,13 +356,31 @@ Adding roles later needs no migration: add the entry to
 Once a week the bot looks at what landed in a game's repository and, if any of
 it is worth a player's attention, posts a devlog in that game's channel.
 
-## Where the repository comes from
+## Where a game is set up
 
-Nowhere in the bot. It is the portfolio item's own `repoUrl`
-(`/admin` → Projects), so a project's repository is written down in exactly one
-place and it is the same one the website shows. A `repo_watches` row adds only
-what the portfolio has no business knowing: which channel the game's players
-read, and how far the bot has already reported.
+Entirely on its portfolio item, in the site's own project form
+(`/portfolio/<slug>` → Edit). Two fields do it:
+
+| Field | Who sees it | What it does |
+|---|---|---|
+| `repoUrl` | anybody who may edit the project | which repository to follow |
+| `discordChannelId` | admins only | which channel the devlog goes to |
+
+Projects are not an AdminJS resource, and the form had no admin-only field
+before this one. It shows when the session's token says `ADMIN`; the server
+decides separately who may actually set it, and ignores the value from anybody
+else, so a member saving their own project can neither clear the channel nor
+move the devlog somewhere it does not belong.
+
+The channel id is checked against a Discord snowflake — 17 to 20 digits — in
+the form and again on the server. The mistake that catches is a devlog posted
+in the wrong game's channel, which cannot be taken back once people have read
+it.
+
+`repo_watches` holds no configuration at all: only how far the bot has got.
+The bot writes its own row the first time it sees a project carrying both
+fields. Its one useful field is `enabled`, which pauses a watch in `/admin`
+without clearing the project's channel.
 
 Only GitHub is watched. The portfolio also accepts GitLab, and such a project
 simply never gets a devlog.
@@ -377,14 +395,17 @@ both APIs).
 
 ## Setting one up
 
-1. The project must be **published** and carry its GitHub URL in `repoUrl`.
-2. `/admin` → **Repo watches** → new: pick the project id, paste the channel id
-   (right click the channel in Discord → Copy ID), leave `branch` empty for the
-   repository's default branch.
-3. Leave `lastSha` empty. The first run then looks at the **seven days before
-   the newest commit**, not the whole history: a repository that has been quiet
-   for a month still gets its last active week, which is what a first devlog
-   should cover.
+1. Publish the project and put its GitHub URL in `repoUrl`.
+2. As an admin, paste the game's channel id in the field under it (right click
+   the channel in Discord → Copy ID). Save.
+
+That is all. The bot picks it up on its next hourly look and writes its own
+state row. The first run looks at the **seven days before the newest commit**,
+not the whole history: a repository quiet for a month still gets its last
+active week, which is what a first devlog should cover.
+
+To stop a game's devlog, clear the channel field. To pause one while keeping
+the setup, untick `enabled` in `/admin` → Repo watches.
 
 The ZEROxPLAY channels as they stand:
 

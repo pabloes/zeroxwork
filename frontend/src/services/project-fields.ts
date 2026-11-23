@@ -50,3 +50,14 @@ export function statusKey(status: string | null | undefined): string | null {
     const value = (status ?? '').toLowerCase();
     return (PROJECT_STATUSES as readonly string[]).includes(value) ? `project.status_${value}` : null;
 }
+
+
+/**
+ * A Discord channel id as the form checks it: digits only, 17 to 20 of them.
+ * The same rule the server applies, so the field goes red before a save that
+ * would be refused anyway.
+ */
+export function isValidChannelId(value: string): boolean {
+    const raw = value.trim();
+    return raw === '' || /^[0-9]{17,20}$/.test(raw);
+}
