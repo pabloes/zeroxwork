@@ -298,6 +298,34 @@ const options:AdminJSOptions =  {
             },
         },
         {
+            // Read-only, and registered mostly so it exists.
+            //
+            // A project is entered and edited from the site's own form, where
+            // the rules live -- nothing is published by anyone's hand but its
+            // author's, a project keeps at least one member, translations are
+            // dropped when the language changes. AdminJS knows none of that,
+            // so letting it write here would be a way around all of it.
+            //
+            // It has to be registered all the same: `repo_watches.projectId`
+            // is a relation, AdminJS treats a relation as a reference to
+            // another resource, and listing the watches made it look this one
+            // up. Unregistered, that threw and the whole Repo watches screen
+            // answered 500.
+            resource: {
+                model: getModelByName("Project"),
+                client: prisma,
+            },
+            options: {
+                navigation: { name: 'Portfolio' },
+                actions: {
+                    new: { isAccessible: false },
+                    edit: { isAccessible: false },
+                    delete: { isAccessible: false },
+                },
+                listProperties: ['id', 'slug', 'title', 'published', 'repoUrl', 'repoUrlPublic', 'discordChannelId'],
+            },
+        },
+        {
             // How far the devlog watcher has got with each project. Nothing
             // here is configuration -- the repository and the channel are
             // both on the project itself -- and the bot writes its own row.
@@ -320,7 +348,7 @@ const options:AdminJSOptions =  {
                     lastPostedAt: { isVisible: { edit: false, new: false, list: true, show: true } },
                     lastCheckedAt: { isVisible: { edit: false, new: false, list: true, show: true } },
                 },
-                listProperties: ['id', 'projectId', 'enabled', 'lastPostedAt', 'lastCheckedAt', 'lastError'],
+                listProperties: ['id', 'project', 'enabled', 'lastPostedAt', 'lastCheckedAt', 'lastError'],
             },
         }
     ],
