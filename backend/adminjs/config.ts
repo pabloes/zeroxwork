@@ -302,11 +302,13 @@ const options:AdminJSOptions =  {
             // form for anything with a rule behind it, this screen for the
             // handful of fields that are plain configuration.
             //
-            // `new` and `delete` stay shut. A project is born with at least one
-            // member and a slug of its own, and taking one away has to take its
-            // translations, its credits and its repo watch with it. AdminJS
-            // knows none of that, so doing either here would be a way around
-            // all of it.
+            // `new`, `delete` and `bulkDelete` stay shut, the last one by name:
+            // closing `delete` only takes the button off the record's own
+            // screen, and the list keeps a delete of its own for whatever is
+            // ticked. A project is born with at least one member and a slug of
+            // its own, and taking one away has to take its translations, its
+            // credits and its repo watch with it. AdminJS knows none of that,
+            // so doing any of it here would be a way around all of it.
             //
             // `editProperties` is the whole of what can be written by hand
             // without breaking something behind it. Left out on purpose: title,
@@ -329,6 +331,7 @@ const options:AdminJSOptions =  {
                 actions: {
                     new: { isAccessible: false },
                     delete: { isAccessible: false },
+                    bulkDelete: { isAccessible: false },
                 },
                 editProperties: [
                     'published', 'featured', 'status',
