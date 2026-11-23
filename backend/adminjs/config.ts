@@ -317,6 +317,14 @@ const options:AdminJSOptions =  {
             // changes (routes/project.ts); written here, those copies would
             // stay behind and read as if nothing had ever changed.
             //
+            // Out too, and this one bites the moment the screen is used:
+            // `thumbnail` and `screenshots`. Neither column takes a null, so
+            // the adapter calls both required and refuses every save that
+            // leaves them empty, however little the edit had to do with
+            // pictures. And `screenshots` is a list the adapter hands a single
+            // text box, so what it sent back would not be a list at all.
+            // Pictures are uploaded from the site's form, in order.
+            //
             // It has to be registered all the same: `repo_watches.projectId`
             // is a relation, AdminJS treats a relation as a reference to
             // another resource, and listing the watches made it look this one
@@ -335,9 +343,8 @@ const options:AdminJSOptions =  {
                 },
                 editProperties: [
                     'published', 'featured', 'status',
-                    'thumbnail', 'screenshots', 'videoUrl', 'siteUrl',
-                    'repoUrl', 'repoUrlPublic', 'discordChannelId',
-                    'startedAt', 'endedAt',
+                    'videoUrl', 'siteUrl', 'repoUrl', 'repoUrlPublic',
+                    'discordChannelId', 'startedAt', 'endedAt',
                 ],
                 listProperties: ['id', 'slug', 'title', 'published', 'repoUrl', 'repoUrlPublic', 'discordChannelId'],
             },
