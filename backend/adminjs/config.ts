@@ -298,13 +298,22 @@ const options:AdminJSOptions =  {
             },
         },
         {
-            // Read-only, and registered mostly so it exists.
+            // Entered from the site's own form, and edited from either: that
+            // form for anything with a rule behind it, this screen for the
+            // handful of fields that are plain configuration.
             //
-            // A project is entered and edited from the site's own form, where
-            // the rules live -- nothing is published by anyone's hand but its
-            // author's, a project keeps at least one member, translations are
-            // dropped when the language changes. AdminJS knows none of that,
-            // so letting it write here would be a way around all of it.
+            // `new` and `delete` stay shut. A project is born with at least one
+            // member and a slug of its own, and taking one away has to take its
+            // translations, its credits and its repo watch with it. AdminJS
+            // knows none of that, so doing either here would be a way around
+            // all of it.
+            //
+            // `editProperties` is the whole of what can be written by hand
+            // without breaking something behind it. Left out on purpose: title,
+            // summary, content, lang and slug. The form recomputes `sourceHash`
+            // and drops the stored translations when the prose or the language
+            // changes (routes/project.ts); written here, those copies would
+            // stay behind and read as if nothing had ever changed.
             //
             // It has to be registered all the same: `repo_watches.projectId`
             // is a relation, AdminJS treats a relation as a reference to
@@ -319,9 +328,14 @@ const options:AdminJSOptions =  {
                 navigation: { name: 'Portfolio' },
                 actions: {
                     new: { isAccessible: false },
-                    edit: { isAccessible: false },
                     delete: { isAccessible: false },
                 },
+                editProperties: [
+                    'published', 'featured', 'status',
+                    'thumbnail', 'screenshots', 'videoUrl', 'siteUrl',
+                    'repoUrl', 'repoUrlPublic', 'discordChannelId',
+                    'startedAt', 'endedAt',
+                ],
                 listProperties: ['id', 'slug', 'title', 'published', 'repoUrl', 'repoUrlPublic', 'discordChannelId'],
             },
         },
