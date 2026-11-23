@@ -138,6 +138,15 @@ client.once(Events.ClientReady, async (ready) => {
         .then((result) => console.log(result))
         .catch((error) => console.error('Welcome publish failed:', error instanceof Error ? error.message : 'unknown error'));
 
+    // Before the role work, and before its early return: the devlog watcher
+    // only reads the portfolio, GitHub and one channel, so a bot that cannot
+    // manage a single role should still write devlogs. It used to sit below
+    // the return under a comment claiming exactly this, which the placement
+    // quietly contradicted. It paces itself from the database, so starting it
+    // at boot is safe however often a deploy restarts the bot.
+    void runRepoWatch();
+    setInterval(() => void runRepoWatch(), config.repoWatch.passMs);
+
     if (!hasRolePermission(guild)) {
         console.error('The bot is missing the Manage Roles permission; nothing will be applied.');
         return;
@@ -149,12 +158,6 @@ client.once(Events.ClientReady, async (ready) => {
     }
 
     await fullReconcile();
-    // Independent of the roles: the devlog watcher only reads the portfolio,
-    // GitHub and one channel, so it runs whatever the role situation is. It
-    // paces itself from the database, which is why starting it at boot is
-    // safe however often a deploy restarts the bot.
-    void runRepoWatch();
-    setInterval(() => void runRepoWatch(), config.repoWatch.passMs);
     setInterval(() => void drainQueue().catch((e) => console.error('Queue drain failed:', e.message)), config.queueMs);
     setInterval(() => void fastPass().catch((e) => console.error('Fast pass failed:', e.message)), config.fastPassMs);
     setInterval(() => void fullReconcile().catch((e) => console.error('Reconcile failed:', e.message)), config.reconcileMs);

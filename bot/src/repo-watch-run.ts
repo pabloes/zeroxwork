@@ -121,11 +121,18 @@ async function runOne(
     }
 
     if (repoWatch.dryRun) {
-        const preview = `**[dry run]** devlog for \`${repo}\`, meant for <#${channelId}>, written by ${writtenBy}:\n\n${content}`;
+        const header = `**[dry run]** devlog for \`${repo}\`, meant for <#${channelId}>, written by ${writtenBy}:`;
         if (config.logChannelId) {
-            await sendPost(client, config.logChannelId, preview.slice(0, 2000));
+            // Two messages, not one. Glued together they were clamped to
+            // Discord's 2000 as a single string, and the post is built to fill
+            // that on its own -- the first real draft came out at 1991, nine
+            // characters from losing its last line, which is the link to the
+            // game. Sent apart, what you read here is byte for byte what the
+            // game's channel would get.
+            await sendPost(client, config.logChannelId, header);
+            await sendPost(client, config.logChannelId, content);
         } else {
-            console.log(preview);
+            console.log(`${header}\n\n${content}`);
         }
         // Nothing went out to the players, so nothing is marked as reported:
         // a dry run can be read, corrected and run again on the same week.
@@ -174,12 +181,25 @@ export async function repoWatchPass(
     }) as WatchProject[];
 
     const now = new Date();
-    for (const project of projects) {
-        // A row the admin switched off: the configuration stays on the project,
-        // and this is the one thing that pauses it without clearing it.
-        if (project.repoWatch && !project.repoWatch.enabled) continue;
-        if (!isDue(project.repoWatch?.lastCheckedAt ?? null, now, config.repoWatch.everyMs)) continue;
+    const paused = projects.filter((p) => p.repoWatch && !p.repoWatch.enabled);
+    const due = projects.filter((p) => !paused.includes(p)
+        && isDue(p.repoWatch?.lastCheckedAt ?? null, now, config.repoWatch.everyMs));
 
+    // Always says something. A pass that found nothing used to log nothing at
+    // all, which made "no project is set up" look exactly like "the watcher
+    // never ran" -- and from outside the container there is no other way to
+    // tell the two apart.
+    if (projects.length === 0) {
+        console.log('[repo-watch] no published project has both a repository and a Discord channel');
+        return;
+    }
+    console.log(
+        `[repo-watch] ${projects.length} project(s) set up, ${due.length} due now`
+        + (paused.length ? `, ${paused.length} paused` : '')
+        + `: ${projects.map((p) => p.title).join(', ')}`,
+    );
+
+    for (const project of due) {
         try {
             await runOne(project, client, prisma, config, log);
         } catch (error) {
