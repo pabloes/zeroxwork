@@ -8,6 +8,7 @@ import {
     isMergeCommit,
     isNoiseFile,
     parseGitHubRepo,
+    TEMPLATE_MAX_BULLETS,
     windowLabel,
 } from '../src/repo-watch.js';
 
@@ -202,6 +203,51 @@ describe('buildTemplatePost', () => {
         expect(post).toContain('• Records on /stats');
         expect(post).toContain('xrace.dcl.eth');
         expect(post.length).toBeLessThanOrEqual(DISCORD_LIMIT);
+    });
+
+    it('shows the newest changes, not the week\'s first ones', () => {
+        // The real Claim Bite week of 13-19 Nov, in the order GitHub returns
+        // it: oldest first. Filling from the front printed the opening commits
+        // and cut the ones that landed last, which are what a reader came for.
+        const subjects = [
+            'Fix slot-machines position', 'Add Russian lang support', 'Add Vietnam language',
+            'Add Soundtrack controls', 'Improve casino UI', 'Optimize textures',
+            'Share texture between asset-packs', 'Improve Houses', 'improve notifications',
+            'New ranches, improve message system, fix house bug on mobile',
+        ];
+        const busy = range(subjects.map((s) => commit(s)), [file('src/game.ts', 500, 200)]);
+        const post = buildTemplatePost({ gameName: 'Claim Bite', range: busy, assessment: assess(busy) });
+
+        expect(post).toContain('New ranches, improve message system');
+        expect(post).toContain('improve notifications');
+        // the week opened with these, and they are no longer what it leads on
+        expect(post).not.toContain('Fix slot-machines position');
+        expect(post).not.toContain('Add Russian lang support');
+    });
+
+    it('stops at six bullets however long the week was', () => {
+        const subjects = Array.from({ length: 40 }, (_, i) => commit(`Change number ${i}`));
+        const busy = range(subjects, [file('src/game.ts', 500, 200)]);
+        const post = buildTemplatePost({ gameName: 'Claim Bite', range: busy, assessment: assess(busy) });
+
+        const bullets = post.split('\n').filter((line) => line.startsWith('• '));
+        // six changes plus the line that counts the rest
+        expect(bullets).toHaveLength(TEMPLATE_MAX_BULLETS + 1);
+        expect(post).toContain('…and 34 more changes');
+    });
+
+    it('counts one leftover change in the singular', () => {
+        const subjects = Array.from({ length: TEMPLATE_MAX_BULLETS + 1 }, (_, i) => commit(`Change ${i}`));
+        const busy = range(subjects, [file('src/game.ts', 500, 200)]);
+        const post = buildTemplatePost({ gameName: 'Claim Bite', range: busy, assessment: assess(busy) });
+        expect(post).toContain('…and 1 more change');
+        expect(post).not.toContain('1 more changes');
+    });
+
+    it('says nothing about leftovers when there are none', () => {
+        const small = range([commit('Records on /stats'), commit('Solid barriers')], [file('src/race.ts', 120, 40)]);
+        const post = buildTemplatePost({ gameName: 'ELON RACE', range: small, assessment: assess(small) });
+        expect(post).not.toContain('more change');
     });
 
     it('fits a very busy week into one message', () => {

@@ -24,7 +24,12 @@ Write the post itself and nothing else. No preamble, no sign-off, no offer to
 help. Rules:
 
 - Open with a bold line: **<GAME> · devlog <window>**, using the window given.
-- Then three to six bullets, each starting with "• ".
+- Then three to six bullets, each starting with "• ". Never more than six,
+  however many commits there are.
+- One bullet per theme, not per commit. Commits that are the same piece of work
+  are one bullet: seven commits adding Russian, German, Italian, Dutch,
+  Chinese, Japanese and Vietnamese are one line about the game speaking more
+  languages, not seven lines. A week of ninety commits is still six bullets.
 - Each bullet says what changed for the person playing, in plain English. Lead
   with the effect, not the file. "It plays on a phone" beats "refactored the
   HUD layout component".

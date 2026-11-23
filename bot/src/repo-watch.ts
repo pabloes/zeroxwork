@@ -151,10 +151,20 @@ export interface PostInput {
 }
 
 /**
+ * How many commit subjects the plain post shows before it stops counting.
+ *
+ * Six, because a wall of thirty-seven lines is not something anybody reads.
+ * The template cannot do what a model does -- seven commits about languages
+ * are one sentence about languages, and only something that understands them
+ * can say so -- but it can at least refuse to print all seven.
+ */
+export const TEMPLATE_MAX_BULLETS = 6;
+
+/**
  * The post written without a model: the commit subjects, as they are.
  *
  * It reads like a changelog rather than a devlog, which is the point -- it is
- * the fallback for when the key is missing or the API call fails, and a plain
+ * the fallback for when the key is missing or the API call fails, and a short
  * list of real changes is better than silence or an invention.
  */
 export function buildTemplatePost(input: PostInput): string {
@@ -162,16 +172,20 @@ export function buildTemplatePost(input: PostInput): string {
     const header = `**${gameName} · devlog ${windowLabel(range.since, range.until)}**`;
     const footer = siteUrl ? `\n\n${siteUrl}` : '';
 
+    // The newest, not the oldest. A comparison arrives oldest first, so filling
+    // from the front printed the week's opening commits and cut the ones that
+    // landed last -- which are the ones somebody reading a devlog came for.
+    const newest = assessment.commits.slice(-TEMPLATE_MAX_BULLETS);
     const lines: string[] = [];
-    for (const commit of assessment.commits) {
+    for (const commit of newest) {
         const line = `• ${commit.subject}`;
-        // leave room for the footer and the "and N more" line
-        if (header.length + lines.join('\n').length + line.length + footer.length > DISCORD_LIMIT - 60) {
-            lines.push(`• …and ${assessment.commits.length - lines.length} more`);
-            break;
-        }
+        // a single enormous subject should still not blow the message
+        if (header.length + lines.join('\n').length + line.length + footer.length > DISCORD_LIMIT - 60) break;
         lines.push(line);
     }
+
+    const hidden = assessment.commits.length - lines.length;
+    if (hidden > 0) lines.push(`• …and ${hidden} more change${hidden === 1 ? '' : 's'}`);
 
     return clampToDiscord(`${header}\n\n${lines.join('\n')}${footer}`);
 }
