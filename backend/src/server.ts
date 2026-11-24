@@ -24,6 +24,7 @@ import logsRoutes from "./routes/logs";
 import adminBackupRoutes from "./routes/admin-backup";
 import { socialPreview } from "./routes/social-preview.js";
 import { socialImageRoutes } from "./routes/social-image.js";
+import { sitemapRoutes } from "./routes/sitemap.js";
 import { ROLE } from './constants/roles';
 import { installConsoleCapture } from './services/log-store';
 import requestLogger from './middleware/requestLogger';
@@ -132,6 +133,11 @@ const run = async () => {
     const port = process.env.PORT || 3000;
     console.log("Listening...")
     const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+
+    // El indice de direcciones que el robots.txt anuncia. Antes del estatico
+    // porque ahi no hay ningun sitemap.xml que servir, y antes del comodin
+    // porque si no la peticion acabaria llevandose el index.html de la SPA.
+    app.use(sitemapRoutes());
 
     app.use(express.static(frontendDistPath));
 
