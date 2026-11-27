@@ -29,7 +29,11 @@ const Login: React.FC = () => {
 
         try {
             await login(email, password);
-            window.location.href = '/';
+            // Someone who has just verified is still finishing their
+            // registration: send them to /account, where the Discord
+            // invitation is waiting. It only works from here on, because
+            // linking needs the session they did not have a moment ago.
+            window.location.href = justVerified ? '/account?welcome=discord' : '/';
         } catch (error: any) {
             if (error.response?.data?.resendToken) {
                 setResendToken(error.response.data.resendToken);

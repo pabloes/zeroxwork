@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/axios-setup';
 import { useTranslation } from '../i18n';
@@ -37,22 +38,32 @@ const BindDiscord: React.FC = () => {
     const queryClient = useQueryClient();
     const [status, setStatus] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
+    // `?welcome=discord`: Login sends a member here right after they verified
+    // and signed in for the first time. Kept in state because the parameter is
+    // stripped from the address straight away, so a reload is a plain /account.
+    const [welcome, setWelcome] = useState(false);
 
     const { data, isLoading } = useQuery<DiscordLinkResponse>({
         queryKey: ['discord-link'],
         queryFn: async () => (await api.get('/discord/link')).data,
     });
 
-    // the callback comes back as /account?discord=<outcome>
+    // the callback comes back as /account?discord=<outcome>, and a member who
+    // has just finished registering arrives as /account?welcome=discord
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const outcome = params.get('discord');
-        if (!outcome) return;
+        const invited = params.get('welcome') === 'discord';
+        if (!outcome && !invited) return;
 
-        setStatus(STATUS_KEYS[outcome] ?? 'account.discord.status_error');
-        queryClient.invalidateQueries({ queryKey: ['discord-link'] });
+        if (invited) setWelcome(true);
+        if (outcome) {
+            setStatus(STATUS_KEYS[outcome] ?? 'account.discord.status_error');
+            queryClient.invalidateQueries({ queryKey: ['discord-link'] });
+        }
 
         params.delete('discord');
+        params.delete('welcome');
         const query = params.toString();
         window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
     }, [queryClient]);
@@ -86,14 +97,25 @@ const BindDiscord: React.FC = () => {
     if (isLoading || !data?.configured) return null;
 
     const link = data.link;
+    // The invitation only makes sense while there is nothing linked: coming
+    // back from Discord lands on the normal panel with its "linked" notice.
+    const inviting = welcome && !link;
 
     return (
-        <section className="zx-panel">
+        <section className={inviting ? 'zx-panel zx-panel-invite' : 'zx-panel'}>
             <h3 className="zx-panel-title zx-panel-title-icon">
                 <DiscordIcon className="zx-discord-icon" size={22} />
-                {t('account.discord.title')}
+                {t(inviting ? 'account.discord.welcome_title' : 'account.discord.title')}
             </h3>
-            <p className="zx-panel-sub">{t('account.discord.description')}</p>
+            <p className="zx-panel-sub">{t(inviting ? 'account.discord.welcome_sub' : 'account.discord.description')}</p>
+
+            {inviting && (
+                <ul className="zx-discord-perks">
+                    <li>{t('account.discord.perk_role')}</li>
+                    <li>{t('account.discord.perk_channels')}</li>
+                    <li>{t('account.discord.perk_contests')}</li>
+                </ul>
+            )}
 
             {status && <p className="zx-panel-status">{t(status)}</p>}
 
@@ -111,10 +133,17 @@ const BindDiscord: React.FC = () => {
                     </button>
                 </div>
             ) : (
-                <button type="button" className="zx-btn zx-btn-primary" onClick={startLinking} disabled={busy}>
-                    <DiscordIcon size={18} />
-                    {t('account.discord.link_button')} <span className="arr">→</span>
-                </button>
+                <div className="zx-discord-actions">
+                    <button type="button" className="zx-btn zx-btn-primary" onClick={startLinking} disabled={busy}>
+                        <DiscordIcon size={18} />
+                        {t(inviting ? 'account.discord.welcome_button' : 'account.discord.link_button')} <span className="arr">→</span>
+                    </button>
+                    {/* Skipping has to be as easy as accepting: the account is
+                        already complete without Discord. */}
+                    {inviting && (
+                        <Link className="zx-btn zx-btn-ghost" to="/">{t('account.discord.welcome_skip')}</Link>
+                    )}
+                </div>
             )}
         </section>
     );

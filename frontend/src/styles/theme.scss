@@ -1656,6 +1656,50 @@ a.uk-link-reset {
   flex: none;
 }
 
+/* The Discord panel as the last step of a registration (BindDiscord in
+   "welcome" mode, reached as /account?welcome=discord). Same panel, pulled
+   forward: a Discord-coloured edge, and the perks as a short list so the
+   invitation says what it is actually worth. */
+.zx-panel-invite {
+  border-color: color-mix(in srgb, var(--zx-discord) 45%, var(--zx-line));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--zx-discord) 9%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--zx-glass), transparent);
+}
+
+.zx-discord-perks {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--zx-ink-dim);
+  font-size: 14.5px;
+  line-height: 1.5;
+  max-width: 44em;
+
+  li {
+    padding-left: 22px;
+    position: relative;
+  }
+
+  li::before {
+    content: '\2192';
+    position: absolute;
+    left: 0;
+    color: var(--zx-discord);
+    font-family: var(--zx-mono);
+  }
+}
+
+.zx-discord-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 /* Credits editor inside the article form. The rows are a plain list; these
    rules only stop the member results from looking like body copy. */
 .zx-credit-rows {
