@@ -70,7 +70,7 @@ vi.mock('../src/services/mailer.js', () => {
 
 // none of these is what is under test, and each drags in the network or the disk
 vi.mock('../src/routes/image.js', () => ({ ImageRejected: class extends Error {}, storeImageBuffer: async () => ({ banned: false, servedUrl: '/x' }) }));
-vi.mock('../src/services/admin-notify.js', () => ({ notifyAdminNewUser: async () => undefined }));
+vi.mock('../src/services/admin-notify.js', () => ({ notifyAdminNewUser: async () => undefined, notifyAdminUserVerified: async () => undefined }));
 vi.mock('../src/services/decentraland-names.js', () => ({ updateUserExtraSpace: async () => undefined, updateWalletNames: async () => [] }));
 vi.mock('../src/services/public-handle.js', () => ({ freeHandle: async (handle: string) => handle }));
 // the limits are the library's job; here they would only make the order of the tests matter

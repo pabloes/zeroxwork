@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import argon2 from 'argon2';
 import {MailDeliveryError} from "../services/mailer";
 import { InvalidSocialError, normalizeSocial } from '../constants/social-networks';
-import { notifyAdminNewUser } from '../services/admin-notify';
+import { notifyAdminNewUser, notifyAdminUserVerified } from '../services/admin-notify';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import { env } from '../config/env';
@@ -387,6 +387,11 @@ router.post('/verify', linkLimiter, async (req, res) => {
         }
 
         await prisma.user.update({ where: { id: user.id }, data: { verified: true } });
+        // Same fire-and-forget as the sign-up notice: the owner hears that the
+        // alta completed, and a broken SMTP never costs the user their
+        // verification.
+        notifyAdminUserVerified(user.email)
+            .catch((err: any) => console.error('Admin notify error:', err));
         return res.json({ message: 'Email has been successfully verified!' });
     } catch (error) {
         console.error('Verification failed: the account could not be updated');

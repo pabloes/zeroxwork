@@ -114,3 +114,46 @@ export function notifyAdminNewProject(project: {
         { event: 'project', slug: project.slug, lang: project.lang }
     );
 }
+
+/**
+ * An account became verified: the person clicked the link we mailed them.
+ * Pairs with `notifyAdminNewUser`, so an alta that never verifies is visible
+ * by the mail that never arrives.
+ */
+export function notifyAdminUserVerified(email: string, verifiedAt: Date | string = new Date()): Promise<void> {
+    const at = verifiedAt instanceof Date ? verifiedAt.toISOString() : String(verifiedAt);
+
+    return notifyAdmin(
+        `[ZEROxWORK] Cuenta verificada: ${oneLine(email)}`,
+        `<p>Una cuenta de ZEROxWORK acaba de verificarse.</p>
+         <p><strong>Email:</strong> ${escapeHtml(email)}<br>
+         <strong>Fecha:</strong> ${escapeHtml(at)}</p>`,
+        { event: 'verified', email }
+    );
+}
+
+/**
+ * A member linked their Discord account (or moved the link to another one).
+ * The Discord id travels because it is what the bot and the admin panel use
+ * to find the member; it is a public snowflake, not a secret.
+ */
+export function notifyAdminDiscordLinked(link: {
+    email: string;
+    username: string;
+    globalName: string | null;
+    discordId: string;
+    previousDiscordId?: string | null;
+}): Promise<void> {
+    const changed = Boolean(link.previousDiscordId);
+    const name = link.globalName || link.username;
+
+    return notifyAdmin(
+        `[ZEROxWORK] Discord ${changed ? 'cambiado' : 'vinculado'}: ${oneLine(name)}`,
+        `<p>${changed ? 'Un miembro ha cambiado su Discord vinculado.' : 'Un miembro ha vinculado su Discord.'}</p>
+         <p><strong>Email:</strong> ${escapeHtml(link.email)}<br>
+         <strong>Discord:</strong> ${escapeHtml(link.username)}${link.globalName ? ` (${escapeHtml(link.globalName)})` : ''}<br>
+         <strong>Discord ID:</strong> ${escapeHtml(link.discordId)}${changed ? `<br>
+         <strong>Antes era:</strong> ${escapeHtml(link.previousDiscordId)}` : ''}</p>`,
+        { event: changed ? 'discord-relinked' : 'discord-linked', email: link.email, discordId: link.discordId }
+    );
+}

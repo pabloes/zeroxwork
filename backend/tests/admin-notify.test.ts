@@ -93,4 +93,49 @@ describe('admin notifications', () => {
         expect(article.html).toContain('pablo');
         expect(article.html).toContain('News');
     });
+
+    it('tells the owner when an account verifies, and when a Discord is linked or changed', async () => {
+        process.env.ADMIN_NOTIFY_EMAIL = 'owner@zeroxwork.com';
+        sendMailMock.mockResolvedValue({ messageId: '<abc@test>', accepted: ['owner@zeroxwork.com'], rejected: [] });
+        const { notifyAdminUserVerified, notifyAdminDiscordLinked } = await loadAdminNotify();
+
+        await notifyAdminUserVerified('nuevo@user.com', new Date('2026-01-02T03:04:05.000Z'));
+        await notifyAdminDiscordLinked({
+            email: 'nuevo@user.com', username: 'pablones', globalName: 'Pablo', discordId: '123456789',
+        });
+        await notifyAdminDiscordLinked({
+            email: 'nuevo@user.com', username: 'otro', globalName: null, discordId: '987654321', previousDiscordId: '123456789',
+        });
+
+        const [verified, linked, relinked] = sendMailMock.mock.calls.map(([options]) => options);
+
+        expect(verified.to).toBe('owner@zeroxwork.com');
+        expect(verified.subject).toBe('[ZEROxWORK] Cuenta verificada: nuevo@user.com');
+        expect(verified.html).toContain('2026-01-02T03:04:05.000Z');
+        expect(verified.html).not.toContain('/verify');
+
+        expect(linked.subject).toBe('[ZEROxWORK] Discord vinculado: Pablo');
+        expect(linked.html).toContain('pablones');
+        expect(linked.html).toContain('123456789');
+        expect(linked.html).not.toContain('Antes era');
+
+        // No globalName: the subject falls back to the username.
+        expect(relinked.subject).toBe('[ZEROxWORK] Discord cambiado: otro');
+        expect(relinked.html).toContain('Antes era');
+        expect(relinked.html).toContain('123456789');
+    });
+
+    it('escapes a Discord name that carries markup', async () => {
+        process.env.ADMIN_NOTIFY_EMAIL = 'owner@zeroxwork.com';
+        sendMailMock.mockResolvedValue({ messageId: '<abc@test>', accepted: ['owner@zeroxwork.com'], rejected: [] });
+        const { notifyAdminDiscordLinked } = await loadAdminNotify();
+
+        await notifyAdminDiscordLinked({
+            email: 'nuevo@user.com', username: '<img src=x onerror=alert(1)>', globalName: null, discordId: '1',
+        });
+
+        const [{ html }] = sendMailMock.mock.calls.map(([options]) => options);
+        expect(html).not.toContain('<img');
+        expect(html).toContain('&lt;img');
+    });
 });

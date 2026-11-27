@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { prisma } from '../db';
 import { verifyToken } from '../middleware/authMiddleware';
 import { enqueueDiscordSync } from '../services/discord-sync-queue';
+import { notifyAdminDiscordLinked } from '../services/admin-notify';
 import {
     DiscordOAuthError,
     buildAuthorizeUrl,
@@ -94,10 +95,22 @@ router.get('/oauth/callback', callbackLimiter, async (req: Request, res: Respons
     try {
         const profile = await resolveProfileFromCode(code, config);
 
-        const taken = await prisma.discordLink.findUnique({
-            where: { discordId: profile.id },
-            select: { userId: true },
-        });
+        // `previous` and `owner` are only here for the owner's notice: who
+        // linked, and whether this replaces another Discord account.
+        const [taken, previous, owner] = await Promise.all([
+            prisma.discordLink.findUnique({
+                where: { discordId: profile.id },
+                select: { userId: true },
+            }),
+            prisma.discordLink.findUnique({
+                where: { userId },
+                select: { discordId: true },
+            }),
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { email: true },
+            }),
+        ]);
         if (taken && taken.userId !== userId) {
             return backToAccount(res, 'already_linked');
         }
@@ -120,6 +133,21 @@ router.get('/oauth/callback', callbackLimiter, async (req: Request, res: Respons
         });
 
         await enqueueDiscordSync(profile.id, 'linked');
+
+        // Only when the link actually changed: pressing "link" again on the
+        // same Discord account is not news. Never awaited and it never
+        // rejects, but keep the catch so a future change cannot turn this into
+        // an unhandled rejection.
+        if (!previous || previous.discordId !== profile.id) {
+            notifyAdminDiscordLinked({
+                email: owner?.email ?? `user #${userId}`,
+                username: profile.username,
+                globalName: profile.globalName,
+                discordId: profile.id,
+                previousDiscordId: previous?.discordId ?? null,
+            }).catch((err: any) => console.error('Admin notify error:', err));
+        }
+
         return backToAccount(res, 'linked');
     } catch (err) {
         if (err instanceof DiscordOAuthError) {
